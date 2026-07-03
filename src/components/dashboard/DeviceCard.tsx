@@ -67,16 +67,18 @@ const styles = StyleSheet.create({
   statusChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    backgroundColor: dashboardTheme.colors.surfaceTint,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   online: {
     backgroundColor: dashboardTheme.colors.success,
@@ -86,8 +88,10 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: dashboardTheme.colors.textPrimary,
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
   },
   metaGrid: {
     marginTop: 18,
@@ -99,6 +103,8 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: dashboardTheme.radii.md,
     backgroundColor: dashboardTheme.colors.surfaceTint,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
     gap: 6,
   },
   metaLabel: {

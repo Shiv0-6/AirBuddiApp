@@ -7,6 +7,7 @@ import type { DashboardCommandMessage, DashboardTelemetryMessage } from '../../s
 import type { ConnectionState, DeviceMode, PowerState } from './dashboardTypes';
 import {
   applyTelemetry,
+  cycleLocalFanSpeed,
   setConnectionState,
   setDeviceMode,
   setDevicePower,
@@ -97,6 +98,7 @@ export function useDashboardRealtimeBridge() {
       }
     },
     cycleFanSpeed: async () => {
+      dispatch(cycleLocalFanSpeed());
       const command: DashboardCommandMessage = {
         type: 'fanSpeed',
         value: 'cycle',

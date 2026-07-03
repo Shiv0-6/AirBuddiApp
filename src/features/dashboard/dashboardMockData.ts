@@ -10,6 +10,7 @@ export const dashboardMockState: DashboardState = {
     mode: 'auto',
     power: 'on',
     lastUpdated: '2 min ago',
+    fanSpeed: '2',
   },
   aqi: 46,
   connection: 'connected',

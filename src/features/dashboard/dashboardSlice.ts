@@ -83,6 +83,14 @@ const dashboardSlice = createSlice({
       state.device.mode = action.payload;
       state.device.lastUpdated = 'Just now';
     },
+    cycleLocalFanSpeed(state) {
+      const speeds: ('1' | '2' | '3' | 'turbo')[] = ['1', '2', '3', 'turbo'];
+      const currentSpeed = state.device.fanSpeed ?? '2';
+      const currentIndex = speeds.indexOf(currentSpeed);
+      const nextIndex = (currentIndex + 1) % speeds.length;
+      state.device.fanSpeed = speeds[nextIndex];
+      state.device.lastUpdated = 'Just now';
+    },
     applyTelemetry(state, action: PayloadAction<DashboardTelemetryMessage>) {
       const telemetry = action.payload;
 
@@ -139,6 +147,7 @@ export const {
   setErrorMessage,
   setDevicePower,
   setDeviceMode,
+  cycleLocalFanSpeed,
   applyTelemetry,
   resetDashboard,
 } = dashboardSlice.actions;

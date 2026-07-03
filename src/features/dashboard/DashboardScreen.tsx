@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, View, Pressable, Text } from 'react-native';
 
 import { dashboardTheme } from './dashboardTheme';
 import { connectionLabels } from './dashboardMockData';
@@ -17,6 +17,7 @@ import { useDashboardRealtimeBridge } from './useDashboardRealtimeBridge';
 export function DashboardScreen() {
   const dashboard = useAppSelector(selectDashboard);
   const { setPowerState, setAutoMode, cycleFanSpeed } = useDashboardRealtimeBridge();
+  const [activeTab, setActiveTab] = useState<'overview' | 'sensors' | 'device'>('overview');
 
   const connectionLabel = useMemo(
     () => connectionLabels[dashboard.connection],
@@ -51,42 +52,69 @@ export function DashboardScreen() {
           notificationCount={dashboard.notificationCount}
         />
 
-        <View style={styles.sectionGap}>
-          <DeviceCard
-            device={{
-              ...dashboard.device,
-            }}
-          />
+        {/* Custom Segmented Tab Bar */}
+        <View style={styles.tabContainer}>
+          <View style={styles.tabBar}>
+            {(['overview', 'sensors', 'device'] as const).map(tab => {
+              const isActive = activeTab === tab;
+              const label =
+                tab === 'overview'
+                  ? 'Overview'
+                  : tab === 'sensors'
+                  ? 'Sensors'
+                  : 'Device';
+              return (
+                <Pressable
+                  key={tab}
+                  onPress={() => setActiveTab(tab)}
+                  style={[styles.tabButton, isActive && styles.activeTabButton]}
+                >
+                  <Text style={[styles.tabText, isActive && styles.activeTabText]}>
+                    {label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
-        <View style={styles.sectionGap}>
-          <AirQualityCard aqi={dashboard.aqi} />
-        </View>
+        {/* Tab Contents */}
+        {activeTab === 'overview' && (
+          <View style={styles.tabContent}>
+            <AirQualityCard aqi={dashboard.aqi} />
+            <View style={styles.sectionGap}>
+              <QuickControls
+                isPoweredOn={dashboard.device.power === 'on'}
+                isAutoMode={dashboard.device.mode === 'auto'}
+                fanSpeed={dashboard.device.fanSpeed}
+                onTogglePower={handleTogglePower}
+                onCycleFanSpeed={handleCycleFanSpeed}
+                onToggleAutoMode={handleToggleAutoMode}
+              />
+            </View>
+          </View>
+        )}
 
-        <View style={styles.sectionGap}>
-          <SensorGrid sensors={dashboard.sensors} />
-        </View>
+        {activeTab === 'sensors' && (
+          <View style={styles.tabContent}>
+            <SensorGrid sensors={dashboard.sensors} />
+          </View>
+        )}
 
-        <View style={styles.sectionGap}>
-          <QuickControls
-            isPoweredOn={dashboard.device.power === 'on'}
-            isAutoMode={dashboard.device.mode === 'auto'}
-            onTogglePower={handleTogglePower}
-            onCycleFanSpeed={handleCycleFanSpeed}
-            onToggleAutoMode={handleToggleAutoMode}
-          />
-        </View>
-
-        <View style={styles.sectionGap}>
-          <FilterHealthCard
-            health={dashboard.filterHealth}
-            remainingLifeDays={dashboard.remainingLifeDays}
-          />
-        </View>
-
-        <View style={styles.sectionGap}>
-          <ConnectionPill label={connectionLabel} status={dashboard.connection} />
-        </View>
+        {activeTab === 'device' && (
+          <View style={styles.tabContent}>
+            <DeviceCard device={dashboard.device} />
+            <View style={styles.sectionGap}>
+              <FilterHealthCard
+                health={dashboard.filterHealth}
+                remainingLifeDays={dashboard.remainingLifeDays}
+              />
+            </View>
+            <View style={styles.sectionGap}>
+              <ConnectionPill label={connectionLabel} status={dashboard.connection} />
+            </View>
+          </View>
+        )}
 
         <View style={styles.bottomSpace} />
       </ScrollView>
@@ -106,6 +134,38 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 14,
   },
+  tabContainer: {
+    marginVertical: 18,
+  },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.05)',
+    padding: 4,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activeTabButton: {
+    backgroundColor: dashboardTheme.colors.primary,
+  },
+  tabText: {
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  activeTabText: {
+    color: '#FFFFFF',
+  },
+  tabContent: {
+    flex: 1,
+  },
   sectionGap: {
     marginTop: 16,
   },
@@ -114,21 +174,20 @@ const styles = StyleSheet.create({
   },
   backgroundBlobOne: {
     position: 'absolute',
-    top: -80,
-    right: -90,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: dashboardTheme.colors.primarySoft,
-    opacity: 0.7,
+    top: -60,
+    right: -80,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: 'rgba(13, 148, 136, 0.12)',
   },
   backgroundBlobTwo: {
     position: 'absolute',
-    top: 220,
-    left: -120,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
-    backgroundColor: 'rgba(240, 162, 2, 0.10)',
+    top: 300,
+    left: -100,
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
   },
 });

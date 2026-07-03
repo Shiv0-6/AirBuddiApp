@@ -15,22 +15,27 @@ function SensorCard({ sensor }: { sensor: DashboardSensor }) {
   const tone = getSensorTone(sensor.status);
 
   return (
-    <View style={styles.sensorCard}>
+    <View style={[styles.sensorCard, { borderColor: tone + '18' }]}>
       <View style={styles.iconRow}>
-        <View style={[styles.iconBubble, { backgroundColor: tone + '18' }]}>
-          <MaterialCommunityIcons name={sensor.icon as never} size={20} color={tone} />
+        <View style={[styles.iconBubble, { backgroundColor: tone + '12' }]}>
+          <MaterialCommunityIcons name={sensor.icon as never} size={18} color={tone} />
         </View>
-        <View style={[styles.dot, { backgroundColor: tone }]} />
+        <View style={[styles.statusTag, { backgroundColor: tone + '0F', borderColor: tone + '25' }]}>
+          <Text style={[styles.statusTagText, { color: tone }]}>
+            {sensor.status === 'good' ? 'Optimal' : sensor.status === 'warning' ? 'Monitor' : 'Alert'}
+          </Text>
+        </View>
       </View>
 
-      <Text style={styles.sensorName} numberOfLines={1}>
-        {sensor.name}
-      </Text>
-      <Text style={styles.sensorValue}>
-        {formatSensorValue(sensor.value)}
-        <Text style={styles.sensorUnit}> {sensor.unit}</Text>
-      </Text>
-      <Text style={styles.sensorStatus}>{sensor.status === 'good' ? 'Stable' : sensor.status === 'warning' ? 'Monitor' : 'Attention'}</Text>
+      <View style={styles.valueGroup}>
+        <Text style={styles.sensorValue} numberOfLines={1}>
+          {formatSensorValue(sensor.value)}
+          <Text style={styles.sensorUnit}> {sensor.unit}</Text>
+        </Text>
+        <Text style={styles.sensorName} numberOfLines={1}>
+          {sensor.name}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -45,8 +50,8 @@ function SensorGridComponent({ sensors }: SensorGridProps) {
   return (
     <SectionCard padding={18}>
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Sensors</Text>
-        <Text style={styles.subtitle}>Live environmental readings</Text>
+        <Text style={styles.title}>Environmental Sensors</Text>
+        <Text style={styles.subtitle}>Live Indoor Analytics</Text>
       </View>
 
       <FlatList
@@ -67,21 +72,21 @@ export const SensorGrid = memo(SensorGridComponent);
 
 const styles = StyleSheet.create({
   headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-    gap: 12,
+    marginBottom: 16,
   },
   title: {
     color: dashboardTheme.colors.textPrimary,
     fontSize: 18,
     fontWeight: '800',
+    letterSpacing: -0.2,
   },
   subtitle: {
     color: dashboardTheme.colors.textSecondary,
-    fontSize: 13,
-    fontWeight: '500',
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
   list: {
     overflow: 'visible',
@@ -94,13 +99,13 @@ const styles = StyleSheet.create({
   },
   sensorCard: {
     flex: 1,
-    minHeight: 132,
+    minHeight: 124,
     padding: 14,
     borderRadius: dashboardTheme.radii.md,
     backgroundColor: dashboardTheme.colors.surfaceTint,
     borderWidth: 1,
-    borderColor: dashboardTheme.colors.border,
-    gap: 8,
+    gap: 16,
+    justifyContent: 'space-between',
   },
   iconRow: {
     flexDirection: 'row',
@@ -108,36 +113,41 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconBubble: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+  statusTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  statusTagText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+    textTransform: 'uppercase',
+  },
+  valueGroup: {
+    gap: 2,
   },
   sensorName: {
     color: dashboardTheme.colors.textSecondary,
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
   },
   sensorValue: {
     color: dashboardTheme.colors.textPrimary,
-    fontSize: 23,
+    fontSize: 24,
     fontWeight: '900',
-    letterSpacing: -0.4,
+    letterSpacing: -0.5,
   },
   sensorUnit: {
     color: dashboardTheme.colors.textSecondary,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  sensorStatus: {
-    color: dashboardTheme.colors.textMuted,
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
   },
 });

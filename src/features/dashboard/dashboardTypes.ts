@@ -8,6 +8,7 @@ export interface DashboardDevice {
   mode: DeviceMode;
   power: PowerState;
   lastUpdated: string;
+  fanSpeed?: '1' | '2' | '3' | 'turbo';
 }
 
 export interface DashboardSensor {

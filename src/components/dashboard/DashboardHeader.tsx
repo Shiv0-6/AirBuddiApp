@@ -21,7 +21,12 @@ function DashboardHeaderComponent({ greeting, userName, notificationCount }: Das
       <View style={styles.actions}>
         <View style={styles.iconButton}>
           <MaterialCommunityIcons name="bell-outline" size={22} color={dashboardTheme.colors.textPrimary} />
-          {notificationCount > 0 ? <View style={styles.badge} /> : null}
+          {notificationCount > 0 ? (
+            <View style={styles.badgeContainer}>
+              <View style={styles.badgePulse} />
+              <View style={styles.badge} />
+            </View>
+          ) : null}
         </View>
         <View style={styles.avatar}>
           <Text style={styles.avatarText}>{userName.charAt(0).toUpperCase()}</Text>
@@ -38,21 +43,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    paddingVertical: 8,
   },
   copyGroup: {
-    gap: 6,
+    gap: 4,
   },
   greeting: {
     color: dashboardTheme.colors.textSecondary,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    letterSpacing: 0.2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   userName: {
     color: dashboardTheme.colors.textPrimary,
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.4,
+    fontSize: 26,
+    fontWeight: '900',
+    letterSpacing: -0.6,
   },
   actions: {
     flexDirection: 'row',
@@ -60,35 +67,51 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   iconButton: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: dashboardTheme.colors.surface,
     borderWidth: 1,
     borderColor: dashboardTheme.colors.border,
   },
-  badge: {
+  badgeContainer: {
     position: 'absolute',
-    top: 12,
-    right: 13,
+    top: 11,
+    right: 12,
+    width: 9,
+    height: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  badgePulse: {
+    position: 'absolute',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: dashboardTheme.colors.danger,
+    opacity: 0.35,
+  },
+  badge: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: dashboardTheme.colors.danger,
   },
   avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: dashboardTheme.colors.textPrimary,
+    backgroundColor: dashboardTheme.colors.primary,
+    borderWidth: 1.5,
+    borderColor: dashboardTheme.colors.primarySoft,
   },
   avatarText: {
-    color: dashboardTheme.colors.lightText,
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });
