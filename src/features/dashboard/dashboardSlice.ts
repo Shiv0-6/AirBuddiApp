@@ -1,4 +1,4 @@
-import { createSlice, type PayloadAction } from '../../../../node_modules/@reduxjs/toolkit/dist/cjs/index.js';
+import { createSlice, type PayloadAction } from '../../vendor/reduxToolkit';
 
 import { awsIotConfig } from '../../config/awsIotConfig';
 import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
