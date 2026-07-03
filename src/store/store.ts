@@ -1,4 +1,4 @@
-import { configureStore } from '@reduxjs/toolkit';
+import { configureStore } from '../../../node_modules/@reduxjs/toolkit/dist/cjs/index.js';
 
 import { dashboardReducer } from '../features/dashboard/dashboardSlice';
 
