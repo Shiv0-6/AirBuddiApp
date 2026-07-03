@@ -1,3 +1,5 @@
+/* global jest */
+
 import 'react-native-gesture-handler/jestSetup';
 
 jest.mock('react-native-gesture-handler', () => {
@@ -15,8 +17,6 @@ jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => {
 	return ({name, ...props}) => React.createElement(Text, props, name);
 });
 jest.mock('react-native-reanimated', () => {
-	const React = require('react');
-
 	const Animated = {
 		createAnimatedComponent: Component => Component,
 	};

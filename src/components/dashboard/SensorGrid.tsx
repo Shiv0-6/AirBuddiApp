@@ -35,9 +35,13 @@ function SensorCard({ sensor }: { sensor: DashboardSensor }) {
   );
 }
 
-function SensorGridComponent({ sensors }: SensorGridProps) {
-  const renderSensor = ({ item }: ListRenderItemInfo<DashboardSensor>) => <SensorCard sensor={item} />;
+const renderSensorItem = ({ item }: ListRenderItemInfo<DashboardSensor>) => (
+  <SensorCard sensor={item} />
+);
 
+const renderSensorSeparator = () => <View style={styles.rowGap} />;
+
+function SensorGridComponent({ sensors }: SensorGridProps) {
   return (
     <SectionCard padding={18}>
       <View style={styles.headerRow}>
@@ -47,12 +51,12 @@ function SensorGridComponent({ sensors }: SensorGridProps) {
 
       <FlatList
         data={sensors}
-        renderItem={renderSensor}
+        renderItem={renderSensorItem}
         keyExtractor={item => item.id}
         numColumns={2}
         scrollEnabled={false}
         columnWrapperStyle={styles.columnWrapper}
-        ItemSeparatorComponent={() => <View style={styles.rowGap} />}
+        ItemSeparatorComponent={renderSensorSeparator}
         style={styles.list}
       />
     </SectionCard>
