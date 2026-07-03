@@ -95,3 +95,113 @@ To learn more about React Native, take a look at the following resources:
 - [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
 - [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
 - [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+
+# AirBuddi Live Data Setup
+
+AirBuddi now includes a live AWS IoT Core MQTT layer. The dashboard still renders the same reusable UI, but the data source can switch from mock state to real telemetry without changing the cards.
+
+## Files to review first
+
+- [src/config/awsIotConfig.ts](src/config/awsIotConfig.ts)
+- [src/services/awsIot/awsIotClient.ts](src/services/awsIot/awsIotClient.ts)
+- [src/features/dashboard/dashboardSlice.ts](src/features/dashboard/dashboardSlice.ts)
+- [src/features/dashboard/useDashboardRealtimeBridge.ts](src/features/dashboard/useDashboardRealtimeBridge.ts)
+- [src/features/dashboard/DashboardScreen.tsx](src/features/dashboard/DashboardScreen.tsx)
+
+## How the live path works
+
+1. `App.tsx` wraps the app in a Redux provider.
+2. `DashboardScreen` reads the dashboard state from Redux.
+3. `useDashboardRealtimeBridge` opens an MQTT connection when live mode is enabled.
+4. Incoming telemetry updates the Redux slice.
+5. Quick control actions publish JSON commands back to AWS IoT Core.
+
+## Enable AWS IoT Core
+
+Open [src/config/awsIotConfig.ts](src/config/awsIotConfig.ts) and set:
+
+- `enabled: true`
+- `endpoint` to your AWS IoT ATS endpoint
+- `region` to the AWS region where IoT Core lives
+- `clientId` to a stable device-specific value
+- `credentialsProvider` to return temporary AWS credentials
+
+### Example config shape
+
+```ts
+export const awsIotConfig = {
+	enabled: true,
+	endpoint: 'your-endpoint-ats.iot.us-east-1.amazonaws.com',
+	region: 'us-east-1',
+	clientId: 'airbuddi-pure-x',
+	deviceId: 'airbuddi-pure-x',
+	topics: {
+		telemetry: 'airbuddi/airbuddi-pure-x/telemetry',
+		status: 'airbuddi/airbuddi-pure-x/status',
+		command: 'airbuddi/airbuddi-pure-x/command',
+		connection: 'airbuddi/airbuddi-pure-x/connection',
+	},
+	credentialsProvider: async () => ({
+		accessKeyId: 'TEMP_ACCESS_KEY',
+		secretAccessKey: 'TEMP_SECRET_KEY',
+		sessionToken: 'TEMP_SESSION_TOKEN',
+	}),
+};
+```
+
+## Recommended auth approach
+
+Do not hardcode long-lived AWS keys in the app. Use temporary credentials from one of these flows:
+
+- Cognito Identity Pool
+- A secure backend that issues short-lived IAM credentials
+- Amplify or a custom auth service that can provide a credentials provider
+
+## MQTT topic contract
+
+The dashboard expects telemetry in JSON form. A good starting payload looks like this:
+
+```json
+{
+	"aqi": 46,
+	"connection": "connected",
+	"device": {
+		"name": "AirBuddi Pure X",
+		"status": "Online",
+		"mode": "auto",
+		"power": "on",
+		"lastUpdated": "2026-07-03T09:30:00Z"
+	},
+	"filterHealth": 78,
+	"remainingLifeDays": 42,
+	"sensors": [
+		{ "id": "temp", "value": 24.6, "unit": "°C", "status": "good" },
+		{ "id": "humidity", "value": 52, "unit": "%", "status": "good" }
+	]
+}
+```
+
+Topic usage in the app:
+
+- `telemetry` publishes full sensor snapshots.
+- `status` can carry device online/offline updates.
+- `connection` can carry heartbeat or connectivity messages.
+- `command` is used by the app to publish power, mode, and fan control commands.
+
+## Quick control commands
+
+The quick controls publish command messages like this:
+
+```json
+{ "type": "power", "value": "on", "timestamp": "2026-07-03T09:30:00Z" }
+```
+
+## Run after setup
+
+```sh
+npm install
+npm start
+npm run android
+```
+
+If AWS IoT Core is configured correctly, the dashboard will move into connected mode and start showing live telemetry updates in real time.

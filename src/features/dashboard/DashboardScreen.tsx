@@ -1,14 +1,8 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import {
-  Alert,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import React, { useCallback, useMemo } from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
 
 import { dashboardTheme } from './dashboardTheme';
-import { dashboardMockState, connectionLabels } from './dashboardMockData';
+import { connectionLabels } from './dashboardMockData';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { DeviceCard } from '../../components/dashboard/DeviceCard';
 import { AirQualityCard } from '../../components/dashboard/AirQualityCard';
@@ -16,30 +10,30 @@ import { SensorGrid } from '../../components/dashboard/SensorGrid';
 import { QuickControls } from '../../components/dashboard/QuickControls';
 import { FilterHealthCard } from '../../components/dashboard/FilterHealthCard';
 import { ConnectionPill } from '../../components/dashboard/ConnectionPill';
+import { useAppSelector } from '../../store/hooks';
+import { selectDashboard } from './dashboardSelectors';
+import { useDashboardRealtimeBridge } from './useDashboardRealtimeBridge';
 
 export function DashboardScreen() {
-  const [isPoweredOn, setIsPoweredOn] = useState(dashboardMockState.device.power === 'on');
-  const [isAutoMode, setIsAutoMode] = useState(dashboardMockState.device.mode === 'auto');
-
-  const mockState = dashboardMockState;
+  const dashboard = useAppSelector(selectDashboard);
+  const { setPowerState, setAutoMode, cycleFanSpeed } = useDashboardRealtimeBridge();
 
   const connectionLabel = useMemo(
-    () => connectionLabels[mockState.connection],
-    [mockState.connection],
+    () => connectionLabels[dashboard.connection],
+    [dashboard.connection],
   );
 
   const handleTogglePower = useCallback(() => {
-    Alert.alert('AirBuddi', 'Power control is wired to mock state for now.');
-    setIsPoweredOn(previous => !previous);
-  }, []);
+    void setPowerState(dashboard.device.power !== 'on');
+  }, [dashboard.device.power, setPowerState]);
 
   const handleCycleFanSpeed = useCallback(() => {
-    Alert.alert('AirBuddi', 'Fan speed control will connect to MQTT later.');
-  }, []);
+    void cycleFanSpeed();
+  }, [cycleFanSpeed]);
 
   const handleToggleAutoMode = useCallback((value: boolean) => {
-    setIsAutoMode(value);
-  }, []);
+    void setAutoMode(value);
+  }, [setAutoMode]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -52,33 +46,31 @@ export function DashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <DashboardHeader
-          greeting={mockState.greeting}
-          userName={mockState.userName}
-          notificationCount={mockState.notificationCount}
+          greeting={dashboard.greeting}
+          userName={dashboard.userName}
+          notificationCount={dashboard.notificationCount}
         />
 
         <View style={styles.sectionGap}>
           <DeviceCard
             device={{
-              ...mockState.device,
-              power: isPoweredOn ? 'on' : 'off',
-              mode: isAutoMode ? 'auto' : 'manual',
+              ...dashboard.device,
             }}
           />
         </View>
 
         <View style={styles.sectionGap}>
-          <AirQualityCard aqi={mockState.aqi} />
+          <AirQualityCard aqi={dashboard.aqi} />
         </View>
 
         <View style={styles.sectionGap}>
-          <SensorGrid sensors={mockState.sensors} />
+          <SensorGrid sensors={dashboard.sensors} />
         </View>
 
         <View style={styles.sectionGap}>
           <QuickControls
-            isPoweredOn={isPoweredOn}
-            isAutoMode={isAutoMode}
+            isPoweredOn={dashboard.device.power === 'on'}
+            isAutoMode={dashboard.device.mode === 'auto'}
             onTogglePower={handleTogglePower}
             onCycleFanSpeed={handleCycleFanSpeed}
             onToggleAutoMode={handleToggleAutoMode}
@@ -87,13 +79,13 @@ export function DashboardScreen() {
 
         <View style={styles.sectionGap}>
           <FilterHealthCard
-            health={mockState.filterHealth}
-            remainingLifeDays={mockState.remainingLifeDays}
+            health={dashboard.filterHealth}
+            remainingLifeDays={dashboard.remainingLifeDays}
           />
         </View>
 
         <View style={styles.sectionGap}>
-          <ConnectionPill label={connectionLabel} status={mockState.connection} />
+          <ConnectionPill label={connectionLabel} status={dashboard.connection} />
         </View>
 
         <View style={styles.bottomSpace} />
