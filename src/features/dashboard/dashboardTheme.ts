@@ -1,0 +1,26 @@
+export const dashboardTheme = {
+  colors: {
+    background: '#F4F7FB',
+    surface: '#FFFFFF',
+    surfaceTint: '#F8FAFD',
+    textPrimary: '#102033',
+    textSecondary: '#5F6B7A',
+    textMuted: '#8A95A3',
+    border: '#E4EAF2',
+    shadow: 'rgba(15, 23, 42, 0.08)',
+    primary: '#1F7A8C',
+    primarySoft: 'rgba(31, 122, 140, 0.12)',
+    success: '#1F9D55',
+    warning: '#F0A202',
+    danger: '#D64545',
+    info: '#2D7FF9',
+    dark: '#0F172A',
+    lightText: '#F8FAFD',
+  },
+  radii: {
+    xl: 28,
+    lg: 22,
+    md: 18,
+    sm: 14,
+  },
+} as const;
