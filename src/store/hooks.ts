@@ -1,6 +1,13 @@
-import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux/dist/cjs/index.js';
+import { useSyncExternalStore } from 'react';
 
-import type { AppDispatch, RootState } from './store';
+import { store, type AppDispatch, type RootState } from './store';
 
-export const useAppDispatch = () => useDispatch<AppDispatch>();
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
+export const useAppDispatch = () => store.dispatch as AppDispatch;
+
+export function useAppSelector<TSelected>(selector: (state: RootState) => TSelected) {
+	return useSyncExternalStore(
+		store.subscribe,
+		() => selector(store.getState()),
+		() => selector(store.getState()),
+	);
+}
