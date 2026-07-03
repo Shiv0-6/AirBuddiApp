@@ -8,4 +8,25 @@ jest.mock('react-native-gesture-handler', () => {
 		GestureHandlerRootView: ({children, ...props}) => React.createElement(View, props, children),
 	};
 });
-jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
+jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => {
+	const React = require('react');
+	const { Text } = require('react-native');
+
+	return ({name, ...props}) => React.createElement(Text, props, name);
+});
+jest.mock('react-native-reanimated', () => {
+	const React = require('react');
+
+	const Animated = {
+		createAnimatedComponent: Component => Component,
+	};
+
+	return {
+		__esModule: true,
+		default: Animated,
+		useSharedValue: initialValue => ({value: initialValue}),
+		withTiming: value => value,
+		useAnimatedProps: updater => updater(),
+		createAnimatedComponent: Animated.createAnimatedComponent,
+	};
+});
