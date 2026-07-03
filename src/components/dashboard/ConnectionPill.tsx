@@ -41,8 +41,8 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   label: {
-    color: dashboardTheme.colors.textPrimary,
-    fontSize: 13,
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 12,
     fontWeight: '700',
   },
 });
