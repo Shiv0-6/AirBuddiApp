@@ -24,15 +24,15 @@ export function DashboardScreen() {
   );
 
   const handleTogglePower = useCallback(() => {
-    void setPowerState(dashboard.device.power !== 'on');
+    setPowerState(dashboard.device.power !== 'on');
   }, [dashboard.device.power, setPowerState]);
 
   const handleCycleFanSpeed = useCallback(() => {
-    void cycleFanSpeed();
+    cycleFanSpeed();
   }, [cycleFanSpeed]);
 
   const handleToggleAutoMode = useCallback((value: boolean) => {
-    void setAutoMode(value);
+    setAutoMode(value);
   }, [setAutoMode]);
 
   return (
