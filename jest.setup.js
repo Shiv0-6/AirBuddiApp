@@ -2,6 +2,7 @@
 
 import 'react-native-gesture-handler/jestSetup';
 
+jest.mock('react-native-url-polyfill/auto', () => ({}));
 jest.mock('react-native-gesture-handler', () => {
 	const React = require('react');
 	const { View } = require('react-native');
