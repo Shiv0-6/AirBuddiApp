@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { awsIotConfig } from '../../config/awsIotConfig';
 import { useAppDispatch } from '../../store/hooks';
 import { AwsIotClient } from '../../services/awsIot/awsIotClient';
-import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
+import type { DashboardCommandMessage, DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
 import type { Esp32CommandEnvelope } from '../../services/awsIot/esp32TelemetryContract';
 import type { ConnectionState, DeviceMode, PowerState } from './dashboardTypes';
 import {

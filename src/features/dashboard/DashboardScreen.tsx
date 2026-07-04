@@ -24,6 +24,18 @@ export function DashboardScreen() {
     [dashboard.connection],
   );
 
+  const realtimeLabel = useMemo(() => {
+    if (dashboard.errorMessage) {
+      return dashboard.errorMessage;
+    }
+
+    if (dashboard.liveMode) {
+      return 'Live data synced from ESP32 via AWS IoT Core';
+    }
+
+    return 'Mock data active. Enable AWS IoT Core config to stream live telemetry.';
+  }, [dashboard.errorMessage, dashboard.liveMode]);
+
   const handleTogglePower = useCallback(() => {
     setPowerState(dashboard.device.power !== 'on');
   }, [dashboard.device.power, setPowerState]);
@@ -51,6 +63,19 @@ export function DashboardScreen() {
           userName={dashboard.userName}
           notificationCount={dashboard.notificationCount}
         />
+
+        <View style={styles.realtimeBanner}>
+          <View style={styles.realtimeHeaderRow}>
+            <ConnectionPill label={connectionLabel} status={dashboard.connection} />
+            <Text style={styles.realtimeMeta}>
+              {dashboard.connectedDeviceCount} device{dashboard.connectedDeviceCount === 1 ? '' : 's'}
+            </Text>
+          </View>
+          <Text style={styles.realtimeLabel}>{realtimeLabel}</Text>
+          <Text style={styles.realtimeSubtext}>
+            Last update: {dashboard.device.lastSeenAt ?? dashboard.device.lastUpdated}
+          </Text>
+        </View>
 
         {/* Custom Segmented Tab Bar */}
         <View style={styles.tabContainer}>
@@ -133,6 +158,39 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 16,
     paddingTop: 14,
+  },
+  realtimeBanner: {
+    marginTop: 18,
+    padding: 16,
+    borderRadius: dashboardTheme.radii.lg,
+    backgroundColor: dashboardTheme.colors.surface,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    gap: 10,
+  },
+  realtimeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  realtimeMeta: {
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.9,
+  },
+  realtimeLabel: {
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '800',
+    lineHeight: 20,
+  },
+  realtimeSubtext: {
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 12,
+    fontWeight: '500',
   },
   tabContainer: {
     marginVertical: 18,
