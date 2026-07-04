@@ -9,6 +9,8 @@ export interface DashboardDevice {
   power: PowerState;
   lastUpdated: string;
   fanSpeed?: '1' | '2' | '3' | 'turbo';
+  deviceId?: string;
+  lastSeenAt?: string;
 }
 
 export interface DashboardSensor {
@@ -18,6 +20,7 @@ export interface DashboardSensor {
   unit: string;
   icon: string;
   status: 'good' | 'warning' | 'critical';
+  source?: 'esp32' | 'cloud';
 }
 
 export interface DashboardState {
@@ -30,4 +33,5 @@ export interface DashboardState {
   filterHealth: number;
   remainingLifeDays: number;
   sensors: DashboardSensor[];
+  connectedDeviceCount?: number;
 }

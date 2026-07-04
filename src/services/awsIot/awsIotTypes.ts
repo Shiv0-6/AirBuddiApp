@@ -1,4 +1,5 @@
 import type { ConnectionState, DashboardDevice, DashboardSensor } from '../../features/dashboard/dashboardTypes';
+import type { Esp32DeviceTelemetry } from './esp32TelemetryContract';
 
 export interface AwsIotCredentials {
   accessKeyId: string;
@@ -31,6 +32,7 @@ export interface DashboardTelemetryMessage {
   remainingLifeDays?: number;
   sensors?: Array<Partial<DashboardSensor> & Pick<DashboardSensor, 'id'>>;
   timestamp?: string;
+  esp32?: Esp32DeviceTelemetry;
 }
 
 export interface DashboardCommandMessage {

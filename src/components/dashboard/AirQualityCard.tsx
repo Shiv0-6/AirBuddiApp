@@ -112,7 +112,7 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
           <Text style={[styles.badgeText, { color: descriptor.color }]}>{descriptor.label.toUpperCase()}</Text>
         </View>
         <Text style={styles.description}>
-          The indoor air is currently <Text style={{ color: descriptor.color, fontWeight: '700' }}>{descriptor.label.toLowerCase()}</Text>. The purifier is maintaining safe thresholds.
+            The indoor air is currently <Text style={[styles.highlightText, { color: descriptor.color }]}>{descriptor.label.toLowerCase()}</Text>. The purifier is maintaining safe thresholds.
         </Text>
       </View>
 
@@ -205,6 +205,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     textAlign: 'center',
+  },
+  highlightText: {
+    fontWeight: '700',
   },
   metricsRow: {
     flexDirection: 'row',

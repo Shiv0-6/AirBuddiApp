@@ -116,6 +116,75 @@ AirBuddi now includes a live AWS IoT Core MQTT layer. The dashboard still render
 4. Incoming telemetry updates the Redux slice.
 5. Quick control actions publish JSON commands back to AWS IoT Core.
 
+## Recommended system architecture
+
+Your target flow is a good fit for this app:
+
+```mermaid
+flowchart TB
+	ESP32[ESP32 + sensors] -->|MQTT publish/subscribe| IOT[AWS IoT Core]
+	IOT -->|telemetry topic| RN[React Native app]
+	IOT -->|IoT Rule| RULES[IoT Rules]
+	RULES --> DDB[DynamoDB]
+	DDB --> API[API Gateway + Lambda]
+	API --> RN
+```
+
+Use AWS IoT Core for device telemetry and commands, DynamoDB for history, and API Gateway + Lambda for app features that need query/summary data.
+
+## ESP32 telemetry contract
+
+The app is now prepared for ESP32 payloads that contain multiple sensor readings in one message. A good payload shape is:
+
+```json
+{
+	"esp32": {
+		"deviceId": "airbuddi-pure-x",
+		"deviceName": "AirBuddi Pure X",
+		"ts": "2026-07-04T09:30:00Z",
+		"connection": "connected",
+		"power": "on",
+		"mode": "auto",
+		"fanSpeed": "2",
+		"aqi": 46,
+		"filterHealth": 78,
+		"remainingLifeDays": 42,
+		"sensors": [
+			{ "key": "temperature", "value": 24.6, "unit": "°C", "status": "good" },
+			{ "key": "humidity", "value": 52, "unit": "%", "status": "good" },
+			{ "key": "pm2_5", "value": 18, "unit": "µg/m³", "status": "warning" },
+			{ "key": "pm10", "value": 31, "unit": "µg/m³", "status": "good" },
+			{ "key": "co2", "value": 612, "unit": "ppm", "status": "good" },
+			{ "key": "voc", "value": 0.21, "unit": "ppm", "status": "good" }
+		]
+	}
+}
+```
+
+That format keeps all sensor readings together, which is easier for ESP32 publishing and easier for the app to render.
+
+## Suggested MQTT topics
+
+Keep the topics device-scoped:
+
+- `airbuddi/<deviceId>/telemetry`
+- `airbuddi/<deviceId>/status`
+- `airbuddi/<deviceId>/command`
+- `airbuddi/<deviceId>/connection`
+
+If you add more ESP32 devices later, each one should use its own `deviceId` with the same topic pattern.
+
+## IoT Rules and backend path
+
+Use AWS IoT Rules for persistence and downstream APIs:
+
+1. ESP32 publishes telemetry to AWS IoT Core.
+2. IoT Rule writes the raw telemetry to DynamoDB.
+3. Lambda can shape history, device summaries, or alerts.
+4. API Gateway exposes those Lambda results to the app.
+
+This keeps the live dashboard responsive while still giving you historical views and server-side features later.
+
 ## Enable AWS IoT Core
 
 Open [src/config/awsIotConfig.ts](src/config/awsIotConfig.ts) and set:
@@ -125,6 +194,16 @@ Open [src/config/awsIotConfig.ts](src/config/awsIotConfig.ts) and set:
 - `region` to the AWS region where IoT Core lives
 - `clientId` to a stable device-specific value
 - `credentialsProvider` to return temporary AWS credentials
+
+You should replace the placeholder config in [src/config/awsIotConfig.ts](src/config/awsIotConfig.ts) with your real IoT Core ATS endpoint and a short-lived credentials provider when you are ready to connect the app.
+
+Important: the endpoint must be an IoT Core ATS MQTT hostname, not an API Gateway hostname. The correct shape is:
+
+```txt
+<prefix>-ats.iot.<region>.amazonaws.com
+```
+
+An `execute-api` hostname will not work for MQTT over WebSockets.
 
 ### Example config shape
 

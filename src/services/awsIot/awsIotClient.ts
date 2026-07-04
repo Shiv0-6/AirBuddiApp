@@ -6,9 +6,12 @@ import { formatUrl } from '@aws-sdk/util-format-url';
 import type {
   AwsIotConnectionConfig,
   AwsIotCredentials,
-  DashboardCommandMessage,
   DashboardTelemetryMessage,
 } from './awsIotTypes';
+
+function isValidAwsIotMqttEndpoint(endpoint: string) {
+  return endpoint.includes('.iot.') && !endpoint.includes('execute-api');
+}
 
 type RawMqttClient = {
   on: (event: string, handler: (...args: Array<unknown>) => void) => void;
@@ -37,6 +40,16 @@ export class AwsIotClient {
 
   async connect(config: AwsIotConnectionConfig, handlers: AwsIotClientHandlers) {
     if (!config.enabled || !config.endpoint) {
+      return;
+    }
+
+    if (!isValidAwsIotMqttEndpoint(config.endpoint)) {
+      handlers.onConnectionChange('offline');
+      handlers.onError(
+        new Error(
+          'Invalid AWS IoT endpoint. Use the ATS MQTT endpoint in the form <prefix>-ats.iot.<region>.amazonaws.com, not an execute-api hostname.',
+        ),
+      );
       return;
     }
 
@@ -94,7 +107,7 @@ export class AwsIotClient {
     });
   }
 
-  publishCommand(topic: string, payload: DashboardCommandMessage) {
+  publishCommand(topic: string, payload: unknown) {
     if (!this.client) {
       return Promise.resolve();
     }

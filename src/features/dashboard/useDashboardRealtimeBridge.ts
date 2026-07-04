@@ -3,7 +3,8 @@ import { useEffect, useRef } from 'react';
 import { awsIotConfig } from '../../config/awsIotConfig';
 import { useAppDispatch } from '../../store/hooks';
 import { AwsIotClient } from '../../services/awsIot/awsIotClient';
-import type { DashboardCommandMessage, DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
+import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
+import type { Esp32CommandEnvelope } from '../../services/awsIot/esp32TelemetryContract';
 import type { ConnectionState, DeviceMode, PowerState } from './dashboardTypes';
 import {
   applyTelemetry,
@@ -99,14 +100,15 @@ export function useDashboardRealtimeBridge() {
     },
     cycleFanSpeed: async () => {
       dispatch(cycleLocalFanSpeed());
-      const command: DashboardCommandMessage = {
-        type: 'fanSpeed',
+      const esp32Command: Esp32CommandEnvelope = {
+        deviceId: awsIotConfig.deviceId,
+        command: 'fanSpeed',
         value: 'cycle',
-        timestamp: new Date().toISOString(),
+        ts: new Date().toISOString(),
       };
 
       try {
-        await clientRef.current?.publishCommand(awsIotConfig.topics.command, command);
+        await clientRef.current?.publishCommand(awsIotConfig.topics.command, esp32Command);
       } catch (error) {
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
       }

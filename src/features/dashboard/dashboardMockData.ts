@@ -11,19 +11,21 @@ export const dashboardMockState: DashboardState = {
     power: 'on',
     lastUpdated: '2 min ago',
     fanSpeed: '2',
+    deviceId: 'airbuddi-pure-x',
   },
   aqi: 46,
   connection: 'connected',
   filterHealth: 78,
   remainingLifeDays: 42,
   sensors: [
-    { id: 'temp', name: 'Temperature', value: 24.6, unit: '°C', icon: 'thermometer', status: 'good' },
-    { id: 'humidity', name: 'Humidity', value: 52, unit: '%', icon: 'water-percent', status: 'good' },
-    { id: 'pm25', name: 'PM2.5', value: 18, unit: 'µg/m³', icon: 'blur', status: 'warning' },
-    { id: 'pm10', name: 'PM10', value: 31, unit: 'µg/m³', icon: 'grain', status: 'good' },
-    { id: 'co2', name: 'CO₂', value: 612, unit: 'ppm', icon: 'molecule-co2', status: 'good' },
-    { id: 'voc', name: 'VOC', value: 0.21, unit: 'ppm', icon: 'air-filter', status: 'good' },
+    { id: 'temp', name: 'Temperature', value: 24.6, unit: '°C', icon: 'thermometer', status: 'good', source: 'esp32' },
+    { id: 'humidity', name: 'Humidity', value: 52, unit: '%', icon: 'water-percent', status: 'good', source: 'esp32' },
+    { id: 'pm25', name: 'PM2.5', value: 18, unit: 'µg/m³', icon: 'blur', status: 'warning', source: 'esp32' },
+    { id: 'pm10', name: 'PM10', value: 31, unit: 'µg/m³', icon: 'grain', status: 'good', source: 'esp32' },
+    { id: 'co2', name: 'CO₂', value: 612, unit: 'ppm', icon: 'molecule-co2', status: 'good', source: 'esp32' },
+    { id: 'voc', name: 'VOC', value: 0.21, unit: 'ppm', icon: 'air-filter', status: 'good', source: 'esp32' },
   ],
+  connectedDeviceCount: 1,
 };
 
 export const aqiLegend = [
