@@ -2,7 +2,7 @@ import type { DashboardSensor, DashboardState } from './dashboardTypes';
 
 export const dashboardMockState: DashboardState = {
   greeting: 'Good Morning',
-  userName: 'Amina',
+  userName: 'Buddi',
   notificationCount: 2,
   device: {
     name: 'AirBuddi Pure X',
