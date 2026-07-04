@@ -7,10 +7,31 @@ import type { DashboardDevice } from '../../features/dashboard/dashboardTypes';
 import { SectionCard } from './SectionCard';
 
 type DeviceCardProps = {
-  device: DashboardDevice;
+  device: DashboardDevice | null;
 };
 
 function DeviceCardComponent({ device }: DeviceCardProps) {
+  if (!device) {
+    return (
+      <SectionCard>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.title}>Device</Text>
+            <Text style={styles.subtitle}>Waiting for ESP32 telemetry</Text>
+          </View>
+          <View style={styles.statusChip}>
+            <View style={[styles.statusDot, styles.offline]} />
+            <Text style={styles.statusText}>Offline</Text>
+          </View>
+        </View>
+
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>No live device data received yet.</Text>
+        </View>
+      </SectionCard>
+    );
+  }
+
   return (
     <SectionCard>
       <View style={styles.headerRow}>
@@ -116,5 +137,19 @@ const styles = StyleSheet.create({
     color: dashboardTheme.colors.textPrimary,
     fontSize: 15,
     fontWeight: '800',
+  },
+  emptyState: {
+    marginTop: 18,
+    padding: 16,
+    borderRadius: dashboardTheme.radii.md,
+    backgroundColor: dashboardTheme.colors.surfaceTint,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+  },
+  emptyStateText: {
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
   },
 });

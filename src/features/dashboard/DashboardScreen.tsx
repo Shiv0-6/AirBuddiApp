@@ -19,6 +19,8 @@ export function DashboardScreen() {
   const dashboard = useAppSelector(selectDashboard) as DashboardRuntimeState;
   const { setPowerState, setAutoMode, cycleFanSpeed } = useDashboardRealtimeBridge();
   const [activeTab, setActiveTab] = useState<'overview' | 'sensors' | 'device'>('overview');
+  const device = dashboard.device;
+  const sensors = dashboard.sensors ?? [];
 
   const connectionLabel = useMemo(
     () => connectionLabels[dashboard.connection],
@@ -34,12 +36,16 @@ export function DashboardScreen() {
       return 'Live data synced from ESP32 via AWS IoT Core';
     }
 
-    return 'Mock data active. Enable AWS IoT Core config to stream live telemetry.';
+    return 'Waiting for ESP32 telemetry and AWS IoT Core connection.';
   }, [dashboard.errorMessage, dashboard.liveMode]);
 
   const handleTogglePower = useCallback(() => {
-    setPowerState(dashboard.device.power !== 'on');
-  }, [dashboard.device.power, setPowerState]);
+    if (!device) {
+      return;
+    }
+
+    setPowerState(device.power !== 'on');
+  }, [device, setPowerState]);
 
   const handleCycleFanSpeed = useCallback(() => {
     cycleFanSpeed();
@@ -60,9 +66,9 @@ export function DashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <DashboardHeader
-          greeting={dashboard.greeting}
-          userName={dashboard.userName}
-          notificationCount={dashboard.notificationCount}
+          title={dashboard.appTitle}
+          subtitle="Real-time telemetry dashboard"
+          notificationCount={dashboard.connectedDeviceCount}
         />
 
         <View style={styles.realtimeBanner}>
@@ -74,7 +80,7 @@ export function DashboardScreen() {
           </View>
           <Text style={styles.realtimeLabel}>{realtimeLabel}</Text>
           <Text style={styles.realtimeSubtext}>
-            Last update: {dashboard.device.lastSeenAt ?? dashboard.device.lastUpdated}
+            Last update: {device?.lastSeenAt ?? device?.lastUpdated ?? 'Waiting for live data'}
           </Text>
         </View>
 
@@ -110,9 +116,9 @@ export function DashboardScreen() {
             <AirQualityCard aqi={dashboard.aqi} />
             <View style={styles.sectionGap}>
               <QuickControls
-                isPoweredOn={dashboard.device.power === 'on'}
-                isAutoMode={dashboard.device.mode === 'auto'}
-                fanSpeed={dashboard.device.fanSpeed}
+                isPoweredOn={device?.power === 'on'}
+                isAutoMode={device?.mode === 'auto'}
+                fanSpeed={device?.fanSpeed}
                 onTogglePower={handleTogglePower}
                 onCycleFanSpeed={handleCycleFanSpeed}
                 onToggleAutoMode={handleToggleAutoMode}
@@ -123,13 +129,13 @@ export function DashboardScreen() {
 
         {activeTab === 'sensors' && (
           <View style={styles.tabContent}>
-            <SensorGrid sensors={dashboard.sensors} />
+            <SensorGrid sensors={sensors} />
           </View>
         )}
 
         {activeTab === 'device' && (
           <View style={styles.tabContent}>
-            <DeviceCard device={dashboard.device} />
+            <DeviceCard device={device} />
             <View style={styles.sectionGap}>
               <FilterHealthCard
                 health={dashboard.filterHealth}

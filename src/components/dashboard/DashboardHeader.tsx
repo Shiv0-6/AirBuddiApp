@@ -5,17 +5,17 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
 
 type DashboardHeaderProps = {
-  greeting: string;
-  userName: string;
+  title: string;
+  subtitle: string;
   notificationCount: number;
 };
 
-function DashboardHeaderComponent({ greeting, userName, notificationCount }: DashboardHeaderProps) {
+function DashboardHeaderComponent({ title, subtitle, notificationCount }: DashboardHeaderProps) {
   return (
     <View style={styles.container}>
       <View style={styles.copyGroup}>
-        <Text style={styles.greeting}>{greeting}</Text>
-        <Text style={styles.userName}>{userName}</Text>
+        <Text style={styles.greeting}>{title}</Text>
+        <Text style={styles.userName}>{subtitle}</Text>
       </View>
 
       <View style={styles.actions}>
@@ -29,7 +29,7 @@ function DashboardHeaderComponent({ greeting, userName, notificationCount }: Das
           ) : null}
         </View>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{userName.charAt(0).toUpperCase()}</Text>
+          <Text style={styles.avatarText}>{title.charAt(0).toUpperCase()}</Text>
         </View>
       </View>
     </View>

@@ -3,7 +3,6 @@ import { createSlice, type PayloadAction } from '../../vendor/reduxToolkit';
 import { awsIotConfig } from '../../config/awsIotConfig';
 import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
 import type { Esp32DeviceTelemetry } from '../../services/awsIot/esp32TelemetryContract';
-import { dashboardMockState } from './dashboardMockData';
 import type {
   ConnectionState,
   DashboardDevice,
@@ -13,46 +12,39 @@ import type {
 } from './dashboardTypes';
 
 export interface DashboardRuntimeState {
-  greeting: string;
-  userName: string;
-  notificationCount: number;
-  device: DashboardDevice;
-  aqi: number;
+  appTitle: string;
+  device: DashboardDevice | null;
+  aqi: number | null;
   connection: ConnectionState;
-  filterHealth: number;
-  remainingLifeDays: number;
-  sensors: DashboardSensor[];
+  filterHealth: number | null;
+  remainingLifeDays: number | null;
+  sensors: DashboardSensor[] | null;
   liveMode: boolean;
   errorMessage: string | null;
   connectedDeviceCount: number;
 }
 
-const initialConnectionState: ConnectionState = awsIotConfig.enabled
-  ? 'connecting'
-  : dashboardMockState.connection;
-
-const initialDeviceStatus: DashboardDevice['status'] = awsIotConfig.enabled
-  ? 'Offline'
-  : dashboardMockState.device.status;
-
 const initialState: DashboardRuntimeState = {
-  ...dashboardMockState,
-  device: {
-    ...dashboardMockState.device,
-    status: initialDeviceStatus,
-  },
-  connection: initialConnectionState,
+  appTitle: 'AirBuddi',
+  device: null,
+  aqi: null,
+  connection: awsIotConfig.enabled ? 'connecting' : 'offline',
+  filterHealth: null,
+  remainingLifeDays: null,
+  sensors: null,
   liveMode: awsIotConfig.enabled,
   errorMessage: null,
-  connectedDeviceCount: dashboardMockState.connectedDeviceCount ?? 1,
+  connectedDeviceCount: 0,
 };
 
-function mergeSensors(current: DashboardSensor[], next: DashboardTelemetryMessage['sensors']) {
+function mergeSensors(current: DashboardSensor[] | null, next: DashboardTelemetryMessage['sensors']) {
   if (!next?.length) {
     return current;
   }
 
-  return current.map(sensor => {
+  const currentSensors = current ?? [];
+
+  return currentSensors.map(sensor => {
     const update = next.find(item => item.id === sensor.id);
 
     if (!update) {
@@ -71,6 +63,9 @@ function mergeEsp32Telemetry(
   current: DashboardRuntimeState,
   telemetry: Esp32DeviceTelemetry,
 ) {
+  const currentDevice = current.device;
+  const deviceStatus: DashboardDevice['status'] = telemetry.connection === 'offline' ? 'Offline' : 'Online';
+
   const nextSensors = telemetry.sensors.map(sensor => ({
     id: sensor.key,
     name:
@@ -106,15 +101,14 @@ function mergeEsp32Telemetry(
   return {
     ...current,
     device: {
-      ...current.device,
-      name: telemetry.deviceName ?? current.device.name,
-      power: telemetry.power ?? current.device.power,
-      mode: telemetry.mode ?? current.device.mode,
-      fanSpeed: telemetry.fanSpeed ?? current.device.fanSpeed,
+      name: telemetry.deviceName ?? currentDevice?.name ?? 'ESP32 Device',
+      status: deviceStatus,
+      mode: telemetry.mode ?? currentDevice?.mode ?? 'manual',
+      power: telemetry.power ?? currentDevice?.power ?? 'off',
+      lastUpdated: telemetry.ts ?? currentDevice?.lastUpdated ?? 'Just now',
+      fanSpeed: telemetry.fanSpeed ?? currentDevice?.fanSpeed,
       deviceId: telemetry.deviceId,
-      lastSeenAt: telemetry.ts ?? current.device.lastSeenAt ?? current.device.lastUpdated,
-      lastUpdated: telemetry.ts ?? 'Just now',
-      status: telemetry.connection === 'offline' ? 'Offline' : 'Online',
+      lastSeenAt: telemetry.ts ?? currentDevice?.lastSeenAt ?? currentDevice?.lastUpdated,
     },
     connection: telemetry.connection ?? current.connection,
     aqi: telemetry.aqi ?? current.aqi,
@@ -132,20 +126,29 @@ const dashboardSlice = createSlice({
     setConnectionState(state, action: PayloadAction<ConnectionState>) {
       state.connection = action.payload;
       state.liveMode = action.payload === 'connected';
+      state.connectedDeviceCount = action.payload === 'connected' ? Math.max(state.connectedDeviceCount, 1) : state.connectedDeviceCount;
     },
     setErrorMessage(state, action: PayloadAction<string | null>) {
       state.errorMessage = action.payload;
     },
     setDevicePower(state, action: PayloadAction<PowerState>) {
-      state.device.power = action.payload;
-      state.device.lastUpdated = 'Just now';
+      if (state.device) {
+        state.device.power = action.payload;
+        state.device.lastUpdated = 'Just now';
+      }
     },
     setDeviceMode(state, action: PayloadAction<DeviceMode>) {
-      state.device.mode = action.payload;
-      state.device.lastUpdated = 'Just now';
+      if (state.device) {
+        state.device.mode = action.payload;
+        state.device.lastUpdated = 'Just now';
+      }
     },
     cycleLocalFanSpeed(state) {
       const speeds: ('1' | '2' | '3' | 'turbo')[] = ['1', '2', '3', 'turbo'];
+      if (!state.device) {
+        return;
+      }
+
       const currentSpeed = state.device.fanSpeed ?? '2';
       const currentIndex = speeds.indexOf(currentSpeed);
       const nextIndex = (currentIndex + 1) % speeds.length;
@@ -186,7 +189,13 @@ const dashboardSlice = createSlice({
 
       if (telemetry.device) {
         state.device = {
-          ...state.device,
+          ...(state.device ?? {
+            name: telemetry.device.name ?? 'ESP32 Device',
+            status: 'Online' as const,
+            mode: 'manual',
+            power: 'off',
+            lastUpdated: telemetry.timestamp ?? 'Just now',
+          }),
           ...telemetry.device,
           lastUpdated: telemetry.timestamp ?? telemetry.device.lastUpdated ?? 'Just now',
         };
@@ -197,21 +206,16 @@ const dashboardSlice = createSlice({
       }
     },
     resetDashboard(state) {
-      state.greeting = dashboardMockState.greeting;
-      state.userName = dashboardMockState.userName;
-      state.notificationCount = dashboardMockState.notificationCount;
-      state.device = {
-        ...dashboardMockState.device,
-        status: initialDeviceStatus,
-      };
-      state.aqi = dashboardMockState.aqi;
-      state.connection = initialConnectionState;
-      state.filterHealth = dashboardMockState.filterHealth;
-      state.remainingLifeDays = dashboardMockState.remainingLifeDays;
-      state.sensors = dashboardMockState.sensors;
+      state.appTitle = initialState.appTitle;
+      state.device = null;
+      state.aqi = null;
+      state.connection = initialState.connection;
+      state.filterHealth = null;
+      state.remainingLifeDays = null;
+      state.sensors = null;
       state.liveMode = awsIotConfig.enabled;
       state.errorMessage = null;
-      state.connectedDeviceCount = dashboardMockState.connectedDeviceCount ?? 1;
+      state.connectedDeviceCount = 0;
     },
   },
 });

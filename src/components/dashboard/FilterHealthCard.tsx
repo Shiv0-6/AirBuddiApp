@@ -7,11 +7,33 @@ import { clamp } from '../../features/dashboard/dashboardUtils';
 import { SectionCard } from './SectionCard';
 
 type FilterHealthCardProps = {
-  health: number;
-  remainingLifeDays: number;
+  health: number | null;
+  remainingLifeDays: number | null;
 };
 
 function FilterHealthCardComponent({ health, remainingLifeDays }: FilterHealthCardProps) {
+  if (health === null || remainingLifeDays === null) {
+    return (
+      <SectionCard>
+        <View style={styles.headerRow}>
+          <View style={styles.titleGroup}>
+            <View style={[styles.iconContainer, { backgroundColor: dashboardTheme.colors.surfaceTint }]}>
+              <MaterialCommunityIcons name="air-filter" size={20} color={dashboardTheme.colors.textMuted} />
+            </View>
+            <View>
+              <Text style={styles.title}>Filter Integrity</Text>
+              <Text style={styles.subtitle}>Waiting for live filter telemetry</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>No filter health data received yet.</Text>
+        </View>
+      </SectionCard>
+    );
+  }
+
   const clamped = clamp(health, 0, 100);
 
   const getStatusColor = (val: number) => {
@@ -146,5 +168,19 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 0.2,
+  },
+  emptyState: {
+    marginTop: 18,
+    padding: 16,
+    borderRadius: dashboardTheme.radii.md,
+    backgroundColor: dashboardTheme.colors.surfaceTint,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+  },
+  emptyStateText: {
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
   },
 });

@@ -8,7 +8,7 @@ import { formatSensorValue, getSensorTone } from '../../features/dashboard/dashb
 import { SectionCard } from './SectionCard';
 
 type SensorGridProps = {
-  sensors: DashboardSensor[];
+  sensors: DashboardSensor[] | null;
 };
 
 function SensorCard({ sensor }: { sensor: DashboardSensor }) {
@@ -47,6 +47,22 @@ const renderSensorItem = ({ item }: ListRenderItemInfo<DashboardSensor>) => (
 const renderSensorSeparator = () => <View style={styles.rowGap} />;
 
 function SensorGridComponent({ sensors }: SensorGridProps) {
+  const data = sensors ?? [];
+
+  if (!data.length) {
+    return (
+      <SectionCard padding={18}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Environmental Sensors</Text>
+          <Text style={styles.subtitle}>Waiting for live telemetry</Text>
+        </View>
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>No sensor readings received yet.</Text>
+        </View>
+      </SectionCard>
+    );
+  }
+
   return (
     <SectionCard padding={18}>
       <View style={styles.headerRow}>
@@ -55,7 +71,7 @@ function SensorGridComponent({ sensors }: SensorGridProps) {
       </View>
 
       <FlatList
-        data={sensors}
+        data={data}
         renderItem={renderSensorItem}
         keyExtractor={item => item.id}
         numColumns={2}
@@ -96,6 +112,24 @@ const styles = StyleSheet.create({
   },
   rowGap: {
     height: 12,
+  },
+  emptyState: {
+    minHeight: 120,
+    borderRadius: dashboardTheme.radii.md,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: dashboardTheme.colors.border,
+    backgroundColor: dashboardTheme.colors.surfaceTint,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  emptyStateText: {
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 18,
   },
   sensorCard: {
     flex: 1,

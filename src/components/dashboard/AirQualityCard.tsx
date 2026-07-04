@@ -14,7 +14,7 @@ import { clamp, getAqiDescriptor } from '../../features/dashboard/dashboardUtils
 import { SectionCard } from './SectionCard';
 
 type AirQualityCardProps = {
-  aqi: number;
+  aqi: number | null;
 };
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -24,9 +24,11 @@ const RADIUS = (SIZE - STROKE_WIDTH) / 2;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
-  const descriptor = getAqiDescriptor(aqi);
+  const hasLiveAqi = aqi !== null;
+  const safeAqi = aqi ?? 0;
+  const descriptor = getAqiDescriptor(safeAqi);
   const progress = useSharedValue(0);
-  const ratio = clamp(aqi / 200, 0, 1);
+  const ratio = clamp(safeAqi / 200, 0, 1);
 
   // Pulse animation for the aura behind the text
   const auraScale = useSharedValue(0.9);
@@ -34,7 +36,7 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
 
   useEffect(() => {
     progress.value = withTiming(ratio, { duration: 1100 });
-    
+
     auraScale.value = withRepeat(
       withTiming(1.05, { duration: 2200 }),
       -1,
@@ -55,6 +57,31 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
     transform: [{ scale: auraScale.value }],
     opacity: auraOpacity.value,
   }));
+
+  if (!hasLiveAqi) {
+    return (
+      <SectionCard tone="default" padding={20}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Air Quality Index</Text>
+          <Text style={styles.subtitle}>Waiting for ESP32 telemetry</Text>
+        </View>
+
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyValue}>--</Text>
+          <Text style={styles.emptyLabel}>AQI</Text>
+        </View>
+
+        <View style={styles.statusContainer}>
+          <View style={[styles.badge, styles.badgeNeutral]}>
+            <Text style={styles.badgeText}>NO LIVE DATA</Text>
+          </View>
+          <Text style={styles.description}>
+            Connect the ESP32 and AWS IoT Core to stream real air quality readings here.
+          </Text>
+        </View>
+      </SectionCard>
+    );
+  }
 
   return (
     <SectionCard tone="default" padding={20}>
@@ -112,7 +139,7 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
           <Text style={[styles.badgeText, { color: descriptor.color }]}>{descriptor.label.toUpperCase()}</Text>
         </View>
         <Text style={styles.description}>
-            The indoor air is currently <Text style={[styles.highlightText, { color: descriptor.color }]}>{descriptor.label.toLowerCase()}</Text>. The purifier is maintaining safe thresholds.
+          The indoor air is currently <Text style={[styles.highlightText, { color: descriptor.color }]}>{descriptor.label.toLowerCase()}</Text>. The purifier is maintaining safe thresholds.
         </Text>
       </View>
 
@@ -195,10 +222,33 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginBottom: 8,
   },
+  badgeNeutral: {
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderColor: dashboardTheme.colors.border,
+  },
   badgeText: {
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1,
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 16,
+    height: SIZE + 10,
+  },
+  emptyValue: {
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 54,
+    fontWeight: '900',
+    letterSpacing: -2,
+  },
+  emptyLabel: {
+    color: dashboardTheme.colors.textSecondary,
+    marginTop: -6,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.8,
   },
   description: {
     color: dashboardTheme.colors.textSecondary,
