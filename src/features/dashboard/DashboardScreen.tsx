@@ -12,10 +12,11 @@ import { FilterHealthCard } from '../../components/dashboard/FilterHealthCard';
 import { ConnectionPill } from '../../components/dashboard/ConnectionPill';
 import { useAppSelector } from '../../store/hooks';
 import { selectDashboard } from './dashboardSelectors';
+import type { DashboardRuntimeState } from './dashboardSlice';
 import { useDashboardRealtimeBridge } from './useDashboardRealtimeBridge';
 
 export function DashboardScreen() {
-  const dashboard = useAppSelector(selectDashboard);
+  const dashboard = useAppSelector(selectDashboard) as DashboardRuntimeState;
   const { setPowerState, setAutoMode, cycleFanSpeed } = useDashboardRealtimeBridge();
   const [activeTab, setActiveTab] = useState<'overview' | 'sensors' | 'device'>('overview');
 
