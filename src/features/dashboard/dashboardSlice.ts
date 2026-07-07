@@ -26,7 +26,14 @@ export interface DashboardRuntimeState {
 
 const initialState: DashboardRuntimeState = {
   appTitle: 'AirBuddi',
-  device: null,
+  device: {
+    name: 'AirBuddi ESP32',
+    status: 'Offline',
+    mode: 'manual',
+    power: 'off',
+    lastUpdated: 'Waiting for telemetry',
+    deviceId: awsIotConfig.deviceId,
+  },
   aqi: null,
   connection: awsIotConfig.enabled ? 'connecting' : 'offline',
   filterHealth: null,
@@ -207,7 +214,7 @@ const dashboardSlice = createSlice({
     },
     resetDashboard(state) {
       state.appTitle = initialState.appTitle;
-      state.device = null;
+      state.device = initialState.device;
       state.aqi = null;
       state.connection = initialState.connection;
       state.filterHealth = null;

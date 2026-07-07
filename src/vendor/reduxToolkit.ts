@@ -74,7 +74,8 @@ export function createSlice<State, Reducers extends SliceReducers<State>>(
   };
 }
 
-type ReducerMap = Record<string, (state: unknown | undefined, action: PayloadAction) => unknown>;
+type Reducer<State = unknown> = (state: State | undefined, action: PayloadAction) => State;
+type ReducerMap = Record<string, Reducer<any>>;
 
 export function configureStore<ReducerMapObject extends ReducerMap>(options: {
   reducer: ReducerMapObject;

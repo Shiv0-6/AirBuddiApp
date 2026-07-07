@@ -16,15 +16,31 @@ export function createAwsIotTopics(deviceId: string) {
 const defaultDeviceId = 'airbuddi-pure-x';
 const defaultEndpoint = 'd05900693skt5zcv3mclp-ats.iot.eu-north-1.amazonaws.com';
 
+const temporaryAppCredentials = {
+  accessKeyId: '',
+  secretAccessKey: '',
+  sessionToken: '',
+};
+
 export const awsIotConfig: AwsIotConnectionConfig = {
-  enabled: false,
+  enabled: true,
   endpoint: defaultEndpoint,
   region: 'eu-north-1',
-  clientId: `airbuddi-${defaultDeviceId}`,
+  clientId: `airbuddi-mobile-${defaultDeviceId}`,
   deviceId: defaultDeviceId,
   topics: createAwsIotTopics(defaultDeviceId),
   credentialsProvider: async () => {
-    throw new Error('Configure AWS IoT credentials before enabling live mode.');
+    if (!temporaryAppCredentials.accessKeyId || !temporaryAppCredentials.secretAccessKey) {
+      throw new Error(
+        'AWS IoT endpoint is set, but the app still needs temporary AWS credentials. ESP32 certificates connect the device only; the mobile app needs Cognito or short-lived IAM credentials for MQTT over WebSockets.',
+      );
+    }
+
+    return {
+      accessKeyId: temporaryAppCredentials.accessKeyId,
+      secretAccessKey: temporaryAppCredentials.secretAccessKey,
+      sessionToken: temporaryAppCredentials.sessionToken || undefined,
+    };
   },
 };
 
@@ -41,6 +57,13 @@ export function validateAwsIotConfig() {
       valid: false,
       reason:
         'Invalid AWS IoT endpoint. Use the ATS MQTT hostname in the form <prefix>-ats.iot.<region>.amazonaws.com.',
+    };
+  }
+
+  if (!awsIotConfig.region || !awsIotConfig.endpoint.includes(`.${awsIotConfig.region}.`)) {
+    return {
+      valid: false,
+      reason: 'AWS IoT endpoint and region do not look like they belong together.',
     };
   }
 

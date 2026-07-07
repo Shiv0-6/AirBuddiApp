@@ -10,6 +10,7 @@ import { SensorGrid } from '../../components/dashboard/SensorGrid';
 import { QuickControls } from '../../components/dashboard/QuickControls';
 import { FilterHealthCard } from '../../components/dashboard/FilterHealthCard';
 import { ConnectionPill } from '../../components/dashboard/ConnectionPill';
+import { awsIotConfig } from '../../config/awsIotConfig';
 import { useAppSelector } from '../../store/hooks';
 import { selectDashboard } from './dashboardSelectors';
 import type { DashboardRuntimeState } from './dashboardSlice';
@@ -38,6 +39,14 @@ export function DashboardScreen() {
 
     return 'Waiting for ESP32 telemetry and AWS IoT Core connection.';
   }, [dashboard.errorMessage, dashboard.liveMode]);
+
+  const connectionHint = useMemo(() => {
+    if (dashboard.connection === 'connected') {
+      return `Subscribed to ${awsIotConfig.topics.telemetry}`;
+    }
+
+    return `Device: ${awsIotConfig.deviceId}  |  Topic: ${awsIotConfig.topics.telemetry}`;
+  }, [dashboard.connection]);
 
   const handleTogglePower = useCallback(() => {
     if (!device) {
@@ -82,6 +91,7 @@ export function DashboardScreen() {
           <Text style={styles.realtimeSubtext}>
             Last update: {device?.lastSeenAt ?? device?.lastUpdated ?? 'Waiting for live data'}
           </Text>
+          <Text style={styles.realtimeHint}>{connectionHint}</Text>
         </View>
 
         {/* Custom Segmented Tab Bar */}
@@ -198,6 +208,12 @@ const styles = StyleSheet.create({
     color: dashboardTheme.colors.textSecondary,
     fontSize: 12,
     fontWeight: '500',
+  },
+  realtimeHint: {
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
+    lineHeight: 16,
   },
   tabContainer: {
     marginVertical: 18,

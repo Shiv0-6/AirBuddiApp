@@ -197,6 +197,8 @@ Open [src/config/awsIotConfig.ts](src/config/awsIotConfig.ts) and set:
 
 You should replace the placeholder config in [src/config/awsIotConfig.ts](src/config/awsIotConfig.ts) with your real IoT Core ATS endpoint and a short-lived credentials provider when you are ready to connect the app.
 
+If the ESP32 is connected but the app still shows no readings, check this first: the ESP32 certificate only authenticates the ESP32. The React Native app connects through MQTT over WebSockets, so it must sign the WebSocket URL with temporary AWS credentials from Cognito Identity Pool or your backend. Without those credentials the app cannot subscribe to AWS IoT Core, even when the endpoint is correct.
+
 Important: the endpoint must be an IoT Core ATS MQTT hostname, not an API Gateway hostname. The correct shape is:
 
 ```txt
@@ -236,6 +238,46 @@ Do not hardcode long-lived AWS keys in the app. Use temporary credentials from o
 - A secure backend that issues short-lived IAM credentials
 - Amplify or a custom auth service that can provide a credentials provider
 
+For a quick development test only, you can paste short-lived STS credentials into `temporaryAppCredentials` in [src/config/awsIotConfig.ts](src/config/awsIotConfig.ts). Remove them before committing or sharing the app.
+
+The IAM policy attached to the app credentials needs at least these IoT permissions for your account, region, client id, and topics:
+
+```json
+{
+	"Version": "2012-10-17",
+	"Statement": [
+		{
+			"Effect": "Allow",
+			"Action": ["iot:Connect"],
+			"Resource": "arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:client/airbuddi-mobile-airbuddi-pure-x"
+		},
+		{
+			"Effect": "Allow",
+			"Action": ["iot:Subscribe"],
+			"Resource": [
+				"arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topicfilter/airbuddi/airbuddi-pure-x/telemetry",
+				"arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topicfilter/airbuddi/airbuddi-pure-x/status",
+				"arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topicfilter/airbuddi/airbuddi-pure-x/connection"
+			]
+		},
+		{
+			"Effect": "Allow",
+			"Action": ["iot:Receive"],
+			"Resource": [
+				"arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topic/airbuddi/airbuddi-pure-x/telemetry",
+				"arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topic/airbuddi/airbuddi-pure-x/status",
+				"arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topic/airbuddi/airbuddi-pure-x/connection"
+			]
+		},
+		{
+			"Effect": "Allow",
+			"Action": ["iot:Publish"],
+			"Resource": "arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topic/airbuddi/airbuddi-pure-x/command"
+		}
+	]
+}
+```
+
 ## MQTT topic contract
 
 The dashboard expects telemetry in JSON form. A good starting payload looks like this:
@@ -259,6 +301,28 @@ The dashboard expects telemetry in JSON form. A good starting payload looks like
 	]
 }
 ```
+
+The app also accepts a simpler ESP32 test payload on `airbuddi/airbuddi-pure-x/telemetry`:
+
+```json
+{
+	"deviceId": "airbuddi-pure-x",
+	"aqi": 46,
+	"temperature": 24.6,
+	"humidity": 52,
+	"pm2_5": 18,
+	"pm10": 31,
+	"co2": 612,
+	"voc": 0.21
+}
+```
+
+Fast sanity test:
+
+1. In AWS IoT Core, open MQTT test client.
+2. Subscribe to `airbuddi/airbuddi-pure-x/telemetry`.
+3. Publish the simple payload above to the same topic.
+4. Confirm your ESP32 publishes to that exact topic and your app credentials allow `iot:Subscribe` and `iot:Receive`.
 
 Topic usage in the app:
 

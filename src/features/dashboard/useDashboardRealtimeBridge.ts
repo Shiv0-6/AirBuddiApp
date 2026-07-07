@@ -99,7 +99,7 @@ export function useDashboardRealtimeBridge() {
       }
     },
     cycleFanSpeed: async () => {
-      dispatch(cycleLocalFanSpeed());
+      dispatch(cycleLocalFanSpeed(undefined));
       const esp32Command: Esp32CommandEnvelope = {
         deviceId: awsIotConfig.deviceId,
         command: 'fanSpeed',
