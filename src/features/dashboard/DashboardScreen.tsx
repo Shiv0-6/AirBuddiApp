@@ -1,5 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, View, Pressable, Text } from 'react-native';
+import {
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { dashboardTheme } from './dashboardTheme';
 import { connectionLabels } from './dashboardMockData';
@@ -16,10 +24,30 @@ import { selectDashboard } from './dashboardSelectors';
 import type { DashboardRuntimeState } from './dashboardSlice';
 import { useDashboardRealtimeBridge } from './useDashboardRealtimeBridge';
 
+// ─── Bottom Tab Config ────────────────────────────────────────────────────────
+
+type TabId = 'airquality' | 'fan' | 'light' | 'more';
+
+const TABS: { id: TabId; label: string; icon: string }[] = [
+  { id: 'airquality', label: 'Air quality', icon: 'lightning-bolt' },
+  { id: 'fan',        label: 'Fan',         icon: 'fan'            },
+  { id: 'light',      label: 'Light',       icon: 'lightbulb-outline' },
+  { id: 'more',       label: 'More',        icon: 'dots-horizontal' },
+];
+
+// ─── Screen ───────────────────────────────────────────────────────────────────
+
 export function DashboardScreen() {
   const dashboard = useAppSelector(selectDashboard) as DashboardRuntimeState;
-  const { setPowerState, setAutoMode, cycleFanSpeed } = useDashboardRealtimeBridge();
-  const [activeTab, setActiveTab] = useState<'overview' | 'sensors' | 'device'>('overview');
+  const {
+    setPowerState,
+    setAutoMode,
+    setSleepModeState,
+    setUvcModeState,
+    setFanSpeedState,
+  } = useDashboardRealtimeBridge();
+
+  const [activeTab, setActiveTab] = useState<TabId>('fan');
   const device = dashboard.device;
   const sensors = dashboard.sensors ?? [];
 
@@ -28,131 +56,101 @@ export function DashboardScreen() {
     [dashboard.connection],
   );
 
-  const realtimeLabel = useMemo(() => {
-    if (dashboard.errorMessage) {
-      return dashboard.errorMessage;
-    }
-
-    if (dashboard.liveMode) {
-      return 'Live data synced from ESP32 via AWS IoT Core';
-    }
-
-    return 'Waiting for ESP32 telemetry and AWS IoT Core connection.';
-  }, [dashboard.errorMessage, dashboard.liveMode]);
-
-  const connectionHint = useMemo(() => {
-    if (dashboard.connection === 'connected') {
-      return `Subscribed to ${awsIotConfig.topics.telemetry}`;
-    }
-
-    return `Device: ${awsIotConfig.deviceId}  |  Topic: ${awsIotConfig.topics.telemetry}`;
-  }, [dashboard.connection]);
-
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const handleTogglePower = useCallback(() => {
-    if (!device) {
-      return;
-    }
-
+    if (!device) { return; }
     setPowerState(device.power !== 'on');
   }, [device, setPowerState]);
-
-  const handleCycleFanSpeed = useCallback(() => {
-    cycleFanSpeed();
-  }, [cycleFanSpeed]);
 
   const handleToggleAutoMode = useCallback((value: boolean) => {
     setAutoMode(value);
   }, [setAutoMode]);
 
+  const handleToggleSleepMode = useCallback((value: boolean) => {
+    setSleepModeState(value);
+  }, [setSleepModeState]);
+
+  const handleToggleUvc = useCallback((value: boolean) => {
+    setUvcModeState(value);
+  }, [setUvcModeState]);
+
+  const handleSelectFanSpeed = useCallback((speed: '1' | '2' | '3' | 'turbo') => {
+    setFanSpeedState(speed);
+  }, [setFanSpeedState]);
+
+  // ── Device title (truncated to 20 chars for header) ───────────────────────
+  const deviceTitle = device?.name ?? 'AirBuddi';
+
+  // ─────────────────────────────────────────────────────────────────────────
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.backgroundBlobOne} />
-      <View style={styles.backgroundBlobTwo} />
 
+      {/* Header – rendered outside scroll so it's always visible */}
+      <DashboardHeader
+        title={deviceTitle}
+        subtitle="Air purifier control"
+        notificationCount={dashboard.connectedDeviceCount}
+      />
+
+      {/* Tab content */}
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <DashboardHeader
-          title={dashboard.appTitle}
-          subtitle="Real-time telemetry dashboard"
-          notificationCount={dashboard.connectedDeviceCount}
-        />
+        {/* ── Fan Tab (main purifier control) ─────────────────── */}
+        {activeTab === 'fan' && (
+          <QuickControls
+            isPoweredOn={device?.power === 'on'}
+            isAutoMode={device?.mode === 'auto'}
+            isSleepMode={device?.sleepMode ?? false}
+            isUvc={device?.uvc ?? true}
+            fanSpeed={device?.fanSpeed}
+            onTogglePower={handleTogglePower}
+            onToggleAutoMode={handleToggleAutoMode}
+            onToggleSleepMode={handleToggleSleepMode}
+            onToggleUvc={handleToggleUvc}
+            onSelectFanSpeed={handleSelectFanSpeed}
+          />
+        )}
 
-        <View style={styles.realtimeBanner}>
-          <View style={styles.realtimeHeaderRow}>
-            <ConnectionPill label={connectionLabel} status={dashboard.connection} />
-            <Text style={styles.realtimeMeta}>
-              {dashboard.connectedDeviceCount} device{dashboard.connectedDeviceCount === 1 ? '' : 's'}
-            </Text>
-          </View>
-          <Text style={styles.realtimeLabel}>{realtimeLabel}</Text>
-          <Text style={styles.realtimeSubtext}>
-            Last update: {device?.lastSeenAt ?? device?.lastUpdated ?? 'Waiting for live data'}
-          </Text>
-          <Text style={styles.realtimeHint}>{connectionHint}</Text>
-        </View>
-
-        {/* Custom Segmented Tab Bar */}
-        <View style={styles.tabContainer}>
-          <View style={styles.tabBar}>
-            {(['overview', 'sensors', 'device'] as const).map(tab => {
-              const isActive = activeTab === tab;
-              const label =
-                tab === 'overview'
-                  ? 'Overview'
-                  : tab === 'sensors'
-                  ? 'Sensors'
-                  : 'Device';
-              return (
-                <Pressable
-                  key={tab}
-                  onPress={() => setActiveTab(tab)}
-                  style={[styles.tabButton, isActive && styles.activeTabButton]}
-                >
-                  <Text style={[styles.tabText, isActive && styles.activeTabText]}>
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Tab Contents */}
-        {activeTab === 'overview' && (
-          <View style={styles.tabContent}>
+        {/* ── Air Quality Tab ─────────────────────────────────── */}
+        {activeTab === 'airquality' && (
+          <View style={styles.tabPad}>
             <AirQualityCard aqi={dashboard.aqi} />
-            <View style={styles.sectionGap}>
-              <QuickControls
-                isPoweredOn={device?.power === 'on'}
-                isAutoMode={device?.mode === 'auto'}
-                fanSpeed={device?.fanSpeed}
-                onTogglePower={handleTogglePower}
-                onCycleFanSpeed={handleCycleFanSpeed}
-                onToggleAutoMode={handleToggleAutoMode}
-              />
+            <View style={styles.gap}>
+              <SensorGrid sensors={sensors} />
             </View>
           </View>
         )}
 
-        {activeTab === 'sensors' && (
-          <View style={styles.tabContent}>
-            <SensorGrid sensors={sensors} />
+        {/* ── Light Tab ───────────────────────────────────────── */}
+        {activeTab === 'light' && (
+          <View style={styles.tabPad}>
+            <View style={styles.placeholderCard}>
+              <MaterialCommunityIcons
+                name="lightbulb-outline"
+                size={40}
+                color={dashboardTheme.colors.textMuted}
+              />
+              <Text style={styles.placeholderTitle}>Light Controls</Text>
+              <Text style={styles.placeholderSub}>LED brightness and colour settings coming soon.</Text>
+            </View>
           </View>
         )}
 
-        {activeTab === 'device' && (
-          <View style={styles.tabContent}>
+        {/* ── More Tab ────────────────────────────────────────── */}
+        {activeTab === 'more' && (
+          <View style={styles.tabPad}>
             <DeviceCard device={device} />
-            <View style={styles.sectionGap}>
+            <View style={styles.gap}>
               <FilterHealthCard
                 health={dashboard.filterHealth}
                 remainingLifeDays={dashboard.remainingLifeDays}
               />
             </View>
-            <View style={styles.sectionGap}>
+            <View style={styles.gap}>
               <ConnectionPill label={connectionLabel} status={dashboard.connection} />
             </View>
           </View>
@@ -160,9 +158,36 @@ export function DashboardScreen() {
 
         <View style={styles.bottomSpace} />
       </ScrollView>
+
+      {/* ── Bottom Navigation Bar ───────────────────────────── */}
+      <View style={styles.navBar}>
+        {TABS.map(tab => {
+          const isActive = tab.id === activeTab;
+          return (
+            <TouchableOpacity
+              key={tab.id}
+              activeOpacity={0.75}
+              style={styles.navItem}
+              onPress={() => setActiveTab(tab.id)}
+            >
+              <MaterialCommunityIcons
+                name={tab.icon}
+                size={24}
+                color={isActive ? dashboardTheme.colors.textPrimary : dashboardTheme.colors.textMuted}
+              />
+              <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
     </SafeAreaView>
   );
 }
+
+// ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -173,102 +198,73 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  tabPad: {
     paddingHorizontal: 16,
-    paddingTop: 14,
   },
-  realtimeBanner: {
-    marginTop: 18,
-    padding: 16,
-    borderRadius: dashboardTheme.radii.lg,
-    backgroundColor: dashboardTheme.colors.surface,
-    borderWidth: 1,
-    borderColor: dashboardTheme.colors.border,
-    gap: 10,
-  },
-  realtimeHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  realtimeMeta: {
-    color: dashboardTheme.colors.textMuted,
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.9,
-  },
-  realtimeLabel: {
-    color: dashboardTheme.colors.textPrimary,
-    fontSize: 15,
-    fontWeight: '800',
-    lineHeight: 20,
-  },
-  realtimeSubtext: {
-    color: dashboardTheme.colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  realtimeHint: {
-    color: dashboardTheme.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '600',
-    lineHeight: 16,
-  },
-  tabContainer: {
-    marginVertical: 18,
-  },
-  tabBar: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.05)',
-    padding: 4,
-  },
-  tabButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activeTabButton: {
-    backgroundColor: dashboardTheme.colors.primary,
-  },
-  tabText: {
-    color: dashboardTheme.colors.textSecondary,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  activeTabText: {
-    color: '#FFFFFF',
-  },
-  tabContent: {
-    flex: 1,
-  },
-  sectionGap: {
+  gap: {
     marginTop: 16,
   },
   bottomSpace: {
-    height: 28,
+    height: 20,
   },
-  backgroundBlobOne: {
-    position: 'absolute',
-    top: -60,
-    right: -80,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: 'rgba(13, 148, 136, 0.12)',
+
+  // Placeholder card (Light tab)
+  placeholderCard: {
+    backgroundColor: dashboardTheme.colors.surface,
+    borderRadius: dashboardTheme.radii.lg,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    padding: 40,
+    alignItems: 'center',
+    gap: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
-  backgroundBlobTwo: {
-    position: 'absolute',
-    top: 300,
-    left: -100,
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+  placeholderTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: dashboardTheme.colors.textPrimary,
+  },
+  placeholderSub: {
+    fontSize: 13,
+    color: dashboardTheme.colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  // Bottom nav bar
+  navBar: {
+    flexDirection: 'row',
+    backgroundColor: dashboardTheme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: dashboardTheme.colors.border,
+    paddingVertical: 8,
+    paddingBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: -2 },
+    elevation: 8,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 4,
+  },
+  navLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: dashboardTheme.colors.textMuted,
+  },
+  navLabelActive: {
+    color: dashboardTheme.colors.textPrimary,
+    fontWeight: '700',
   },
 });

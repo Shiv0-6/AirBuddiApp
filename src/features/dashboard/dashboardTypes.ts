@@ -11,6 +11,8 @@ export interface DashboardDevice {
   fanSpeed?: '1' | '2' | '3' | 'turbo';
   deviceId?: string;
   lastSeenAt?: string;
+  sleepMode?: boolean;
+  uvc?: boolean;
 }
 
 export interface DashboardSensor {

@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
@@ -10,27 +10,41 @@ type DashboardHeaderProps = {
   notificationCount: number;
 };
 
-function DashboardHeaderComponent({ title, subtitle, notificationCount }: DashboardHeaderProps) {
+function DashboardHeaderComponent({ title }: DashboardHeaderProps) {
   return (
-    <View style={styles.container}>
-      <View style={styles.copyGroup}>
-        <Text style={styles.greeting}>{title}</Text>
-        <Text style={styles.userName}>{subtitle}</Text>
+    <View style={styles.wrapper}>
+      {/* Top row: back arrow | title | settings */}
+      <View style={styles.topRow}>
+        <TouchableOpacity style={styles.circleBtn} activeOpacity={0.75}>
+          <MaterialCommunityIcons
+            name="chevron-left"
+            size={22}
+            color={dashboardTheme.colors.textPrimary}
+          />
+        </TouchableOpacity>
+
+        <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+          {title}
+        </Text>
+
+        <TouchableOpacity style={styles.circleBtn} activeOpacity={0.75}>
+          <MaterialCommunityIcons
+            name="cog-outline"
+            size={20}
+            color={dashboardTheme.colors.textPrimary}
+          />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.actions}>
-        <View style={styles.iconButton}>
-          <MaterialCommunityIcons name="bell-outline" size={22} color={dashboardTheme.colors.textPrimary} />
-          {notificationCount > 0 ? (
-            <View style={styles.badgeContainer}>
-              <View style={styles.badgePulse} />
-              <View style={styles.badge} />
-            </View>
-          ) : null}
-        </View>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{title.charAt(0).toUpperCase()}</Text>
-        </View>
+      {/* Second row: timer icon (bottom-left) */}
+      <View style={styles.secondRow}>
+        <TouchableOpacity style={styles.circleBtn} activeOpacity={0.75}>
+          <MaterialCommunityIcons
+            name="clock-outline"
+            size={20}
+            color={dashboardTheme.colors.textSecondary}
+          />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -39,79 +53,40 @@ function DashboardHeaderComponent({ title, subtitle, notificationCount }: Dashbo
 export const DashboardHeader = memo(DashboardHeaderComponent);
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    gap: 6,
+  },
+  topRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
   },
-  copyGroup: {
-    gap: 4,
-  },
-  greeting: {
-    color: dashboardTheme.colors.textSecondary,
-    fontSize: 14,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  userName: {
-    color: dashboardTheme.colors.textPrimary,
-    fontSize: 26,
-    fontWeight: '900',
-    letterSpacing: -0.6,
-  },
-  actions: {
+  secondRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
   },
-  iconButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: dashboardTheme.colors.surface,
-    borderWidth: 1,
-    borderColor: dashboardTheme.colors.border,
-  },
-  badgeContainer: {
-    position: 'absolute',
-    top: 11,
-    right: 12,
-    width: 9,
-    height: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgePulse: {
-    position: 'absolute',
-    width: 14,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: dashboardTheme.colors.danger,
-    opacity: 0.35,
-  },
-  badge: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: dashboardTheme.colors.danger,
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: dashboardTheme.colors.primary,
-    borderWidth: 1.5,
-    borderColor: dashboardTheme.colors.primarySoft,
-  },
-  avatarText: {
-    color: '#FFFFFF',
+  title: {
+    flex: 1,
+    textAlign: 'center',
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
+    color: dashboardTheme.colors.textPrimary,
+    letterSpacing: -0.2,
+    marginHorizontal: 8,
+  },
+  circleBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: dashboardTheme.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
 });

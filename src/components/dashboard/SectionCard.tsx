@@ -26,14 +26,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: dashboardTheme.colors.border,
     shadowColor: '#000000',
-    shadowOpacity: 0.35,
-    shadowRadius: 14,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
     shadowOffset: {
       width: 0,
-      height: 6,
+      height: 3,
     },
-    elevation: 4,
-    overflow: 'hidden',
+    elevation: 2,
   },
   tinted: {
     backgroundColor: dashboardTheme.colors.surfaceTint,

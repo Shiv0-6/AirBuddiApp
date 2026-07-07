@@ -13,6 +13,9 @@ import {
   setDeviceMode,
   setDevicePower,
   setErrorMessage,
+  setFanSpeed,
+  setSleepMode,
+  setUvcState,
 } from './dashboardSlice';
 
 export function useDashboardRealtimeBridge() {
@@ -94,6 +97,54 @@ export function useDashboardRealtimeBridge() {
 
       try {
         await clientRef.current?.publishCommand(awsIotConfig.topics.command, command);
+      } catch (error) {
+        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
+      }
+    },
+    setSleepModeState: async (nextSleepMode: boolean) => {
+      dispatch(setSleepMode(nextSleepMode));
+
+      const esp32Command: Esp32CommandEnvelope = {
+        deviceId: awsIotConfig.deviceId,
+        command: 'autoMode',
+        value: nextSleepMode ? 'sleep' : 'off',
+        ts: new Date().toISOString(),
+      };
+
+      try {
+        await clientRef.current?.publishCommand(awsIotConfig.topics.command, esp32Command);
+      } catch (error) {
+        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
+      }
+    },
+    setUvcModeState: async (nextUvc: boolean) => {
+      dispatch(setUvcState(nextUvc));
+
+      const esp32Command: Esp32CommandEnvelope = {
+        deviceId: awsIotConfig.deviceId,
+        command: 'autoMode',
+        value: nextUvc ? 'uvc_on' : 'uvc_off',
+        ts: new Date().toISOString(),
+      };
+
+      try {
+        await clientRef.current?.publishCommand(awsIotConfig.topics.command, esp32Command);
+      } catch (error) {
+        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
+      }
+    },
+    setFanSpeedState: async (speed: '1' | '2' | '3' | 'turbo') => {
+      dispatch(setFanSpeed(speed));
+
+      const esp32Command: Esp32CommandEnvelope = {
+        deviceId: awsIotConfig.deviceId,
+        command: 'fanSpeed',
+        value: speed,
+        ts: new Date().toISOString(),
+      };
+
+      try {
+        await clientRef.current?.publishCommand(awsIotConfig.topics.command, esp32Command);
       } catch (error) {
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
       }

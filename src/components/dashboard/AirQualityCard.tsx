@@ -111,7 +111,7 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
             cx={SIZE / 2}
             cy={SIZE / 2}
             r={RADIUS}
-            stroke="rgba(255,255,255,0.06)"
+            stroke="#E2E8F0"
             strokeWidth={STROKE_WIDTH}
             fill="none"
           />
@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   badgeNeutral: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: dashboardTheme.colors.surfaceTint,
     borderColor: dashboardTheme.colors.border,
   },
   badgeText: {

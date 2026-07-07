@@ -1,251 +1,413 @@
-import React, { memo, useEffect } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import React, { memo, useCallback, useEffect } from 'react';
+import {
+  StyleSheet,
+  Switch,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
   withTiming,
-  Easing,
 } from 'react-native-reanimated';
 
 import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
-import { SectionCard } from './SectionCard';
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 type QuickControlsProps = {
   isPoweredOn: boolean;
   isAutoMode: boolean;
+  isSleepMode: boolean;
+  isUvc: boolean;
   fanSpeed?: '1' | '2' | '3' | 'turbo';
   onTogglePower: () => void;
-  onCycleFanSpeed: () => void;
   onToggleAutoMode: (value: boolean) => void;
+  onToggleSleepMode: (value: boolean) => void;
+  onToggleUvc: (value: boolean) => void;
+  onSelectFanSpeed: (speed: '1' | '2' | '3' | 'turbo') => void;
 };
+
+// Maps 5 UI speed buttons to the 4 actual speed values
+const SPEED_LABELS = ['1', '2', '3', '4', '5'] as const;
+const SPEED_MAP: Record<string, '1' | '2' | '3' | 'turbo'> = {
+  '1': '1',
+  '2': '2',
+  '3': '3',
+  '4': 'turbo',
+  '5': 'turbo',
+};
+const SPEED_REVERSE_MAP: Record<string, string> = {
+  '1': '1',
+  '2': '2',
+  '3': '3',
+  turbo: '4',
+};
+
+// ─── Fan icon rotation ────────────────────────────────────────────────────────
+
+const FAN_DURATIONS: Record<string, number> = {
+  '1': 2400,
+  '2': 1400,
+  '3': 800,
+  turbo: 380,
+};
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 function QuickControlsComponent({
   isPoweredOn,
   isAutoMode,
+  isSleepMode,
+  isUvc,
   fanSpeed = '2',
   onTogglePower,
-  onCycleFanSpeed,
   onToggleAutoMode,
+  onToggleSleepMode,
+  onToggleUvc,
+  onSelectFanSpeed,
 }: QuickControlsProps) {
+
+  // Power ring pulse
+  const ringScale = useSharedValue(1);
+  const ringOpacity = useSharedValue(0.25);
+
+  // Fan rotation
   const rotation = useSharedValue(0);
 
   useEffect(() => {
     if (isPoweredOn) {
-      let duration = 3000;
-      if (fanSpeed === '1') duration = 2000;
-      else if (fanSpeed === '2') duration = 1200;
-      else if (fanSpeed === '3') duration = 650;
-      else if (fanSpeed === 'turbo') duration = 350;
+      ringScale.value = withRepeat(withTiming(1.12, { duration: 1800 }), -1, true);
+      ringOpacity.value = withRepeat(withTiming(0.5, { duration: 1800 }), -1, true);
 
+      const duration = FAN_DURATIONS[fanSpeed] ?? 1400;
       rotation.value = withRepeat(
         withTiming(360, { duration, easing: Easing.linear }),
         -1,
-        false
+        false,
       );
     } else {
+      ringScale.value = withTiming(1, { duration: 500 });
+      ringOpacity.value = withTiming(0.25, { duration: 500 });
       rotation.value = withTiming(0, { duration: 600 });
     }
-  }, [isPoweredOn, fanSpeed, rotation]);
+  }, [isPoweredOn, fanSpeed, ringScale, ringOpacity, rotation]);
 
-  const animatedFanStyle = useAnimatedStyle(() => ({
+  const outerRingStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: ringScale.value }],
+    opacity: ringOpacity.value,
+  }));
+
+  const fanStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
-  return (
-    <SectionCard>
-      <View style={styles.headerRow}>
-        <Text style={styles.title}>Quick Controls</Text>
-        <Text style={styles.subtitle}>Instant Device Actions</Text>
-      </View>
+  // Determine active UI speed button
+  const activeSpeedLabel = SPEED_REVERSE_MAP[fanSpeed] ?? '2';
 
-      <View style={styles.controlsRow}>
-        {/* Power Toggle Button */}
-        <Pressable
-          accessibilityRole="button"
+  const handleSpeedPress = useCallback((label: string) => {
+    const mapped = SPEED_MAP[label];
+    if (mapped) onSelectFanSpeed(mapped);
+  }, [onSelectFanSpeed]);
+
+  // Fan speed label text
+  const fanSpeedText = isAutoMode
+    ? 'Auto mode'
+    : fanSpeed === 'turbo'
+    ? 'Turbo'
+    : `Level ${fanSpeed}`;
+
+  return (
+    <View style={styles.container}>
+
+      {/* ── Power Ring Button ─────────────────────────────── */}
+      <View style={styles.powerSection}>
+        {/* Outermost faint ring (animated pulse) */}
+        <Animated.View style={[styles.ringOuter, outerRingStyle]} />
+        {/* Mid decorative ring */}
+        <View style={styles.ringMid} />
+        {/* Inner solid button */}
+        <TouchableOpacity
+          activeOpacity={0.8}
           onPress={onTogglePower}
-          style={({ pressed }) => [
-            styles.actionButton,
-            isPoweredOn ? styles.powerOnButton : styles.powerOffButton,
-            pressed && styles.pressed,
-          ]}
+          style={[styles.powerBtn, isPoweredOn && styles.powerBtnOn]}
         >
           <MaterialCommunityIcons
             name="power"
-            size={22}
+            size={34}
             color="#FFFFFF"
           />
-          <View style={styles.buttonTextContainer}>
-            <Text style={styles.buttonLabel}>Purifier Power</Text>
-            <Text style={styles.buttonSublabel}>{isPoweredOn ? 'ACTIVE' : 'STANDBY'}</Text>
-          </View>
-        </Pressable>
+        </TouchableOpacity>
+      </View>
 
-        {/* Fan Speed Cycle Button */}
-        <Pressable
-          accessibilityRole="button"
-          onPress={onCycleFanSpeed}
-          disabled={!isPoweredOn}
-          style={({ pressed }) => [
-            styles.actionButton,
-            styles.fanButton,
-            !isPoweredOn && styles.disabledButton,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Animated.View style={animatedFanStyle}>
+      {/* ── Air Purifier Control Cards ────────────────────── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Air purifier control</Text>
+
+        <View style={styles.modesRow}>
+          {/* Auto mode */}
+          <ModeCard
+            icon={<Text style={styles.modeIconText}>A</Text>}
+            label="Auto mode"
+            value={isAutoMode}
+            onToggle={onToggleAutoMode}
+          />
+          {/* Sleep mode */}
+          <ModeCard
+            icon={
+              <MaterialCommunityIcons
+                name="weather-night"
+                size={20}
+                color={isSleepMode ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted}
+              />
+            }
+            label="Sleep mode"
+            value={isSleepMode}
+            onToggle={onToggleSleepMode}
+          />
+          {/* UV-C */}
+          <ModeCard
+            icon={
+              <MaterialCommunityIcons
+                name="white-balance-sunny"
+                size={20}
+                color={isUvc ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted}
+              />
+            }
+            label="UV-C"
+            value={isUvc}
+            onToggle={onToggleUvc}
+          />
+        </View>
+      </View>
+
+      {/* ── Fan Speed ─────────────────────────────────────── */}
+      <View style={styles.section}>
+        <View style={styles.fanHeader}>
+          <Animated.View style={fanStyle}>
             <MaterialCommunityIcons
               name="fan"
               size={22}
-              color={isPoweredOn ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted}
+              color={isPoweredOn ? dashboardTheme.colors.textPrimary : dashboardTheme.colors.textMuted}
             />
           </Animated.View>
-          <View style={styles.buttonTextContainer}>
-            <Text style={[styles.buttonLabel, !isPoweredOn && { color: dashboardTheme.colors.textMuted }]}>
-              Fan Speed
-            </Text>
-            <Text style={[styles.buttonSublabel, !isPoweredOn && { color: dashboardTheme.colors.textMuted }]}>
-              {isPoweredOn ? (fanSpeed === 'turbo' ? 'Turbo' : `Speed ${fanSpeed}`) : 'OFF'}
-            </Text>
-          </View>
-        </Pressable>
+          <Text style={styles.fanLabel}>Fan speed: {fanSpeedText}</Text>
+        </View>
+
+        <View style={styles.speedRow}>
+          {SPEED_LABELS.map(label => {
+            const isActive = label === activeSpeedLabel && isPoweredOn;
+            return (
+              <TouchableOpacity
+                key={label}
+                activeOpacity={0.75}
+                disabled={!isPoweredOn}
+                onPress={() => handleSpeedPress(label)}
+                style={[styles.speedBtn, isActive && styles.speedBtnActive]}
+              >
+                <Text style={[styles.speedBtnText, isActive && styles.speedBtnTextActive]}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
-      <View style={styles.toggleRow}>
-        <View style={styles.toggleTextGroup}>
-          <View style={styles.iconContainer}>
-            <MaterialCommunityIcons
-              name="shield-sync"
-              size={20}
-              color={isAutoMode ? dashboardTheme.colors.primary : dashboardTheme.colors.textSecondary}
-            />
-          </View>
-          <View style={styles.toggleContent}>
-            <Text style={styles.toggleLabel}>Auto Air Purify</Text>
-            <Text style={styles.toggleCaption}>
-              Purifier automatically manages fan speed based on AQI values
-            </Text>
-          </View>
-        </View>
-        <Switch
-          value={isAutoMode}
-          onValueChange={onToggleAutoMode}
-          trackColor={{ false: 'rgba(255,255,255,0.06)', true: dashboardTheme.colors.primarySoft }}
-          thumbColor={isAutoMode ? dashboardTheme.colors.primary : '#64748B'}
-        />
-      </View>
-    </SectionCard>
+    </View>
+  );
+}
+
+// ─── ModeCard ─────────────────────────────────────────────────────────────────
+
+type ModeCardProps = {
+  icon: React.ReactNode;
+  label: string;
+  value: boolean;
+  onToggle: (v: boolean) => void;
+};
+
+function ModeCard({ icon, label, value, onToggle }: ModeCardProps) {
+  return (
+    <View style={modeStyles.card}>
+      <View style={modeStyles.iconWrap}>{icon}</View>
+      <Text style={modeStyles.label}>{label}</Text>
+      <Switch
+        value={value}
+        onValueChange={onToggle}
+        trackColor={{ false: '#E2E8F0', true: dashboardTheme.colors.primary }}
+        thumbColor="#FFFFFF"
+        ios_backgroundColor="#E2E8F0"
+        style={modeStyles.switch}
+      />
+    </View>
   );
 }
 
 export const QuickControls = memo(QuickControlsComponent);
 
+// ─── Styles ───────────────────────────────────────────────────────────────────
+
+const POWER_BTN_SIZE = 80;
+const RING_MID_SIZE = 130;
+const RING_OUTER_SIZE = 170;
+
 const styles = StyleSheet.create({
-  headerRow: {
-    marginBottom: 16,
-  },
-  title: {
-    color: dashboardTheme.colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '800',
-    letterSpacing: -0.2,
-  },
-  subtitle: {
-    color: dashboardTheme.colors.textSecondary,
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  controlsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    minHeight: 60,
-    borderRadius: dashboardTheme.radii.md,
-    borderWidth: 1,
-    borderColor: dashboardTheme.colors.border,
-    flexDirection: 'row',
+  container: {
     alignItems: 'center',
-    paddingHorizontal: 14,
-    gap: 10,
+    gap: 0,
   },
-  powerOnButton: {
-    backgroundColor: dashboardTheme.colors.primary,
+
+  // Power
+  powerSection: {
+    width: RING_OUTER_SIZE + 40,
+    height: RING_OUTER_SIZE + 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 4,
+  },
+  ringOuter: {
+    position: 'absolute',
+    width: RING_OUTER_SIZE,
+    height: RING_OUTER_SIZE,
+    borderRadius: RING_OUTER_SIZE / 2,
+    borderWidth: 3,
     borderColor: dashboardTheme.colors.primary,
   },
-  powerOffButton: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    borderColor: 'rgba(239, 68, 68, 0.3)',
+  ringMid: {
+    position: 'absolute',
+    width: RING_MID_SIZE,
+    height: RING_MID_SIZE,
+    borderRadius: RING_MID_SIZE / 2,
+    borderWidth: 2.5,
+    borderColor: `${dashboardTheme.colors.primary}55`,
   },
-  fanButton: {
-    backgroundColor: dashboardTheme.colors.surfaceTint,
-    borderColor: dashboardTheme.colors.border,
-  },
-  disabledButton: {
-    opacity: 0.5,
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    borderColor: 'rgba(255,255,255,0.04)',
-  },
-  buttonTextContainer: {
-    flex: 1,
+  powerBtn: {
+    width: POWER_BTN_SIZE,
+    height: POWER_BTN_SIZE,
+    borderRadius: POWER_BTN_SIZE / 2,
+    backgroundColor: '#C8C8C8',
+    alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
   },
-  buttonLabel: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
+  powerBtnOn: {
+    backgroundColor: dashboardTheme.colors.primary,
   },
-  buttonSublabel: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 11,
-    fontWeight: '800',
-    marginTop: 2,
-  },
-  toggleRow: {
+
+  // Section
+  section: {
+    width: '100%',
+    paddingHorizontal: 16,
     marginTop: 20,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: dashboardTheme.colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 16,
   },
-  toggleTextGroup: {
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: dashboardTheme.colors.textPrimary,
+    marginBottom: 12,
+  },
+
+  // Modes row
+  modesRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: 10,
-    flex: 1,
   },
-  iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+
+  // Mode icon text (the "A" letter for Auto)
+  modeIconText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: dashboardTheme.colors.textPrimary,
+    width: 26,
+    height: 26,
+    textAlign: 'center',
+    lineHeight: 26,
+  },
+
+  // Fan speed
+  fanHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 14,
+  },
+  fanLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: dashboardTheme.colors.textPrimary,
+  },
+  speedRow: {
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'center',
+  },
+  speedBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#EDF2F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  speedBtnActive: {
+    backgroundColor: dashboardTheme.colors.surface,
+    borderWidth: 1.5,
+    borderColor: dashboardTheme.colors.textPrimary,
+  },
+  speedBtnText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: dashboardTheme.colors.textSecondary,
+  },
+  speedBtnTextActive: {
+    color: dashboardTheme.colors.textPrimary,
+    fontWeight: '800',
+  },
+});
+
+const modeStyles = StyleSheet.create({
+  card: {
+    flex: 1,
+    backgroundColor: dashboardTheme.colors.surface,
+    borderRadius: dashboardTheme.radii.md,
+    padding: 12,
+    alignItems: 'center',
+    gap: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  iconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F3F4F6',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  toggleContent: {
-    flex: 1,
-    gap: 3,
-  },
-  toggleLabel: {
-    color: dashboardTheme.colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  toggleCaption: {
+  label: {
+    fontSize: 12,
+    fontWeight: '500',
     color: dashboardTheme.colors.textSecondary,
-    fontSize: 11,
-    lineHeight: 16,
+    textAlign: 'center',
   },
-  pressed: {
-    transform: [{ scale: 0.98 }],
-    opacity: 0.9,
+  switch: {
+    transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
   },
 });

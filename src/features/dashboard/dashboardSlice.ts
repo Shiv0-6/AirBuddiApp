@@ -33,6 +33,8 @@ const initialState: DashboardRuntimeState = {
     power: 'off',
     lastUpdated: 'Waiting for telemetry',
     deviceId: awsIotConfig.deviceId,
+    sleepMode: false,
+    uvc: true,
   },
   aqi: null,
   connection: awsIotConfig.enabled ? 'connecting' : 'offline',
@@ -116,6 +118,8 @@ function mergeEsp32Telemetry(
       fanSpeed: telemetry.fanSpeed ?? currentDevice?.fanSpeed,
       deviceId: telemetry.deviceId,
       lastSeenAt: telemetry.ts ?? currentDevice?.lastSeenAt ?? currentDevice?.lastUpdated,
+      sleepMode: (telemetry as any).sleepMode ?? currentDevice?.sleepMode ?? false,
+      uvc: (telemetry as any).uvc ?? currentDevice?.uvc ?? true,
     },
     connection: telemetry.connection ?? current.connection,
     aqi: telemetry.aqi ?? current.aqi,
@@ -147,6 +151,24 @@ const dashboardSlice = createSlice({
     setDeviceMode(state, action: PayloadAction<DeviceMode>) {
       if (state.device) {
         state.device.mode = action.payload;
+        state.device.lastUpdated = 'Just now';
+      }
+    },
+    setSleepMode(state, action: PayloadAction<boolean>) {
+      if (state.device) {
+        state.device.sleepMode = action.payload;
+        state.device.lastUpdated = 'Just now';
+      }
+    },
+    setUvcState(state, action: PayloadAction<boolean>) {
+      if (state.device) {
+        state.device.uvc = action.payload;
+        state.device.lastUpdated = 'Just now';
+      }
+    },
+    setFanSpeed(state, action: PayloadAction<'1' | '2' | '3' | 'turbo'>) {
+      if (state.device) {
+        state.device.fanSpeed = action.payload;
         state.device.lastUpdated = 'Just now';
       }
     },
@@ -232,6 +254,9 @@ export const {
   setErrorMessage,
   setDevicePower,
   setDeviceMode,
+  setSleepMode,
+  setUvcState,
+  setFanSpeed,
   cycleLocalFanSpeed,
   applyTelemetry,
   resetDashboard,
