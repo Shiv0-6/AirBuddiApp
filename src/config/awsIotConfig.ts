@@ -14,7 +14,7 @@ export function createAwsIotTopics(deviceId: string) {
 }
 
 const defaultDeviceId = 'airbuddi-pure-x';
-const defaultEndpoint = 'd05900693skt5zcv3mclp-ats.iot.eu-north-1.amazonaws.com';
+const defaultEndpoint = 'a1qe87k6xy75k4-ats.iot.eu-north-1.amazonaws.com';
 
 const temporaryAppCredentials = {
   accessKeyId: '',
