@@ -1,4 +1,8 @@
 import type { AwsIotConnectionConfig } from '../services/awsIot/awsIotTypes';
+// ─── Real credentials ─────────────────────────────────────────────────────────
+// Edit  src/config/awsIotCredentials.ts  to provide your AWS IoT keys & device ID.
+// See AWS_IOT_SETUP.md in the project root for a full step-by-step guide.
+import { MY_AWS_CREDENTIALS, MY_DEVICE_CONFIG } from './awsIotCredentials';
 
 export function isAwsIotMqttEndpoint(endpoint: string) {
   return endpoint.includes('.iot.') && !endpoint.includes('execute-api');
@@ -13,33 +17,25 @@ export function createAwsIotTopics(deviceId: string) {
   };
 }
 
-const defaultDeviceId = 'airbuddi-pure-x';
-const defaultEndpoint = 'a1qe87k6xy75k4-ats.iot.eu-north-1.amazonaws.com';
-
-const temporaryAppCredentials = {
-  accessKeyId: '',
-  secretAccessKey: '',
-  sessionToken: '',
-};
-
 export const awsIotConfig: AwsIotConnectionConfig = {
   enabled: true,
-  endpoint: defaultEndpoint,
-  region: 'eu-north-1',
-  clientId: `airbuddi-mobile-${defaultDeviceId}`,
-  deviceId: defaultDeviceId,
-  topics: createAwsIotTopics(defaultDeviceId),
+  endpoint: MY_DEVICE_CONFIG.endpoint,
+  region: MY_DEVICE_CONFIG.region,
+  clientId: `airbuddi-mobile-${MY_DEVICE_CONFIG.deviceId}`,
+  deviceId: MY_DEVICE_CONFIG.deviceId,
+  topics: createAwsIotTopics(MY_DEVICE_CONFIG.deviceId),
   credentialsProvider: async () => {
-    if (!temporaryAppCredentials.accessKeyId || !temporaryAppCredentials.secretAccessKey) {
+    if (!MY_AWS_CREDENTIALS.accessKeyId || MY_AWS_CREDENTIALS.accessKeyId.startsWith('PASTE_')) {
       throw new Error(
-        'AWS IoT endpoint is set, but the app still needs temporary AWS credentials. ESP32 certificates connect the device only; the mobile app needs Cognito or short-lived IAM credentials for MQTT over WebSockets.',
+        'AWS credentials not set. Open src/config/awsIotCredentials.ts and fill in your ' +
+        'accessKeyId and secretAccessKey. See AWS_IOT_SETUP.md for step-by-step instructions.',
       );
     }
 
     return {
-      accessKeyId: temporaryAppCredentials.accessKeyId,
-      secretAccessKey: temporaryAppCredentials.secretAccessKey,
-      sessionToken: temporaryAppCredentials.sessionToken || undefined,
+      accessKeyId: MY_AWS_CREDENTIALS.accessKeyId,
+      secretAccessKey: MY_AWS_CREDENTIALS.secretAccessKey,
+      sessionToken: MY_AWS_CREDENTIALS.sessionToken || undefined,
     };
   },
 };

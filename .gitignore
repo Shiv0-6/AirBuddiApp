@@ -73,3 +73,9 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# AWS IoT real credentials — DO NOT COMMIT
+src/config/awsIotCredentials.ts
+
+# AutoClaw KDream data
+.autoclaw/
