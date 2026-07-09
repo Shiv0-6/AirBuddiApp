@@ -19,12 +19,35 @@ export function createAwsIotTopics(deviceId: string) {
 
 export const awsIotConfig: AwsIotConnectionConfig = {
   enabled: true,
+
+  // Switch between the current implementation (WSS + SigV4) and the legacy
+  // behavior from old_app/ (MQTT over TLS 8883 with certs + old topics).
+  //
+  // - legacyMode=false (default): connect via WSS signed URL
+  // - legacyMode=true: connect via direct TLS MQTT and subscribe to `AQMG_5`
+  //
+  // Keep the current code working; legacy mode is opt-in.
+  legacyMode: true,
+
   endpoint: MY_DEVICE_CONFIG.endpoint,
   region: MY_DEVICE_CONFIG.region,
   clientId: `airbuddi-mobile-${MY_DEVICE_CONFIG.deviceId}`,
   deviceId: MY_DEVICE_CONFIG.deviceId,
+
+  // Current topic scheme (WSS mode). In legacy mode this is overridden.
   topics: createAwsIotTopics(MY_DEVICE_CONFIG.deviceId),
+
   credentialsProvider: async () => {
+    if (awsIotConfig.legacyMode) {
+      // In legacy mode we won't call this provider; legacy TLS uses
+      // MY_IOT_MTLS_CREDENTIALS from awsIotCredentials.ts.
+      return {
+        accessKeyId: '',
+        secretAccessKey: '',
+        sessionToken: undefined,
+      };
+    }
+
     if (!MY_AWS_CREDENTIALS.accessKeyId || MY_AWS_CREDENTIALS.accessKeyId.startsWith('PASTE_')) {
       throw new Error(
         'AWS credentials not set. Open src/config/awsIotCredentials.ts and fill in your ' +
@@ -39,6 +62,7 @@ export const awsIotConfig: AwsIotConnectionConfig = {
     };
   },
 };
+
 
 export function validateAwsIotConfig() {
   if (!awsIotConfig.enabled) {

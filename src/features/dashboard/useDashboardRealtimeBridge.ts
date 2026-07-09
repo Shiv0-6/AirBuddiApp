@@ -23,14 +23,27 @@ export function useDashboardRealtimeBridge() {
   const clientRef = useRef<AwsIotClient | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line no-console
+    console.log('[AirBuddi] realtime bridge effect init', {
+      awsIotConfigEnabled: awsIotConfig.enabled,
+      legacyMode: awsIotConfig.legacyMode,
+      endpoint: awsIotConfig.endpoint,
+      deviceId: awsIotConfig.deviceId,
+    });
+
     const client = new AwsIotClient();
     clientRef.current = client;
 
     if (!awsIotConfig.enabled) {
+      // eslint-disable-next-line no-console
+      console.log('[AirBuddi] realtime bridge disabled, skipping connect');
       return () => {
         client.disconnect();
       };
     }
+
+    // eslint-disable-next-line no-console
+    console.log('[AirBuddi] realtime bridge calling client.connect()');
 
     dispatch(setConnectionState('connecting'));
 
@@ -43,8 +56,11 @@ export function useDashboardRealtimeBridge() {
             dispatch(setConnectionState(status));
           }
         },
-        onTelemetry: (_topic: string, payload: DashboardTelemetryMessage) => {
+        onTelemetry: (topic: string, payload: DashboardTelemetryMessage) => {
           if (active) {
+            // Helpful during AWS IoT wiring/debug
+            // eslint-disable-next-line no-console
+            console.log('[AirBuddi] telemetry', { topic, payload });
             dispatch(applyTelemetry(payload));
           }
         },
@@ -80,11 +96,17 @@ export function useDashboardRealtimeBridge() {
       };
 
       try {
-        await clientRef.current?.publishCommand(awsIotConfig.topics.command, command);
+        await clientRef.current?.publishCommand(
+          awsIotConfig.legacyMode ? 'esp32/control' : awsIotConfig.topics.command,
+          awsIotConfig.legacyMode
+            ? { deviceId: awsIotConfig.deviceId, command: 'power', value: power, ts: new Date().toISOString() }
+            : command,
+        );
       } catch (error) {
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
       }
     },
+
     setAutoMode: async (nextAutoMode: boolean) => {
       const mode: DeviceMode = nextAutoMode ? 'auto' : 'manual';
       dispatch(setDeviceMode(mode));
@@ -96,10 +118,16 @@ export function useDashboardRealtimeBridge() {
       };
 
       try {
-        await clientRef.current?.publishCommand(awsIotConfig.topics.command, command);
+        await clientRef.current?.publishCommand(
+          awsIotConfig.legacyMode ? 'esp32/control' : awsIotConfig.topics.command,
+          awsIotConfig.legacyMode
+            ? { deviceId: awsIotConfig.deviceId, command: 'autoMode', value: mode, ts: new Date().toISOString() }
+            : command,
+        );
       } catch (error) {
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
       }
+
     },
     setSleepModeState: async (nextSleepMode: boolean) => {
       dispatch(setSleepMode(nextSleepMode));
@@ -112,12 +140,24 @@ export function useDashboardRealtimeBridge() {
       };
 
       try {
-        await clientRef.current?.publishCommand(awsIotConfig.topics.command, esp32Command);
-      } catch (error) {
+        await clientRef.current?.publishCommand(
+          awsIotConfig.legacyMode ? 'esp32/control' : awsIotConfig.topics.command,
+          awsIotConfig.legacyMode
+            ? {
+                deviceId: awsIotConfig.deviceId,
+                command: 'autoMode',
+                value: nextSleepMode ? 'sleep' : 'off',
+                ts: new Date().toISOString(),
+              }
+            : esp32Command,
+        );
+      } catch (error: unknown) {
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
       }
+
     },
     setUvcModeState: async (nextUvc: boolean) => {
+
       dispatch(setUvcState(nextUvc));
 
       const esp32Command: Esp32CommandEnvelope = {
@@ -128,12 +168,18 @@ export function useDashboardRealtimeBridge() {
       };
 
       try {
-        await clientRef.current?.publishCommand(awsIotConfig.topics.command, esp32Command);
-      } catch (error) {
+        await clientRef.current?.publishCommand(
+          awsIotConfig.legacyMode ? 'esp32/control' : awsIotConfig.topics.command,
+          awsIotConfig.legacyMode
+            ? { deviceId: awsIotConfig.deviceId, command: 'autoMode', value: nextUvc ? 'uvc_on' : 'uvc_off', ts: new Date().toISOString() }
+            : esp32Command,
+        );
+      } catch (error: unknown) {
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
       }
     },
     setFanSpeedState: async (speed: '1' | '2' | '3' | 'turbo') => {
+
       dispatch(setFanSpeed(speed));
 
       const esp32Command: Esp32CommandEnvelope = {
@@ -144,8 +190,13 @@ export function useDashboardRealtimeBridge() {
       };
 
       try {
-        await clientRef.current?.publishCommand(awsIotConfig.topics.command, esp32Command);
-      } catch (error) {
+        await clientRef.current?.publishCommand(
+          awsIotConfig.legacyMode ? 'esp32/control' : awsIotConfig.topics.command,
+          awsIotConfig.legacyMode
+            ? { deviceId: awsIotConfig.deviceId, command: 'fanSpeed', value: speed, ts: new Date().toISOString() }
+            : esp32Command,
+        );
+      } catch (error: unknown) {
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
       }
     },
@@ -159,8 +210,13 @@ export function useDashboardRealtimeBridge() {
       };
 
       try {
-        await clientRef.current?.publishCommand(awsIotConfig.topics.command, esp32Command);
-      } catch (error) {
+        await clientRef.current?.publishCommand(
+          awsIotConfig.legacyMode ? 'esp32/control' : awsIotConfig.topics.command,
+          awsIotConfig.legacyMode
+            ? { deviceId: awsIotConfig.deviceId, command: 'fanSpeed', value: 'cycle', ts: new Date().toISOString() }
+            : esp32Command,
+        );
+      } catch (error: unknown) {
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
       }
     },

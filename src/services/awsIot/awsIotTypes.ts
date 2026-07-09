@@ -21,8 +21,16 @@ export interface AwsIotConnectionConfig {
   clientId: string;
   deviceId: string;
   topics: AwsIotTopics;
+
+  /**
+   * legacyMode=true uses the old_app proven MQTT-over-TLS (port 8883 + topics like `AQMG_5`).
+   * legacyMode=false keeps the current implementation (WSS + SigV4 signing).
+   */
+  legacyMode?: boolean;
+
   credentialsProvider: () => Promise<AwsIotCredentials>;
 }
+
 
 export interface DashboardTelemetryMessage {
   aqi?: number;
