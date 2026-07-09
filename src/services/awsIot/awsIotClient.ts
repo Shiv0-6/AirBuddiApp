@@ -119,7 +119,55 @@ export class AwsIotClient {
 
       const legacyTopics = ['AQMG_5'];
 
+      // Watchdog: if we never reach mqtt 'connect', print deterministic log lines.
+      // This helps when TLS/MQTT fails silently without triggering expected handlers.
+      let connectTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
+      connectTimeoutHandle = setTimeout(() => {
+        // eslint-disable-next-line no-console
+        console.log('[AirBuddi] legacy mqtt connect timeout', {
+          host: config.endpoint,
+          port: 8883,
+          clientId: legacyClientId,
+          topic: 'AQMG_5',
+        });
+
+        try {
+          this.client?.end(true);
+        } catch (e) {
+          // eslint-disable-next-line no-console
+          console.log('[AirBuddi] legacy mqtt end(true) after timeout failed', e);
+        }
+
+        handlers.onConnectionChange('offline');
+      }, 15000);
+
+      // Extra visibility (may or may not be supported by mqtt.js in RN build)
+      (this.client as any).on?.('packetsend', (...args: unknown[]) => {
+        // eslint-disable-next-line no-console
+        console.log('[AirBuddi] legacy mqtt packetsend', args?.[0]);
+      });
+
+      (this.client as any).on?.('packetreceive', (...args: unknown[]) => {
+        // eslint-disable-next-line no-console
+        console.log('[AirBuddi] legacy mqtt packetreceive', args?.[0]);
+      });
+
+      (this.client as any).on?.('connectfail', (err: unknown) => {
+        // eslint-disable-next-line no-console
+        console.log('[AirBuddi] legacy mqtt connectfail', err);
+
+        if (connectTimeoutHandle) {
+          clearTimeout(connectTimeoutHandle);
+          connectTimeoutHandle = null;
+        }
+      });
+
       this.client.on('connect', () => {
+        if (connectTimeoutHandle) {
+          clearTimeout(connectTimeoutHandle);
+          connectTimeoutHandle = null;
+        }
+
         console.log('[AirBuddi] legacy mqtt connected');
         handlers.onConnectionChange('connected');
 
