@@ -156,7 +156,7 @@ export class AwsIotClient {
 
     this.client.on('message', (topic: string, payload: any) => {
       const rawMessage = payload.toString();
-      const parsed = parseJsonPayload(rawMessage);
+      const parsed = parseJsonPayload(rawMessage, config.deviceId);
 
       if (parsed) {
         handlers.onTelemetry(topic, parsed);
@@ -186,7 +186,7 @@ export class AwsIotClient {
   }
 }
 
-function parseJsonPayload(payload: string): DashboardTelemetryMessage | null {
+function parseJsonPayload(payload: string, defaultDeviceId: string): DashboardTelemetryMessage | null {
   try {
     const parsed = JSON.parse(payload);
 
@@ -195,13 +195,13 @@ function parseJsonPayload(payload: string): DashboardTelemetryMessage | null {
     }
 
     const message = parsed.telemetry ?? parsed.payload ?? parsed.data ?? parsed;
-    return normalizeTelemetryMessage(message);
+    return normalizeTelemetryMessage(message, defaultDeviceId);
   } catch {
     return null;
   }
 }
 
-function normalizeTelemetryMessage(message: any): DashboardTelemetryMessage {
+function normalizeTelemetryMessage(message: any, defaultDeviceId: string): DashboardTelemetryMessage {
   if (message.esp32) {
     return message;
   }
@@ -211,7 +211,7 @@ function normalizeTelemetryMessage(message: any): DashboardTelemetryMessage {
   return {
     ...message,
     esp32: {
-      deviceId: maybeEsp32.deviceId ?? maybeEsp32.device_id ?? 'airbuddi-pure-x',
+      deviceId: maybeEsp32.deviceId ?? maybeEsp32.device_id ?? defaultDeviceId,
       deviceName: maybeEsp32.deviceName,
       ts: maybeEsp32.ts ?? maybeEsp32.timestamp,
       connection: maybeEsp32.connection ?? 'connected',
