@@ -80,24 +80,24 @@ export function DashboardScreen() {
   }, [setFanSpeedState]);
 
   // ── Device title (truncated to 20 chars for header) ───────────────────────
-  const deviceTitle = device?.name ?? 'AirBuddi';
+  const deviceTitle = device?.name ?? 'AirBuddi Pro';
 
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Premium background layers */}
-      <View pointerEvents="none" style={styles.bgLayer1} />
-      <View pointerEvents="none" style={styles.bgLayer2} />
+      {/* Dynamic Background */}
+      <View pointerEvents="none" style={styles.bgContainer}>
+        <View style={styles.bgCirclePrimary} />
+        <View style={styles.bgCircleSecondary} />
+      </View>
 
-      {/* Header – rendered outside scroll so it's always visible */}
       <DashboardHeader
         title={deviceTitle}
-        subtitle="Air purifier control"
+        subtitle="Connected • Optimal Performance"
         notificationCount={dashboard.connectedDeviceCount}
       />
 
-      {/* Tab content */}
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.contentContainer}
@@ -133,13 +133,20 @@ export function DashboardScreen() {
         {activeTab === 'light' && (
           <View style={styles.tabPad}>
             <View style={styles.placeholderCard}>
-              <MaterialCommunityIcons
-                name="lightbulb-outline"
-                size={40}
-                color={dashboardTheme.colors.textMuted}
-              />
-              <Text style={styles.placeholderTitle}>Light Controls</Text>
-              <Text style={styles.placeholderSub}>LED brightness and colour settings coming soon.</Text>
+              <View style={styles.placeholderIconWrap}>
+                <MaterialCommunityIcons
+                  name="lightbulb-variant"
+                  size={48}
+                  color={dashboardTheme.colors.primary}
+                />
+              </View>
+              <Text style={styles.placeholderTitle}>Ambience Control</Text>
+              <Text style={styles.placeholderSub}>
+                Customize your air purifier's LED ring colors and brightness to match your mood.
+              </Text>
+              <TouchableOpacity style={styles.comingSoonBadge}>
+                <Text style={styles.comingSoonText}>COMING SOON</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -163,34 +170,34 @@ export function DashboardScreen() {
         <View style={styles.bottomSpace} />
       </ScrollView>
 
-      {/* ── Bottom Navigation Bar ───────────────────────────── */}
-      <View style={styles.navBar}>
-        {TABS.map(tab => {
-          const isActive = tab.id === activeTab;
-          return (
-            <TouchableOpacity
-              key={tab.id}
-              activeOpacity={0.85}
-              style={[styles.navItem, isActive && styles.navItemActive]}
-              onPress={() => setActiveTab(tab.id)}
-            >
-              <View style={styles.navIconWrap}>
-                {isActive && <View style={styles.navPill} />}
-                <MaterialCommunityIcons
-                  name={tab.icon}
-                  size={24}
-                  color={isActive ? dashboardTheme.colors.textPrimary : dashboardTheme.colors.textMuted}
-                />
-              </View>
-              <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+      {/* ── Modern Bottom Navigation ─────────────────────────── */}
+      <View style={styles.navBarWrapper}>
+        <View style={styles.navBar}>
+          {TABS.map(tab => {
+            const isActive = tab.id === activeTab;
+            return (
+              <TouchableOpacity
+                key={tab.id}
+                activeOpacity={0.7}
+                style={styles.navItem}
+                onPress={() => setActiveTab(tab.id)}
+              >
+                <View style={[styles.navIconContainer, isActive && styles.navIconContainerActive]}>
+                  <MaterialCommunityIcons
+                    name={isActive ? tab.icon.replace('-outline', '') : tab.icon}
+                    size={24}
+                    color={isActive ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted}
+                  />
+                  {isActive && <View style={styles.activeDot} />}
+                </View>
+                <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
-
-
     </SafeAreaView>
   );
 }
@@ -202,122 +209,139 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: dashboardTheme.colors.background,
   },
-  bgLayer1: {
-    position: 'absolute',
-    top: -120,
-    left: -80,
-    width: 340,
-    height: 340,
-    borderRadius: 170,
-    backgroundColor: dashboardTheme.colors.primarySoft,
+  bgContainer: {
+    ...StyleSheet.absoluteFillObject,
+    overflow: 'hidden',
+    zIndex: -1,
   },
-  bgLayer2: {
+  bgCirclePrimary: {
     position: 'absolute',
-    top: 90,
-    right: -120,
-    width: 420,
-    height: 420,
-    borderRadius: 210,
-    backgroundColor: dashboardTheme.colors.surfaceTint,
-    opacity: 0.9,
+    top: -100,
+    right: -100,
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    opacity: 0.5,
+  },
+  bgCircleSecondary: {
+    position: 'absolute',
+    bottom: 100,
+    left: -150,
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: 'rgba(59, 130, 246, 0.05)',
   },
   flex: {
     flex: 1,
   },
   contentContainer: {
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingTop: 8,
+    paddingBottom: 100, // Extra space for floating nav
   },
   tabPad: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 20,
   },
   gap: {
-    marginTop: 16,
+    marginTop: 20,
   },
   bottomSpace: {
-    height: 20,
+    height: 40,
   },
 
   // Placeholder card (Light tab)
   placeholderCard: {
     backgroundColor: dashboardTheme.colors.surface,
     borderRadius: dashboardTheme.radii.lg,
-    borderWidth: 1,
-    borderColor: dashboardTheme.colors.border,
-    padding: 40,
+    padding: 32,
     alignItems: 'center',
-    gap: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    ...dashboardTheme.shadows.medium,
+  },
+  placeholderIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
   placeholderTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     color: dashboardTheme.colors.textPrimary,
+    marginBottom: 12,
   },
   placeholderSub: {
-    fontSize: 13,
+    fontSize: 14,
     color: dashboardTheme.colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  comingSoonBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: dashboardTheme.colors.dark,
+  },
+  comingSoonText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 
-  // Bottom nav bar
+  // Modern Floating Bottom Nav
+  navBarWrapper: {
+    position: 'absolute',
+    bottom: 24,
+    left: 20,
+    right: 20,
+    zIndex: 10,
+  },
   navBar: {
     flexDirection: 'row',
-    backgroundColor: dashboardTheme.colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: dashboardTheme.colors.border,
-    paddingVertical: 8,
-    paddingBottom: 12,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: -2 },
-    elevation: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 24,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    ...dashboardTheme.shadows.strong,
   },
   navItem: {
     flex: 1,
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: 4,
-    borderRadius: 18,
-    marginHorizontal: 6,
+    justifyContent: 'center',
   },
-  navItemActive: {
-    backgroundColor: dashboardTheme.colors.primarySoft,
-  },
-  navIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  navIconContainer: {
+    width: 44,
+    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
-  navPill: {
+  navIconContainerActive: {
+    // No background needed for this style
+  },
+  activeDot: {
     position: 'absolute',
-    inset: 0,
-    borderRadius: 17,
-    backgroundColor: dashboardTheme.colors.surface,
-    borderWidth: 1,
-    borderColor: dashboardTheme.colors.border,
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
+    bottom: -2,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: dashboardTheme.colors.primary,
   },
   navLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
     color: dashboardTheme.colors.textMuted,
+    marginTop: 4,
   },
   navLabelActive: {
-    color: dashboardTheme.colors.textPrimary,
-    fontWeight: '800',
+    color: dashboardTheme.colors.primary,
+    fontWeight: '700',
   },
 });

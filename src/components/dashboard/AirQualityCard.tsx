@@ -32,18 +32,18 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
 
   // Pulse animation for the aura behind the text
   const auraScale = useSharedValue(0.9);
-  const auraOpacity = useSharedValue(0.12);
+  const auraOpacity = useSharedValue(0.1);
 
   useEffect(() => {
-    progress.value = withTiming(ratio, { duration: 1100 });
+    progress.value = withTiming(ratio, { duration: 1200 });
 
     auraScale.value = withRepeat(
-      withTiming(1.05, { duration: 2200 }),
+      withTiming(1.08, { duration: 2400 }),
       -1,
       true
     );
     auraOpacity.value = withRepeat(
-      withTiming(0.24, { duration: 2200 }),
+      withTiming(0.2, { duration: 2400 }),
       -1,
       true
     );
@@ -60,10 +60,10 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
 
   if (!hasLiveAqi) {
     return (
-      <SectionCard tone="default" padding={20}>
+      <SectionCard tone="default" padding={24}>
         <View style={styles.header}>
           <Text style={styles.title}>Air Quality Index</Text>
-          <Text style={styles.subtitle}>Waiting for ESP32 telemetry</Text>
+          <Text style={styles.subtitle}>Purifier Zone Telemetry</Text>
         </View>
 
         <View style={styles.emptyState}>
@@ -73,10 +73,10 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
 
         <View style={styles.statusContainer}>
           <View style={[styles.badge, styles.badgeNeutral]}>
-            <Text style={styles.badgeText}>NO LIVE DATA</Text>
+            <Text style={styles.badgeText}>WAITING FOR DATA</Text>
           </View>
           <Text style={styles.description}>
-            Connect the ESP32 and AWS IoT Core to stream real air quality readings here.
+            Connecting to your AirBuddi device to retrieve real-time air quality metrics.
           </Text>
         </View>
       </SectionCard>
@@ -84,10 +84,10 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
   }
 
   return (
-    <SectionCard tone="default" padding={20}>
+    <SectionCard tone="default" padding={24}>
       <View style={styles.header}>
         <Text style={styles.title}>Air Quality Index</Text>
-        <Text style={styles.subtitle}>Purifier Zone Telemetry</Text>
+        <Text style={styles.subtitle}>Real-time Monitoring</Text>
       </View>
 
       <View style={styles.gaugeContainer}>
@@ -104,14 +104,14 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
           <Defs>
             <LinearGradient id="aqiGradient" x1="0%" y1="0%" x2="100%" y2="100%">
               <Stop offset="0%" stopColor={descriptor.color} stopOpacity="1" />
-              <Stop offset="100%" stopColor={descriptor.color + 'AA'} stopOpacity="0.7" />
+              <Stop offset="100%" stopColor={descriptor.color} stopOpacity="0.6" />
             </LinearGradient>
           </Defs>
           <Circle
             cx={SIZE / 2}
             cy={SIZE / 2}
             r={RADIUS}
-            stroke="#E2E8F0"
+            stroke={dashboardTheme.colors.surfaceSecondary}
             strokeWidth={STROKE_WIDTH}
             fill="none"
           />
@@ -129,8 +129,8 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
           />
         </Svg>
         <View style={styles.centerOverlay}>
-          <Text style={[styles.aqiValue, { color: descriptor.color }]}>{aqi}</Text>
-          <Text style={styles.aqiLabel}>AQI</Text>
+          <Text style={[styles.aqiValue, { color: dashboardTheme.colors.textPrimary }]}>{aqi}</Text>
+          <Text style={[styles.aqiLabel, { color: descriptor.color }]}>AQI</Text>
         </View>
       </View>
 
@@ -139,22 +139,20 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
           <Text style={[styles.badgeText, { color: descriptor.color }]}>{descriptor.label.toUpperCase()}</Text>
         </View>
         <Text style={styles.description}>
-          The indoor air is currently <Text style={[styles.highlightText, { color: descriptor.color }]}>{descriptor.label.toLowerCase()}</Text>. The purifier is maintaining safe thresholds.
+          The indoor air is currently <Text style={[styles.highlightText, { color: descriptor.color }]}>{descriptor.label.toLowerCase()}</Text>. The system is optimizing filtration.
         </Text>
       </View>
 
       <View style={styles.metricsRow}>
         <View style={styles.metricCard}>
-          <Text style={styles.metricLabel}>STATUS</Text>
-          <Text style={styles.metricValue}>{descriptor.label}</Text>
-        </View>
-        <View style={styles.metricCard}>
-          <Text style={styles.metricLabel}>TARGET</Text>
-          <Text style={styles.metricValue}>&lt; 50 AQI</Text>
-        </View>
-        <View style={styles.metricCard}>
+          <MaterialCommunityIcons name="trending-up" size={16} color={dashboardTheme.colors.textMuted} />
           <Text style={styles.metricLabel}>TREND</Text>
           <Text style={styles.metricValue}>Stable</Text>
+        </View>
+        <View style={styles.metricCard}>
+          <MaterialCommunityIcons name="target" size={16} color={dashboardTheme.colors.textMuted} />
+          <Text style={styles.metricLabel}>TARGET</Text>
+          <Text style={styles.metricValue}>&lt; 50</Text>
         </View>
       </View>
     </SectionCard>
@@ -165,33 +163,31 @@ export const AirQualityCard = memo(AirQualityCardComponent);
 
 const styles = StyleSheet.create({
   header: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   title: {
     color: dashboardTheme.colors.textPrimary,
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
-    letterSpacing: -0.2,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    color: dashboardTheme.colors.textSecondary,
-    marginTop: 4,
-    fontSize: 12,
+    color: dashboardTheme.colors.textMuted,
+    marginTop: 2,
+    fontSize: 13,
     fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
   },
   gaugeContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 10,
+    marginVertical: 12,
     height: SIZE + 20,
   },
   auraCircle: {
     position: 'absolute',
-    width: SIZE - STROKE_WIDTH * 2 - 12,
-    height: SIZE - STROKE_WIDTH * 2 - 12,
-    borderRadius: (SIZE - STROKE_WIDTH * 2 - 12) / 2,
+    width: SIZE - STROKE_WIDTH * 2 - 20,
+    height: SIZE - STROKE_WIDTH * 2 - 20,
+    borderRadius: (SIZE - STROKE_WIDTH * 2 - 20) / 2,
   },
   centerOverlay: {
     position: 'absolute',
@@ -199,61 +195,61 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   aqiValue: {
-    fontSize: 54,
+    fontSize: 64,
     fontWeight: '900',
-    letterSpacing: -2,
+    letterSpacing: -3,
   },
   aqiLabel: {
-    color: dashboardTheme.colors.textSecondary,
-    marginTop: -6,
-    fontSize: 11,
+    marginTop: -8,
+    fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 1.8,
+    letterSpacing: 2,
   },
   statusContainer: {
     alignItems: 'center',
-    marginVertical: 14,
+    marginTop: 20,
+    marginBottom: 24,
     paddingHorizontal: 12,
   },
   badge: {
-    borderRadius: 999,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderWidth: 1,
-    marginBottom: 8,
+    marginBottom: 12,
   },
   badgeNeutral: {
-    backgroundColor: dashboardTheme.colors.surfaceTint,
+    backgroundColor: dashboardTheme.colors.surfaceSecondary,
     borderColor: dashboardTheme.colors.border,
   },
   badgeText: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 16,
-    height: SIZE + 10,
+    marginVertical: 20,
+    height: SIZE,
   },
   emptyValue: {
-    color: dashboardTheme.colors.textPrimary,
-    fontSize: 54,
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 64,
     fontWeight: '900',
-    letterSpacing: -2,
+    letterSpacing: -3,
   },
   emptyLabel: {
-    color: dashboardTheme.colors.textSecondary,
-    marginTop: -6,
-    fontSize: 11,
+    color: dashboardTheme.colors.textMuted,
+    marginTop: -8,
+    fontSize: 14,
     fontWeight: '800',
-    letterSpacing: 1.8,
+    letterSpacing: 2,
   },
   description: {
     color: dashboardTheme.colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 22,
     textAlign: 'center',
   },
   highlightText: {
@@ -261,28 +257,25 @@ const styles = StyleSheet.create({
   },
   metricsRow: {
     flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
+    gap: 12,
   },
   metricCard: {
     flex: 1,
-    padding: 12,
-    borderRadius: dashboardTheme.radii.sm,
-    backgroundColor: dashboardTheme.colors.surfaceTint,
-    borderWidth: 1,
-    borderColor: dashboardTheme.colors.border,
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: dashboardTheme.colors.surfaceSecondary,
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   metricLabel: {
     color: dashboardTheme.colors.textMuted,
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.6,
+    letterSpacing: 0.5,
   },
   metricValue: {
     color: dashboardTheme.colors.textPrimary,
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: '800',
   },
 });

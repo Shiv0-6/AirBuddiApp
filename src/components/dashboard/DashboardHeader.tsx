@@ -15,62 +15,52 @@ function DashboardHeaderComponent({ title, subtitle, notificationCount }: Dashbo
 
   return (
     <View style={styles.wrapper}>
-      <View style={styles.headerCard}>
-        {/* Top row: back arrow | title | settings + notifications */}
-        <View style={styles.topRow}>
-          <TouchableOpacity style={styles.circleBtn} activeOpacity={0.75}>
+      {/* Top Status Bar like row */}
+      <View style={styles.topActionRow}>
+        <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
+          <MaterialCommunityIcons
+            name="menu"
+            size={24}
+            color={dashboardTheme.colors.textPrimary}
+          />
+        </TouchableOpacity>
+
+        <View style={styles.rightGroup}>
+          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
             <MaterialCommunityIcons
-              name="chevron-left"
+              name="bell-outline"
               size={22}
               color={dashboardTheme.colors.textPrimary}
             />
+            {count > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText} numberOfLines={1}>
+                  {count > 99 ? '99+' : count}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
 
-          <View style={styles.titleGroup}>
-            <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
-              {title}
-            </Text>
-            <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
-              {subtitle}
-            </Text>
-          </View>
-
-          <View style={styles.rightGroup}>
-            <TouchableOpacity style={styles.circleBtn} activeOpacity={0.75}>
-              <MaterialCommunityIcons
-                name="bell-outline"
-                size={20}
-                color={dashboardTheme.colors.textPrimary}
-              />
-              {count > 0 && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText} numberOfLines={1}>
-                    {count > 99 ? '99+' : count}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.circleBtn} activeOpacity={0.75}>
-              <MaterialCommunityIcons
-                name="cog-outline"
-                size={20}
-                color={dashboardTheme.colors.textPrimary}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Second row: timer icon (bottom-left) */}
-        <View style={styles.secondRow}>
-          <TouchableOpacity style={styles.circleBtn} activeOpacity={0.75}>
-            <MaterialCommunityIcons
-              name="clock-outline"
-              size={20}
-              color={dashboardTheme.colors.textSecondary}
-            />
+          <TouchableOpacity style={styles.profileBtn} activeOpacity={0.7}>
+            <View style={styles.avatarPlaceholder}>
+              <MaterialCommunityIcons name="account" size={20} color={dashboardTheme.colors.textMuted} />
+            </View>
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* Hero Welcome Section */}
+      <View style={styles.heroSection}>
+        <Text style={styles.welcomeText}>Hello, User</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+            {title}
+          </Text>
+          <View style={styles.statusDot} />
+        </View>
+        <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">
+          {subtitle}
+        </Text>
       </View>
     </View>
   );
@@ -80,90 +70,93 @@ export const DashboardHeader = memo(DashboardHeaderComponent);
 
 const styles = StyleSheet.create({
   wrapper: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    gap: 6,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  headerCard: {
-    borderRadius: dashboardTheme.radii.xl,
-    backgroundColor: dashboardTheme.colors.surface,
-    borderWidth: 1,
-    borderColor: dashboardTheme.colors.border,
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
-    gap: 8,
-  },
-  topRow: {
+  topActionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 10,
+    marginBottom: 24,
   },
-  secondRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  heroSection: {
+    gap: 4,
   },
-  titleGroup: {
-    flex: 1,
-    paddingHorizontal: 6,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: dashboardTheme.colors.textPrimary,
-    letterSpacing: -0.2,
-    textAlign: 'center',
-  },
-  subtitle: {
-    marginTop: 2,
-    fontSize: 12,
+  welcomeText: {
+    fontSize: 14,
     fontWeight: '600',
     color: dashboardTheme.colors.textSecondary,
-    textAlign: 'center',
-    maxWidth: 220,
+    letterSpacing: 0.5,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: dashboardTheme.colors.success,
+    marginTop: 4,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: dashboardTheme.colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: dashboardTheme.colors.textMuted,
   },
   rightGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
-  circleBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     backgroundColor: dashboardTheme.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-    position: 'relative',
+    ...dashboardTheme.shadows.soft,
+  },
+  profileBtn: {
+    marginLeft: 4,
+  },
+  avatarPlaceholder: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: dashboardTheme.colors.surfaceSecondary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: dashboardTheme.colors.surface,
+    ...dashboardTheme.shadows.soft,
   },
   badge: {
     position: 'absolute',
-    top: -6,
-    right: -6,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    top: 10,
+    right: 10,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: dashboardTheme.colors.danger,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
-    borderWidth: 2,
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
     borderColor: dashboardTheme.colors.surface,
   },
   badgeText: {
     color: dashboardTheme.colors.lightText,
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '900',
   },
 });

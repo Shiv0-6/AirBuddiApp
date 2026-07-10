@@ -9,9 +9,13 @@ type SectionCardProps = {
   tone?: 'default' | 'tinted';
 };
 
-function SectionCardComponent({ children, padding = 18, tone = 'default' }: SectionCardProps) {
+function SectionCardComponent({ children, padding = 20, tone = 'default' }: SectionCardProps) {
   return (
-    <View style={[styles.card, tone === 'tinted' && styles.tinted, { padding }]}>
+    <View style={[
+      styles.card,
+      tone === 'tinted' && styles.tinted,
+      { padding }
+    ]}>
       {children}
     </View>
   );
@@ -24,17 +28,10 @@ const styles = StyleSheet.create({
     backgroundColor: dashboardTheme.colors.surface,
     borderRadius: dashboardTheme.radii.lg,
     borderWidth: 1,
-    borderColor: dashboardTheme.colors.border,
-    shadowColor: '#000000',
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    elevation: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    ...dashboardTheme.shadows.medium,
   },
   tinted: {
-    backgroundColor: dashboardTheme.colors.surfaceTint,
+    backgroundColor: dashboardTheme.colors.surfaceSecondary,
   },
 });
