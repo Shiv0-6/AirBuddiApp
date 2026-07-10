@@ -207,7 +207,11 @@ function QuickControlsComponent({
                 activeOpacity={0.75}
                 disabled={!isPoweredOn}
                 onPress={() => handleSpeedPress(label)}
-                style={[styles.speedBtn, isActive && styles.speedBtnActive]}
+                style={[
+                  styles.speedBtn,
+                  !isPoweredOn && styles.speedBtnDisabled,
+                  isActive && styles.speedBtnActive,
+                ]}
               >
                 <Text style={[styles.speedBtnText, isActive && styles.speedBtnTextActive]}>
                   {label}
@@ -362,6 +366,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
+  },
+  speedBtnDisabled: {
+    opacity: 0.45,
   },
   speedBtnActive: {
     backgroundColor: dashboardTheme.colors.surface,

@@ -1,14 +1,15 @@
-# TODO — Old app features in new TS app (legacy MQTT)
+# TODO - AirBuddiApp UI Enhancement
 
-- [ ] Add a legacy-mode flag/config in `src/config/awsIotConfig.ts`
-- [x] Extend `src/config/awsIotCredentials.ts` with commented cert-based placeholders (rootCA, deviceCert, privateKey) while keeping IAM keys
+## Plan items
+- [x] Add notification badge UI in `src/components/dashboard/DashboardHeader.tsx` (use `notificationCount` prop)
+- [x] Improve header styling (subtle tinted container / spacing consistency)
+- [x] Add premium background + consistent page padding in `src/features/dashboard/DashboardScreen.tsx`
+- [x] Add bottom navigation active-state indicator (tinted pill background)
+- [x] Polish disabled fan-speed buttons and quick control affordances in `src/components/dashboard/QuickControls.tsx`
 
-- [x] Implement legacy MQTT-over-TLS connector in `src/services/awsIot/awsIotClient.ts`
 
-- [ ] Wire legacy subscriptions/publishes:
-  - subscribe: `AQMG_5`
-  - publish command to: `esp32/control`
-- [ ] Keep existing WSS/SigV4 implementation intact; switch based on flag
-- [ ] Update dashboard bridge if needed (likely no change)
-- [ ] Run tests/build + manual verification steps
+## Verification
+- [ ] Run `npm test` / `npm run lint` (if available)
+- [ ] Run typecheck (if available)
+- [ ] Manual visual check on emulator/device
 

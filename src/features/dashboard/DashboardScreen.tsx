@@ -85,6 +85,9 @@ export function DashboardScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* Premium background layers */}
+      <View pointerEvents="none" style={styles.bgLayer1} />
+      <View pointerEvents="none" style={styles.bgLayer2} />
 
       {/* Header – rendered outside scroll so it's always visible */}
       <DashboardHeader
@@ -166,15 +169,18 @@ export function DashboardScreen() {
           return (
             <TouchableOpacity
               key={tab.id}
-              activeOpacity={0.75}
-              style={styles.navItem}
+              activeOpacity={0.85}
+              style={[styles.navItem, isActive && styles.navItemActive]}
               onPress={() => setActiveTab(tab.id)}
             >
-              <MaterialCommunityIcons
-                name={tab.icon}
-                size={24}
-                color={isActive ? dashboardTheme.colors.textPrimary : dashboardTheme.colors.textMuted}
-              />
+              <View style={styles.navIconWrap}>
+                {isActive && <View style={styles.navPill} />}
+                <MaterialCommunityIcons
+                  name={tab.icon}
+                  size={24}
+                  color={isActive ? dashboardTheme.colors.textPrimary : dashboardTheme.colors.textMuted}
+                />
+              </View>
               <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
                 {tab.label}
               </Text>
@@ -182,6 +188,7 @@ export function DashboardScreen() {
           );
         })}
       </View>
+
 
     </SafeAreaView>
   );
@@ -193,6 +200,25 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: dashboardTheme.colors.background,
+  },
+  bgLayer1: {
+    position: 'absolute',
+    top: -120,
+    left: -80,
+    width: 340,
+    height: 340,
+    borderRadius: 170,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+  },
+  bgLayer2: {
+    position: 'absolute',
+    top: 90,
+    right: -120,
+    width: 420,
+    height: 420,
+    borderRadius: 210,
+    backgroundColor: dashboardTheme.colors.surfaceTint,
+    opacity: 0.9,
   },
   flex: {
     flex: 1,
@@ -257,14 +283,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingVertical: 4,
+    borderRadius: 18,
+    marginHorizontal: 6,
+  },
+  navItemActive: {
+    backgroundColor: dashboardTheme.colors.primarySoft,
+  },
+  navIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  navPill: {
+    position: 'absolute',
+    inset: 0,
+    borderRadius: 17,
+    backgroundColor: dashboardTheme.colors.surface,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   navLabel: {
     fontSize: 11,
-    fontWeight: '500',
+    fontWeight: '600',
     color: dashboardTheme.colors.textMuted,
   },
   navLabelActive: {
     color: dashboardTheme.colors.textPrimary,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });
