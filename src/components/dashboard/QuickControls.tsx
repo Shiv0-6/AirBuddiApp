@@ -71,8 +71,8 @@ function QuickControlsComponent({
   onToggleUvc,
   onSelectFanSpeed,
 }: QuickControlsProps) {
-
   // Power ring pulse
+
   const ringScale = useSharedValue(1);
   const ringOpacity = useSharedValue(0.25);
 

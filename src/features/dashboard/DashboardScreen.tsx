@@ -24,7 +24,8 @@ import { selectDashboard } from './dashboardSelectors';
 import type { DashboardRuntimeState } from './dashboardSlice';
 import { useDashboardRealtimeBridge } from './useDashboardRealtimeBridge';
 
-// ─── Bottom Tab Config ────────────────────────────────────────────────────────
+
+// ─── Bottom Tab Config
 
 type TabId = 'airquality' | 'fan' | 'light' | 'more';
 
