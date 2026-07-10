@@ -1,10 +1,10 @@
 import type { ConnectionState, DashboardDevice, DashboardSensor } from '../../features/dashboard/dashboardTypes';
 import type { Esp32DeviceTelemetry } from './esp32TelemetryContract';
 
-export interface AwsIotCredentials {
-  accessKeyId: string;
-  secretAccessKey: string;
-  sessionToken?: string;
+export interface AwsIotMtlsCredentials {
+  rootCA: string;
+  deviceCert: string;
+  privateKey: string;
 }
 
 export interface AwsIotTopics {
@@ -21,14 +21,6 @@ export interface AwsIotConnectionConfig {
   clientId: string;
   deviceId: string;
   topics: AwsIotTopics;
-
-  /**
-   * legacyMode=true uses the old_app proven MQTT-over-TLS (port 8883 + topics like `AQMG_5`).
-   * legacyMode=false keeps the current implementation (WSS + SigV4 signing).
-   */
-  legacyMode?: boolean;
-
-  credentialsProvider: () => Promise<AwsIotCredentials>;
 }
 
 

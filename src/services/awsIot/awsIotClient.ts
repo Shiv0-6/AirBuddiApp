@@ -1,38 +1,37 @@
-import { Sha256 } from '@aws-crypto/sha256-js';
-import { HttpRequest } from '@aws-sdk/protocol-http';
-import { SignatureV4 } from '@aws-sdk/signature-v4';
-import { formatUrl } from '@aws-sdk/util-format-url';
-
 import type {
   AwsIotConnectionConfig,
-  AwsIotCredentials,
   DashboardTelemetryMessage,
 } from './awsIotTypes';
 import type {
-  Esp32DeviceTelemetry,
   Esp32SensorKey,
   Esp32SensorReading,
 } from './esp32TelemetryContract';
 
-type FlatEsp32Telemetry = DashboardTelemetryMessage &
-  Partial<Omit<Esp32DeviceTelemetry, 'sensors'>> & {
-    device_id?: string;
-    sensors?: DashboardTelemetryMessage['sensors'] | Esp32DeviceTelemetry['sensors'];
-    temperature?: number;
-    temp?: number;
-    temperature_c?: number;
-    humidity?: number;
-    humidity_percent?: number;
-    pm2_5?: number;
-    pm25?: number;
-    pm10?: number;
-    co2?: number;
-    voc?: number;
-  };
-
-function isValidAwsIotMqttEndpoint(endpoint: string) {
-  return endpoint.includes('.iot.') && !endpoint.includes('execute-api');
-}
+type FlatEsp32Telemetry = DashboardTelemetryMessage & {
+  device_id?: string;
+  sensors?: any[];
+  temperature?: number;
+  temp?: number;
+  temperature_c?: number;
+  humidity?: number;
+  humidity_percent?: number;
+  pm2_5?: number;
+  pm25?: number;
+  pm10?: number;
+  co2?: number;
+  voc?: number;
+  deviceId?: string;
+  deviceName?: string;
+  ts?: string;
+  connection?: any;
+  power?: any;
+  mode?: any;
+  fanSpeed?: any;
+  aqi?: any;
+  filterHealth?: any;
+  remainingLifeDays?: any;
+  timestamp?: string;
+};
 
 type RawMqttClient = {
   on: (event: string, handler: (...args: Array<unknown>) => void) => void;
@@ -67,45 +66,41 @@ export class AwsIotClient {
     const mqtt = require('mqtt/dist/mqtt');
 
     // ─────────────────────────────────────────────────────────────
-    // Legacy mode (old_app): MQTT over TLS (port 8883)
-    // - subscribe: AQMG_5
-    // - publish: esp32/control
+    // Certificate-based Mutual TLS (mTLS) Connection (Port 8883)
+    // matches behavior from old_app/airbuddi
     // ─────────────────────────────────────────────────────────────
-    if (config.legacyMode) {
-      // Lazy-load legacy credentials to keep WSS-only users unaffected.
-      const { MY_IOT_MTLS_CREDENTIALS } = require('../../config/awsIotCredentials');
+    const { MY_IOT_MTLS_CREDENTIALS } = require('../../config/awsIotCredentials');
 
-      const { rootCA, deviceCert, privateKey } = MY_IOT_MTLS_CREDENTIALS as {
-        rootCA?: string;
-        deviceCert?: string;
-        privateKey?: string;
-      };
+    const { rootCA, deviceCert, privateKey } = MY_IOT_MTLS_CREDENTIALS as {
+      rootCA?: string;
+      deviceCert?: string;
+      privateKey?: string;
+    };
 
-      if (!rootCA || !deviceCert || !privateKey) {
-        handlers.onConnectionChange('offline');
-        handlers.onError(
-          new Error(
-            'Legacy mode enabled but MQTT mTLS credentials are missing. Fill rootCA, deviceCert, privateKey in src/config/awsIotCredentials.ts.',
-          ),
-        );
-        return;
-      }
+    if (!rootCA || !deviceCert || !privateKey) {
+      handlers.onConnectionChange('offline');
+      handlers.onError(
+        new Error(
+          'MQTT mTLS credentials are missing. Please fill in rootCA, deviceCert, and privateKey in src/config/awsIotCredentials.ts.',
+        ),
+      );
+      return;
+    }
 
-      const legacyClientId = 'AQMG_5';
+    const connectionClientId = config.clientId;
 
-      console.log('[AirBuddi] legacy mqtt connecting', {
-        host: config.endpoint,
-        port: 8883,
-        clientId: legacyClientId,
-        topic: 'AQMG_5',
-        enabled: config.legacyMode,
-      });
+    console.log('[AirBuddi] Connecting via MQTT mTLS', {
+      host: config.endpoint,
+      port: 8883,
+      clientId: connectionClientId,
+    });
 
+    try {
       this.client = mqtt.connect({
         host: config.endpoint,
         port: 8883,
         protocol: 'mqtts',
-        clientId: legacyClientId,
+        clientId: connectionClientId,
         clean: true,
         keepalive: 60,
         reconnectPeriod: 5000,
@@ -116,152 +111,30 @@ export class AwsIotClient {
         cert: deviceCert,
         key: privateKey,
       }) as RawMqttClient;
-
-      const legacyTopics = ['AQMG_5'];
-
-      // Watchdog: if we never reach mqtt 'connect', print deterministic log lines.
-      // This helps when TLS/MQTT fails silently without triggering expected handlers.
-      let connectTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
-      connectTimeoutHandle = setTimeout(() => {
-        // eslint-disable-next-line no-console
-        console.log('[AirBuddi] legacy mqtt connect timeout', {
-          host: config.endpoint,
-          port: 8883,
-          clientId: legacyClientId,
-          topic: 'AQMG_5',
-        });
-
-        try {
-          this.client?.end(true);
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.log('[AirBuddi] legacy mqtt end(true) after timeout failed', e);
-        }
-
-        handlers.onConnectionChange('offline');
-      }, 15000);
-
-      // Extra visibility (may or may not be supported by mqtt.js in RN build)
-      (this.client as any).on?.('packetsend', (...args: unknown[]) => {
-        // eslint-disable-next-line no-console
-        console.log('[AirBuddi] legacy mqtt packetsend', args?.[0]);
-      });
-
-      (this.client as any).on?.('packetreceive', (...args: unknown[]) => {
-        // eslint-disable-next-line no-console
-        console.log('[AirBuddi] legacy mqtt packetreceive', args?.[0]);
-      });
-
-      (this.client as any).on?.('connectfail', (err: unknown) => {
-        // eslint-disable-next-line no-console
-        console.log('[AirBuddi] legacy mqtt connectfail', err);
-
-        if (connectTimeoutHandle) {
-          clearTimeout(connectTimeoutHandle);
-          connectTimeoutHandle = null;
-        }
-      });
-
-      this.client.on('connect', () => {
-        if (connectTimeoutHandle) {
-          clearTimeout(connectTimeoutHandle);
-          connectTimeoutHandle = null;
-        }
-
-        console.log('[AirBuddi] legacy mqtt connected');
-        handlers.onConnectionChange('connected');
-
-        // subscribe once, and log success/error from SUBACK callback
-        this.client?.subscribe(legacyTopics, { qos: 0 }, error => {
-          if (error) {
-            console.log('[AirBuddi] legacy subscribe error', error);
-            handlers.onError(error);
-            return;
-          }
-          console.log('[AirBuddi] legacy subscribe ok', legacyTopics);
-        });
-      });
-
-      this.client.on('reconnect', (packet: unknown) => {
-        // eslint-disable-next-line no-console
-        console.log('[AirBuddi] legacy mqtt reconnect', packet);
-        handlers.onConnectionChange('connecting');
-      });
-
-      this.client.on('offline', () => {
-        // eslint-disable-next-line no-console
-        console.log('[AirBuddi] legacy mqtt offline');
-        handlers.onConnectionChange('offline');
-      });
-
-      this.client.on('close', () => {
-        // eslint-disable-next-line no-console
-        console.log('[AirBuddi] legacy mqtt close');
-        handlers.onConnectionChange('offline');
-      });
-
-      this.client.on('error', (error: unknown) => {
-        // eslint-disable-next-line no-console
-        console.log('[AirBuddi] legacy mqtt error', error);
-        handlers.onError(error instanceof Error ? error : new Error(String(error)));
-      });
-
-      this.client.on('message', (...args: unknown[]) => {
-        const [topic, payload] = args;
-        const rawMessage = payloadToString(payload);
-
-        // eslint-disable-next-line no-console
-        console.log('[AirBuddi] legacy raw message', { topic, rawMessage });
-
-        const parsed = parseJsonPayload(rawMessage);
-        if (parsed && typeof topic === 'string') {
-          handlers.onTelemetry(topic, parsed);
-        } else {
-          // eslint-disable-next-line no-console
-          console.log('[AirBuddi] legacy message parse failed', { topic, rawMessage });
-        }
-      });
-
+    } catch (e) {
+      handlers.onError(e instanceof Error ? e : new Error(String(e)));
       return;
     }
 
-    // ─────────────────────────────────────────────────────────────
-    // Current mode (new app): WSS + SigV4
-    // ─────────────────────────────────────────────────────────────
-    if (!isValidAwsIotMqttEndpoint(config.endpoint)) {
-      handlers.onConnectionChange('offline');
-      handlers.onError(
-        new Error(
-          'Invalid AWS IoT endpoint. Use the ATS MQTT endpoint in the form <prefix>-ats.iot.<region>.amazonaws.com, not an execute-api hostname.',
-        ),
-      );
-      return;
-    }
-
-    const credentials = await config.credentialsProvider();
-    const signedUrl = await buildSignedMqttUrl(config.region, config.endpoint, credentials);
-
-    this.client = mqtt.connect(signedUrl, {
-      clientId: config.clientId,
-      clean: true,
-      keepalive: 60,
-      reconnectPeriod: 5000,
-      connectTimeout: 10000,
-      resubscribe: true,
-      rejectUnauthorized: true,
-    }) as RawMqttClient;
+    const topicsToSubscribe = [
+      config.topics.telemetry,
+      config.topics.status,
+      config.topics.connection,
+      'AQMG_5', // Legacy sensor topic from old_app
+    ];
 
     this.client.on('connect', () => {
+      console.log('[AirBuddi] MQTT connected via mTLS');
       handlers.onConnectionChange('connected');
-      this.client?.subscribe(
-        [config.topics.telemetry, config.topics.status, config.topics.connection],
-        { qos: 0 },
-        error => {
-          if (error) {
-            handlers.onError(error);
-          }
-        },
-      );
+
+      this.client?.subscribe(topicsToSubscribe, { qos: 0 }, error => {
+        if (error) {
+          console.error('[AirBuddi] Subscribe error', error);
+          handlers.onError(error);
+          return;
+        }
+        console.log('[AirBuddi] Subscribed to:', topicsToSubscribe);
+      });
     });
 
     this.client.on('reconnect', () => {
@@ -276,21 +149,20 @@ export class AwsIotClient {
       handlers.onConnectionChange('offline');
     });
 
-    this.client.on('error', error => {
+    this.client.on('error', (error: unknown) => {
+      console.error('[AirBuddi] MQTT Error:', error);
       handlers.onError(error instanceof Error ? error : new Error(String(error)));
     });
 
-    this.client.on('message', (...args: unknown[]) => {
-      const [topic, payload] = args;
-      const rawMessage = payloadToString(payload);
+    this.client.on('message', (topic: string, payload: any) => {
+      const rawMessage = payload.toString();
       const parsed = parseJsonPayload(rawMessage);
 
-      if (parsed && typeof topic === 'string') {
+      if (parsed) {
         handlers.onTelemetry(topic, parsed);
       }
     });
   }
-
 
   publishCommand(topic: string, payload: unknown) {
     if (!this.client) {
@@ -303,12 +175,10 @@ export class AwsIotClient {
           reject(error);
           return;
         }
-
         resolve();
       });
     });
   }
-
 
   disconnect() {
     this.client?.end(true);
@@ -316,99 +186,34 @@ export class AwsIotClient {
   }
 }
 
-function payloadToString(payload: unknown) {
-  if (typeof payload === 'string') {
-    return payload;
-  }
-
-  if (payload && typeof (payload as { toString?: () => string }).toString === 'function') {
-    return (payload as { toString: () => string }).toString();
-  }
-
-  return String(payload);
-}
-
-async function buildSignedMqttUrl(
-  region: string,
-  endpoint: string,
-  credentials: AwsIotCredentials,
-) {
-  const signer = new SignatureV4({
-    credentials,
-    region,
-    service: 'iotdevicegateway',
-    sha256: Sha256,
-  });
-
-  const request = new HttpRequest({
-    method: 'GET',
-    protocol: 'wss:',
-    hostname: endpoint,
-    path: '/mqtt',
-  });
-
-  const signedRequest = await signer.presign(request, { expiresIn: 900 });
-
-  return formatUrl(signedRequest);
-}
-
 function parseJsonPayload(payload: string): DashboardTelemetryMessage | null {
   try {
-    const parsed = JSON.parse(payload) as DashboardTelemetryMessage & {
-      data?: DashboardTelemetryMessage;
-      payload?: DashboardTelemetryMessage;
-      telemetry?: DashboardTelemetryMessage;
-    };
+    const parsed = JSON.parse(payload);
 
     if (!parsed || typeof parsed !== 'object') {
       return null;
     }
 
-    // Support both:
-    // - { telemetry: {...} } / { payload: {...} } / { data: {...} }
-    // - plain payloads like the legacy ESP32 example:
-    //   { "Temperature": 0, "Humidity": 0, "PM 2.5": 0, ... }
-    const message = (parsed as any).telemetry ?? (parsed as any).payload ?? (parsed as any).data ?? parsed;
-
+    const message = parsed.telemetry ?? parsed.payload ?? parsed.data ?? parsed;
     return normalizeTelemetryMessage(message);
   } catch {
     return null;
   }
 }
 
-function normalizeTelemetryMessage(message: DashboardTelemetryMessage): DashboardTelemetryMessage {
+function normalizeTelemetryMessage(message: any): DashboardTelemetryMessage {
   if (message.esp32) {
     return message;
   }
 
   const maybeEsp32 = message as FlatEsp32Telemetry;
 
-  const hasEsp32Identity = typeof maybeEsp32.deviceId === 'string' || typeof maybeEsp32.device_id === 'string';
-  const hasEsp32SensorArray =
-    Array.isArray(maybeEsp32.sensors) &&
-    maybeEsp32.sensors.some(sensor => 'key' in sensor || 'id' in sensor);
-  const hasFlatSensorReadings =
-    typeof maybeEsp32.temperature === 'number' ||
-    typeof maybeEsp32.temp === 'number' ||
-    typeof maybeEsp32.temperature_c === 'number' ||
-    typeof maybeEsp32.humidity === 'number' ||
-    typeof maybeEsp32.humidity_percent === 'number' ||
-    typeof maybeEsp32.pm2_5 === 'number' ||
-    typeof maybeEsp32.pm25 === 'number' ||
-    typeof maybeEsp32.pm10 === 'number' ||
-    typeof maybeEsp32.co2 === 'number' ||
-    typeof maybeEsp32.voc === 'number';
-
-  if (!hasEsp32Identity && !hasEsp32SensorArray && !hasFlatSensorReadings) {
-    return message;
-  }
-
   return {
     ...message,
     esp32: {
       deviceId: maybeEsp32.deviceId ?? maybeEsp32.device_id ?? 'airbuddi-pure-x',
       deviceName: maybeEsp32.deviceName,
-      ts: maybeEsp32.ts ?? message.timestamp,
+      ts: maybeEsp32.ts ?? maybeEsp32.timestamp,
       connection: maybeEsp32.connection ?? 'connected',
       power: maybeEsp32.power,
       mode: maybeEsp32.mode,
@@ -421,85 +226,55 @@ function normalizeTelemetryMessage(message: DashboardTelemetryMessage): Dashboar
   };
 }
 
-function normalizeEsp32Sensors(
-  telemetry: FlatEsp32Telemetry,
-): Esp32SensorReading[] {
+function normalizeEsp32Sensors(telemetry: any): Esp32SensorReading[] {
   if (Array.isArray(telemetry.sensors) && telemetry.sensors.length) {
-    const sensors: Esp32SensorReading[] = [];
-
-    telemetry.sensors.forEach(sensor => {
-      const key = ('key' in sensor ? sensor.key : sensor.id) as Esp32SensorKey;
-      const value = sensor.value;
-
-      if (typeof value === 'number') {
-        sensors.push({
+    return telemetry.sensors
+      .map((sensor: any) => {
+        const key = (sensor.key || sensor.id) as Esp32SensorKey;
+        return {
           key,
-          value,
+          value: sensor.value,
           unit: sensor.unit ?? defaultSensorUnit(key),
           status: sensor.status,
-        });
-      }
-    });
-
-    return sensors;
+        };
+      })
+      .filter((s: any) => typeof s.value === 'number');
   }
 
-  // Legacy payload mapping (from AQMG_5 example)
-  // {
-  //   "Temperature": 0,
-  //   "Humidity": 0,
-  //   "PM 2.5": 0,
-  //   "PM 10": 0,
-  //   "C02 Equivalent": 0,
-  //   "VOC's": 0
-  // }
-  const legacyTemperature = (telemetry as any)['Temperature'] ?? telemetry.temperature ?? telemetry.temp ?? telemetry.temperature_c;
-  const legacyHumidity = (telemetry as any)['Humidity'] ?? telemetry.humidity ?? telemetry.humidity_percent;
-  const legacyPm25 = (telemetry as any)['PM 2.5'] ?? telemetry.pm2_5 ?? telemetry.pm25;
-  const legacyPm10 = (telemetry as any)['PM 10'] ?? telemetry.pm10;
-  const legacyCo2 =
-    (telemetry as any)['C02 Equivalent'] ??
-    (telemetry as any)['CO2 Equivalent'] ??
-    (telemetry as any)['CO2'] ??
-    (telemetry as any)['Co2'] ??
-    telemetry.co2;
+  const legacyMap: Record<string, Esp32SensorKey> = {
+    'Temperature': 'temperature',
+    'Humidity': 'humidity',
+    'PM 2.5': 'pm2_5',
+    'PM 10': 'pm10',
+    'C02 Equivalent': 'co2',
+    'CO2 Equivalent': 'co2',
+    'VOC\'s': 'voc',
+  };
 
-  // device firmware uses exactly: "VOC's"
-  const legacyVoc =
-    (telemetry as any)["VOC's"] ??
-    (telemetry as any)['VOC'] ??
-    (telemetry as any)['VOCs'] ??
-    telemetry.voc;
+  const sensors: Esp32SensorReading[] = [];
+  for (const [rawKey, sensorKey] of Object.entries(legacyMap)) {
+    const value = telemetry[rawKey];
+    if (typeof value === 'number') {
+      sensors.push({
+        key: sensorKey,
+        value,
+        unit: defaultSensorUnit(sensorKey),
+        status: 'good',
+      });
+    }
+  }
 
-  return ([
-    ['temperature', legacyTemperature],
-    ['humidity', legacyHumidity],
-    ['pm2_5', legacyPm25],
-    ['pm10', legacyPm10],
-    ['co2', legacyCo2],
-    ['voc', legacyVoc],
-  ] as Array<[Esp32SensorKey, number | undefined]>)
-    .filter(([, value]) => typeof value === 'number')
-    .map(([key, value]) => ({
-      key,
-      value: value as number,
-      unit: defaultSensorUnit(key),
-      status: 'good' as const,
-    }));
+  return sensors;
 }
 
 function defaultSensorUnit(key: Esp32SensorKey) {
   switch (key) {
-    case 'temperature':
-      return 'C';
-    case 'humidity':
-      return '%';
+    case 'temperature': return 'C';
+    case 'humidity': return '%';
     case 'pm2_5':
-    case 'pm10':
-      return 'ug/m3';
+    case 'pm10': return 'ug/m3';
     case 'co2':
-      return 'ppm';
-    case 'voc':
-      return 'ppm';
+    case 'voc': return 'ppm';
+    default: return '';
   }
 }

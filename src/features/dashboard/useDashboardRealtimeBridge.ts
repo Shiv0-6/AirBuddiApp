@@ -3,8 +3,7 @@ import { useEffect, useRef } from 'react';
 import { awsIotConfig } from '../../config/awsIotConfig';
 import { useAppDispatch } from '../../store/hooks';
 import { AwsIotClient } from '../../services/awsIot/awsIotClient';
-import type { DashboardCommandMessage, DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
-import type { Esp32CommandEnvelope } from '../../services/awsIot/esp32TelemetryContract';
+import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
 import type { ConnectionState, DeviceMode, PowerState } from './dashboardTypes';
 import {
   applyTelemetry,
@@ -18,15 +17,16 @@ import {
   setUvcState,
 } from './dashboardSlice';
 
+/**
+ * Hook that bridges the React Native Redux state with the AWS IoT Core MQTT client.
+ * Now exclusively uses mTLS (port 8883) and the legacy topic structure to match old_app.
+ */
 export function useDashboardRealtimeBridge() {
   const dispatch = useAppDispatch();
   const clientRef = useRef<AwsIotClient | null>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log('[AirBuddi] realtime bridge effect init', {
-      awsIotConfigEnabled: awsIotConfig.enabled,
-      legacyMode: awsIotConfig.legacyMode,
+    console.log('[AirBuddi] bridge init (mTLS mode)', {
       endpoint: awsIotConfig.endpoint,
       deviceId: awsIotConfig.deviceId,
     });
@@ -35,15 +35,10 @@ export function useDashboardRealtimeBridge() {
     clientRef.current = client;
 
     if (!awsIotConfig.enabled) {
-      // eslint-disable-next-line no-console
-      console.log('[AirBuddi] realtime bridge disabled, skipping connect');
       return () => {
         client.disconnect();
       };
     }
-
-    // eslint-disable-next-line no-console
-    console.log('[AirBuddi] realtime bridge calling client.connect()');
 
     dispatch(setConnectionState('connecting'));
 
@@ -58,9 +53,7 @@ export function useDashboardRealtimeBridge() {
         },
         onTelemetry: (topic: string, payload: DashboardTelemetryMessage) => {
           if (active) {
-            // Helpful during AWS IoT wiring/debug
-            // eslint-disable-next-line no-console
-            console.log('[AirBuddi] telemetry', { topic, payload });
+            console.log('[AirBuddi] telemetry received', { topic, payload });
             dispatch(applyTelemetry(payload));
           }
         },
@@ -84,141 +77,51 @@ export function useDashboardRealtimeBridge() {
     };
   }, [dispatch]);
 
+  // Helper to publish commands to the legacy 'esp32/control' topic
+  const sendLegacyCommand = async (commandName: string, value: any) => {
+    try {
+      await clientRef.current?.publishCommand('esp32/control', {
+        deviceId: awsIotConfig.deviceId,
+        command: commandName,
+        value: value,
+        ts: new Date().toISOString(),
+      });
+    } catch (error) {
+      dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
+    }
+  };
+
   return {
     setPowerState: async (nextPower: boolean) => {
       const power: PowerState = nextPower ? 'on' : 'off';
       dispatch(setDevicePower(power));
-
-      const command: DashboardCommandMessage = {
-        type: 'power',
-        value: power,
-        timestamp: new Date().toISOString(),
-      };
-
-      try {
-        await clientRef.current?.publishCommand(
-          awsIotConfig.legacyMode ? 'esp32/control' : awsIotConfig.topics.command,
-          awsIotConfig.legacyMode
-            ? { deviceId: awsIotConfig.deviceId, command: 'power', value: power, ts: new Date().toISOString() }
-            : command,
-        );
-      } catch (error) {
-        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
-      }
+      await sendLegacyCommand('power', power);
     },
 
     setAutoMode: async (nextAutoMode: boolean) => {
       const mode: DeviceMode = nextAutoMode ? 'auto' : 'manual';
       dispatch(setDeviceMode(mode));
-
-      const command: DashboardCommandMessage = {
-        type: 'autoMode',
-        value: mode,
-        timestamp: new Date().toISOString(),
-      };
-
-      try {
-        await clientRef.current?.publishCommand(
-          awsIotConfig.legacyMode ? 'esp32/control' : awsIotConfig.topics.command,
-          awsIotConfig.legacyMode
-            ? { deviceId: awsIotConfig.deviceId, command: 'autoMode', value: mode, ts: new Date().toISOString() }
-            : command,
-        );
-      } catch (error) {
-        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
-      }
-
+      await sendLegacyCommand('autoMode', mode);
     },
+
     setSleepModeState: async (nextSleepMode: boolean) => {
       dispatch(setSleepMode(nextSleepMode));
-
-      const esp32Command: Esp32CommandEnvelope = {
-        deviceId: awsIotConfig.deviceId,
-        command: 'autoMode',
-        value: nextSleepMode ? 'sleep' : 'off',
-        ts: new Date().toISOString(),
-      };
-
-      try {
-        await clientRef.current?.publishCommand(
-          awsIotConfig.legacyMode ? 'esp32/control' : awsIotConfig.topics.command,
-          awsIotConfig.legacyMode
-            ? {
-                deviceId: awsIotConfig.deviceId,
-                command: 'autoMode',
-                value: nextSleepMode ? 'sleep' : 'off',
-                ts: new Date().toISOString(),
-              }
-            : esp32Command,
-        );
-      } catch (error: unknown) {
-        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
-      }
-
+      await sendLegacyCommand('autoMode', nextSleepMode ? 'sleep' : 'off');
     },
+
     setUvcModeState: async (nextUvc: boolean) => {
-
       dispatch(setUvcState(nextUvc));
-
-      const esp32Command: Esp32CommandEnvelope = {
-        deviceId: awsIotConfig.deviceId,
-        command: 'autoMode',
-        value: nextUvc ? 'uvc_on' : 'uvc_off',
-        ts: new Date().toISOString(),
-      };
-
-      try {
-        await clientRef.current?.publishCommand(
-          awsIotConfig.legacyMode ? 'esp32/control' : awsIotConfig.topics.command,
-          awsIotConfig.legacyMode
-            ? { deviceId: awsIotConfig.deviceId, command: 'autoMode', value: nextUvc ? 'uvc_on' : 'uvc_off', ts: new Date().toISOString() }
-            : esp32Command,
-        );
-      } catch (error: unknown) {
-        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
-      }
+      await sendLegacyCommand('autoMode', nextUvc ? 'uvc_on' : 'uvc_off');
     },
+
     setFanSpeedState: async (speed: '1' | '2' | '3' | 'turbo') => {
-
       dispatch(setFanSpeed(speed));
-
-      const esp32Command: Esp32CommandEnvelope = {
-        deviceId: awsIotConfig.deviceId,
-        command: 'fanSpeed',
-        value: speed,
-        ts: new Date().toISOString(),
-      };
-
-      try {
-        await clientRef.current?.publishCommand(
-          awsIotConfig.legacyMode ? 'esp32/control' : awsIotConfig.topics.command,
-          awsIotConfig.legacyMode
-            ? { deviceId: awsIotConfig.deviceId, command: 'fanSpeed', value: speed, ts: new Date().toISOString() }
-            : esp32Command,
-        );
-      } catch (error: unknown) {
-        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
-      }
+      await sendLegacyCommand('fanSpeed', speed);
     },
+
     cycleFanSpeed: async () => {
       dispatch(cycleLocalFanSpeed(undefined));
-      const esp32Command: Esp32CommandEnvelope = {
-        deviceId: awsIotConfig.deviceId,
-        command: 'fanSpeed',
-        value: 'cycle',
-        ts: new Date().toISOString(),
-      };
-
-      try {
-        await clientRef.current?.publishCommand(
-          awsIotConfig.legacyMode ? 'esp32/control' : awsIotConfig.topics.command,
-          awsIotConfig.legacyMode
-            ? { deviceId: awsIotConfig.deviceId, command: 'fanSpeed', value: 'cycle', ts: new Date().toISOString() }
-            : esp32Command,
-        );
-      } catch (error: unknown) {
-        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
-      }
+      await sendLegacyCommand('fanSpeed', 'cycle');
     },
   };
 }
