@@ -7,55 +7,34 @@ import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
 type DashboardHeaderProps = {
   title: string;
   subtitle: string;
-  notificationCount: number;
+  onProfilePress: () => void;
 };
 
-function DashboardHeaderComponent({ title, subtitle, notificationCount }: DashboardHeaderProps) {
-  const count = Math.max(0, notificationCount);
-
+function DashboardHeaderComponent({ title, subtitle, onProfilePress }: DashboardHeaderProps) {
   return (
     <View style={styles.wrapper}>
-      {/* Top Status Bar like row */}
       <View style={styles.topActionRow}>
-        <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-          <MaterialCommunityIcons
-            name="menu"
-            size={24}
-            color={dashboardTheme.colors.textPrimary}
-          />
-        </TouchableOpacity>
-
-        <View style={styles.rightGroup}>
-          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-            <MaterialCommunityIcons
-              name="bell-outline"
-              size={22}
-              color={dashboardTheme.colors.textPrimary}
-            />
-            {count > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText} numberOfLines={1}>
-                  {count > 99 ? '99+' : count}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.profileBtn} activeOpacity={0.7}>
-            <View style={styles.avatarPlaceholder}>
-              <MaterialCommunityIcons name="account" size={20} color={dashboardTheme.colors.textMuted} />
-            </View>
-          </TouchableOpacity>
+        <View style={styles.brandRow}>
+          <View style={styles.brandMark}>
+            <MaterialCommunityIcons name="air-filter" size={20} color={dashboardTheme.colors.primary} />
+          </View>
+          <Text style={styles.brandText}>AIRBUDDI</Text>
         </View>
+
+        <TouchableOpacity
+          accessibilityLabel="Open profile"
+          onPress={onProfilePress}
+          style={styles.profileBtn}
+          activeOpacity={0.75}
+        >
+          <View style={styles.avatarPlaceholder}>
+            <Text style={styles.avatarText}>AB</Text>
+          </View>
+        </TouchableOpacity>
       </View>
 
-      {/* Hero Welcome Section */}
       <View style={styles.heroSection}>
-        <View style={styles.heroBadge}>
-          <MaterialCommunityIcons name="sparkles" size={14} color={dashboardTheme.colors.primary} />
-          <Text style={styles.heroBadgeText}>Live • 24/7 protection</Text>
-        </View>
-        <Text style={styles.welcomeText}>Hello, User</Text>
+        <Text style={styles.welcomeText}>Your space</Text>
         <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
             {title}
@@ -82,28 +61,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   heroSection: {
     gap: 6,
     paddingHorizontal: 4,
     paddingBottom: 6,
-  },
-  heroBadge: {
-    flexDirection: 'row',
-    alignSelf: 'flex-start',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: dashboardTheme.colors.primarySoft,
-  },
-  heroBadgeText: {
-    color: dashboardTheme.colors.primary,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.4,
   },
   welcomeText: {
     fontSize: 14,
@@ -134,51 +97,43 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: dashboardTheme.colors.textMuted,
   },
-  rightGroup: {
+  brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 8,
   },
-  iconBtn: {
-    width: 44,
-    height: 44,
+  brandMark: {
+    width: 36,
+    height: 36,
     borderRadius: 12,
-    backgroundColor: dashboardTheme.colors.surface,
+    backgroundColor: dashboardTheme.colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
-    ...dashboardTheme.shadows.soft,
+  },
+  brandText: {
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 1.6,
   },
   profileBtn: {
-    marginLeft: 4,
+    padding: 2,
   },
   avatarPlaceholder: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: dashboardTheme.colors.surfaceSecondary,
+    backgroundColor: dashboardTheme.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: dashboardTheme.colors.surface,
+    borderColor: dashboardTheme.colors.surfaceElevated,
     ...dashboardTheme.shadows.soft,
   },
-  badge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: dashboardTheme.colors.danger,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-    borderWidth: 1.5,
-    borderColor: dashboardTheme.colors.surface,
-  },
-  badgeText: {
-    color: dashboardTheme.colors.lightText,
-    fontSize: 8,
+  avatarText: {
+    color: dashboardTheme.colors.dark,
+    fontSize: 12,
     fontWeight: '900',
+    letterSpacing: 0.5,
   },
 });

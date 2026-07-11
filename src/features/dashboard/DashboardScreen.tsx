@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Modal,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -50,6 +51,8 @@ export function DashboardScreen() {
   } = useDashboardRealtimeBridge();
 
   const [activeTab, setActiveTab] = useState<TabId>('fan');
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [dailyGoalEnabled, setDailyGoalEnabled] = useState(true);
   const device = dashboard.device;
   const sensors = dashboard.sensors ?? [];
   const contentOpacity = useSharedValue(1);
@@ -110,7 +113,7 @@ export function DashboardScreen() {
       <DashboardHeader
         title={deviceTitle}
         subtitle="Connected • Optimal Performance"
-        notificationCount={dashboard.connectedDeviceCount}
+        onProfilePress={() => setIsProfileOpen(true)}
       />
 
       <ScrollView
@@ -133,6 +136,26 @@ export function DashboardScreen() {
               onToggleUvc={handleToggleUvc}
               onSelectFanSpeed={handleSelectFanSpeed}
             />
+            <View style={styles.tabPad}>
+              <View style={styles.goalCard}>
+                <View style={styles.goalIcon}>
+                  <MaterialCommunityIcons name="leaf-circle-outline" size={24} color={dashboardTheme.colors.primary} />
+                </View>
+                <View style={styles.goalCopy}>
+                  <Text style={styles.goalTitle}>Clean-air goal</Text>
+                  <Text style={styles.goalSubtitle}>
+                    {dailyGoalEnabled ? 'Tracking your healthy-air time today.' : 'Turn this on for gentle daily insights.'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  accessibilityLabel="Toggle clean-air goal"
+                  onPress={() => setDailyGoalEnabled(value => !value)}
+                  style={[styles.goalToggle, dailyGoalEnabled && styles.goalToggleOn]}
+                >
+                  <View style={[styles.goalToggleThumb, dailyGoalEnabled && styles.goalToggleThumbOn]} />
+                </TouchableOpacity>
+              </View>
+            </View>
           </Animated.View>
         )}
 
@@ -192,6 +215,47 @@ export function DashboardScreen() {
 
         <View style={styles.bottomSpace} />
       </ScrollView>
+
+      <Modal
+        animationType="slide"
+        transparent
+        visible={isProfileOpen}
+        onRequestClose={() => setIsProfileOpen(false)}
+      >
+        <View style={styles.profileBackdrop}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setIsProfileOpen(false)}
+          />
+          <View style={styles.profileSheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.profileIdentity}>
+              <View style={styles.profileAvatar}><Text style={styles.profileAvatarText}>AB</Text></View>
+              <View>
+                <Text style={styles.profileName}>AirBuddi member</Text>
+                <Text style={styles.profileEmail}>Your home, healthier</Text>
+              </View>
+            </View>
+            <Text style={styles.sheetLabel}>ACCOUNT</Text>
+            <TouchableOpacity style={styles.profileAction} onPress={() => { setIsProfileOpen(false); setActiveTab('more'); }}>
+              <MaterialCommunityIcons name="air-filter" size={21} color={dashboardTheme.colors.primary} />
+              <Text style={styles.profileActionText}>My devices</Text>
+              <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.profileAction} onPress={() => { setIsProfileOpen(false); setActiveTab('airquality'); }}>
+              <MaterialCommunityIcons name="chart-line" size={21} color={dashboardTheme.colors.accent} />
+              <Text style={styles.profileActionText}>Air quality history</Text>
+              <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.profileAction} onPress={() => setIsProfileOpen(false)}>
+              <MaterialCommunityIcons name="cog-outline" size={21} color={dashboardTheme.colors.textSecondary} />
+              <Text style={styles.profileActionText}>Settings</Text>
+              <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* ── Modern Bottom Navigation ─────────────────────────── */}
       <View style={styles.navBarWrapper}>
@@ -275,6 +339,38 @@ const styles = StyleSheet.create({
   bottomSpace: {
     height: 40,
   },
+  goalCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: dashboardTheme.colors.surface,
+    borderRadius: dashboardTheme.radii.md,
+    padding: 16,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+  },
+  goalIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  goalCopy: { flex: 1, paddingRight: 10 },
+  goalTitle: { color: dashboardTheme.colors.textPrimary, fontSize: 15, fontWeight: '800' },
+  goalSubtitle: { color: dashboardTheme.colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 3 },
+  goalToggle: {
+    width: 46,
+    height: 28,
+    borderRadius: 14,
+    padding: 3,
+    backgroundColor: dashboardTheme.colors.surfaceSecondary,
+  },
+  goalToggleOn: { backgroundColor: dashboardTheme.colors.primary },
+  goalToggleThumb: { width: 22, height: 22, borderRadius: 11, backgroundColor: dashboardTheme.colors.textMuted },
+  goalToggleThumbOn: { alignSelf: 'flex-end', backgroundColor: dashboardTheme.colors.dark },
 
   // Placeholder card (Light tab)
   placeholderCard: {
@@ -375,4 +471,21 @@ const styles = StyleSheet.create({
     color: dashboardTheme.colors.primary,
     fontWeight: '700',
   },
+  profileBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(2, 6, 23, 0.62)' },
+  profileSheet: {
+    backgroundColor: dashboardTheme.colors.surfaceElevated,
+    borderTopLeftRadius: dashboardTheme.radii.xl,
+    borderTopRightRadius: dashboardTheme.radii.xl,
+    padding: 20,
+    paddingBottom: 44,
+  },
+  sheetHandle: { alignSelf: 'center', width: 38, height: 4, borderRadius: 2, backgroundColor: dashboardTheme.colors.textMuted, opacity: 0.45, marginBottom: 22 },
+  profileIdentity: { flexDirection: 'row', alignItems: 'center', gap: 13, marginBottom: 28 },
+  profileAvatar: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: dashboardTheme.colors.primary },
+  profileAvatarText: { color: dashboardTheme.colors.dark, fontSize: 16, fontWeight: '900' },
+  profileName: { color: dashboardTheme.colors.textPrimary, fontSize: 18, fontWeight: '800' },
+  profileEmail: { color: dashboardTheme.colors.textMuted, fontSize: 13, marginTop: 3 },
+  sheetLabel: { color: dashboardTheme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 8 },
+  profileAction: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
+  profileActionText: { flex: 1, color: dashboardTheme.colors.textPrimary, fontSize: 16, fontWeight: '600' },
 });
