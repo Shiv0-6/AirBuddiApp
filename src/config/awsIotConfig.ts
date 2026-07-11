@@ -48,6 +48,13 @@ export function validateAwsIotConfig() {
     };
   }
 
+  if (!awsIotConfig.deviceId?.trim() || !awsIotConfig.clientId?.trim()) {
+    return {
+      valid: false,
+      reason: 'AWS IoT deviceId and clientId must be configured before live mode can start.',
+    };
+  }
+
   if (!awsIotConfig.region || !awsIotConfig.endpoint.includes(`.${awsIotConfig.region}.`)) {
     return {
       valid: false,

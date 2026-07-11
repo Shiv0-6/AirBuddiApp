@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { awsIotConfig } from '../../config/awsIotConfig';
+import { awsIotConfig, validateAwsIotConfig } from '../../config/awsIotConfig';
 import { useAppDispatch } from '../../store/hooks';
 import { AwsIotClient } from '../../services/awsIot/awsIotClient';
 import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
@@ -35,6 +35,15 @@ export function useDashboardRealtimeBridge() {
     clientRef.current = client;
 
     if (!awsIotConfig.enabled) {
+      return () => {
+        client.disconnect();
+      };
+    }
+
+    const configCheck = validateAwsIotConfig();
+    if (!configCheck.valid) {
+      dispatch(setConnectionState('offline'));
+      dispatch(setErrorMessage(configCheck.reason));
       return () => {
         client.disconnect();
       };

@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
     backgroundColor: dashboardTheme.colors.background,
   },
   bgContainer: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     overflow: 'hidden',
     zIndex: -1,
   },
