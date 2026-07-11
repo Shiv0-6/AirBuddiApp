@@ -18,7 +18,10 @@ jest.mock('react-native-vector-icons/MaterialCommunityIcons', () => {
 	return ({name, ...props}) => React.createElement(Text, props, name);
 });
 jest.mock('react-native-reanimated', () => {
+	const React = require('react');
+	const { View } = require('react-native');
 	const Animated = {
+		View: View,
 		createAnimatedComponent: Component => Component,
 	};
 
@@ -26,7 +29,10 @@ jest.mock('react-native-reanimated', () => {
 		__esModule: true,
 		default: Animated,
 		useSharedValue: initialValue => ({value: initialValue}),
+		useAnimatedStyle: styleFactory => styleFactory(),
 		withTiming: value => value,
+		withRepeat: value => value,
+		Easing: { linear: 'linear' },
 		useAnimatedProps: updater => updater(),
 		createAnimatedComponent: Animated.createAnimatedComponent,
 	};

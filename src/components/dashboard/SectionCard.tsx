@@ -28,10 +28,11 @@ const styles = StyleSheet.create({
     backgroundColor: dashboardTheme.colors.surface,
     borderRadius: dashboardTheme.radii.lg,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: dashboardTheme.colors.border,
+    overflow: 'hidden',
     ...dashboardTheme.shadows.medium,
   },
   tinted: {
-    backgroundColor: dashboardTheme.colors.surfaceSecondary,
+    backgroundColor: dashboardTheme.colors.surfaceElevated,
   },
 });

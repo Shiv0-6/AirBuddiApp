@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { dashboardTheme } from './dashboardTheme';
 import { connectionLabels } from './dashboardMockData';
@@ -51,6 +52,20 @@ export function DashboardScreen() {
   const [activeTab, setActiveTab] = useState<TabId>('fan');
   const device = dashboard.device;
   const sensors = dashboard.sensors ?? [];
+  const contentOpacity = useSharedValue(1);
+  const contentTranslateY = useSharedValue(0);
+
+  useEffect(() => {
+    contentOpacity.value = 0;
+    contentTranslateY.value = 10;
+    contentOpacity.value = withTiming(1, { duration: 220 });
+    contentTranslateY.value = withTiming(0, { duration: 220 });
+  }, [activeTab, contentOpacity, contentTranslateY]);
+
+  const contentStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+    transform: [{ translateY: contentTranslateY.value }],
+  }));
 
   const connectionLabel = useMemo(
     () => connectionLabels[dashboard.connection],
@@ -105,66 +120,74 @@ export function DashboardScreen() {
       >
         {/* ── Fan Tab (main purifier control) ─────────────────── */}
         {activeTab === 'fan' && (
-          <QuickControls
-            isPoweredOn={device?.power === 'on'}
-            isAutoMode={device?.mode === 'auto'}
-            isSleepMode={device?.sleepMode ?? false}
-            isUvc={device?.uvc ?? true}
-            fanSpeed={device?.fanSpeed}
-            onTogglePower={handleTogglePower}
-            onToggleAutoMode={handleToggleAutoMode}
-            onToggleSleepMode={handleToggleSleepMode}
-            onToggleUvc={handleToggleUvc}
-            onSelectFanSpeed={handleSelectFanSpeed}
-          />
+          <Animated.View style={[styles.tabContent, contentStyle]}>
+            <QuickControls
+              isPoweredOn={device?.power === 'on'}
+              isAutoMode={device?.mode === 'auto'}
+              isSleepMode={device?.sleepMode ?? false}
+              isUvc={device?.uvc ?? true}
+              fanSpeed={device?.fanSpeed}
+              onTogglePower={handleTogglePower}
+              onToggleAutoMode={handleToggleAutoMode}
+              onToggleSleepMode={handleToggleSleepMode}
+              onToggleUvc={handleToggleUvc}
+              onSelectFanSpeed={handleSelectFanSpeed}
+            />
+          </Animated.View>
         )}
 
         {/* ── Air Quality Tab ─────────────────────────────────── */}
         {activeTab === 'airquality' && (
-          <View style={styles.tabPad}>
-            <AirQualityCard aqi={dashboard.aqi} />
-            <View style={styles.gap}>
-              <SensorGrid sensors={sensors} />
+          <Animated.View style={[styles.tabContent, contentStyle]}>
+            <View style={styles.tabPad}>
+              <AirQualityCard aqi={dashboard.aqi} />
+              <View style={styles.gap}>
+                <SensorGrid sensors={sensors} />
+              </View>
             </View>
-          </View>
+          </Animated.View>
         )}
 
         {/* ── Light Tab ───────────────────────────────────────── */}
         {activeTab === 'light' && (
-          <View style={styles.tabPad}>
-            <View style={styles.placeholderCard}>
-              <View style={styles.placeholderIconWrap}>
-                <MaterialCommunityIcons
-                  name="lightbulb-variant"
-                  size={48}
-                  color={dashboardTheme.colors.primary}
-                />
+          <Animated.View style={[styles.tabContent, contentStyle]}>
+            <View style={styles.tabPad}>
+              <View style={styles.placeholderCard}>
+                <View style={styles.placeholderIconWrap}>
+                  <MaterialCommunityIcons
+                    name="lightbulb-variant"
+                    size={48}
+                    color={dashboardTheme.colors.primary}
+                  />
+                </View>
+                <Text style={styles.placeholderTitle}>Ambience Control</Text>
+                <Text style={styles.placeholderSub}>
+                  Customize your air purifier's LED ring colors and brightness to match your mood.
+                </Text>
+                <TouchableOpacity style={styles.comingSoonBadge}>
+                  <Text style={styles.comingSoonText}>COMING SOON</Text>
+                </TouchableOpacity>
               </View>
-              <Text style={styles.placeholderTitle}>Ambience Control</Text>
-              <Text style={styles.placeholderSub}>
-                Customize your air purifier's LED ring colors and brightness to match your mood.
-              </Text>
-              <TouchableOpacity style={styles.comingSoonBadge}>
-                <Text style={styles.comingSoonText}>COMING SOON</Text>
-              </TouchableOpacity>
             </View>
-          </View>
+          </Animated.View>
         )}
 
         {/* ── More Tab ────────────────────────────────────────── */}
         {activeTab === 'more' && (
-          <View style={styles.tabPad}>
-            <DeviceCard device={device} />
-            <View style={styles.gap}>
-              <FilterHealthCard
-                health={dashboard.filterHealth}
-                remainingLifeDays={dashboard.remainingLifeDays}
-              />
+          <Animated.View style={[styles.tabContent, contentStyle]}>
+            <View style={styles.tabPad}>
+              <DeviceCard device={device} />
+              <View style={styles.gap}>
+                <FilterHealthCard
+                  health={dashboard.filterHealth}
+                  remainingLifeDays={dashboard.remainingLifeDays}
+                />
+              </View>
+              <View style={styles.gap}>
+                <ConnectionPill label={connectionLabel} status={dashboard.connection} />
+              </View>
             </View>
-            <View style={styles.gap}>
-              <ConnectionPill label={connectionLabel} status={dashboard.connection} />
-            </View>
-          </View>
+          </Animated.View>
         )}
 
         <View style={styles.bottomSpace} />
@@ -179,7 +202,7 @@ export function DashboardScreen() {
               <TouchableOpacity
                 key={tab.id}
                 activeOpacity={0.7}
-                style={styles.navItem}
+                style={[styles.navItem, isActive && styles.navItemActive]}
                 onPress={() => setActiveTab(tab.id)}
               >
                 <View style={[styles.navIconContainer, isActive && styles.navIconContainerActive]}>
@@ -239,6 +262,9 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingTop: 8,
     paddingBottom: 100, // Extra space for floating nav
+  },
+  tabContent: {
+    width: '100%',
   },
   tabPad: {
     paddingHorizontal: 20,
@@ -315,6 +341,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  navItemActive: {
+    backgroundColor: dashboardTheme.colors.surfaceSecondary,
   },
   navIconContainer: {
     width: 44,

@@ -51,6 +51,10 @@ function DashboardHeaderComponent({ title, subtitle, notificationCount }: Dashbo
 
       {/* Hero Welcome Section */}
       <View style={styles.heroSection}>
+        <View style={styles.heroBadge}>
+          <MaterialCommunityIcons name="sparkles" size={14} color={dashboardTheme.colors.primary} />
+          <Text style={styles.heroBadgeText}>Live • 24/7 protection</Text>
+        </View>
         <Text style={styles.welcomeText}>Hello, User</Text>
         <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
@@ -81,7 +85,25 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   heroSection: {
-    gap: 4,
+    gap: 6,
+    paddingHorizontal: 4,
+    paddingBottom: 6,
+  },
+  heroBadge: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+  },
+  heroBadgeText: {
+    color: dashboardTheme.colors.primary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.4,
   },
   welcomeText: {
     fontSize: 14,

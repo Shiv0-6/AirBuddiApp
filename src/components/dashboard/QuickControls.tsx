@@ -47,6 +47,39 @@ const SPEED_REVERSE_MAP: Record<string, string> = {
   turbo: '4',
 };
 
+const PRESETS = [
+  {
+    id: 'fresh',
+    label: 'Fresh Air',
+    hint: 'Auto + Turbo',
+    icon: 'weather-partly-cloudy',
+    auto: true,
+    sleep: false,
+    uvc: true,
+    speed: 'turbo' as const,
+  },
+  {
+    id: 'sleep',
+    label: 'Quiet Sleep',
+    hint: 'Low noise',
+    icon: 'weather-night',
+    auto: false,
+    sleep: true,
+    uvc: false,
+    speed: '1' as const,
+  },
+  {
+    id: 'deep',
+    label: 'Deep Clean',
+    hint: 'Maximum filtration',
+    icon: 'shield-check',
+    auto: true,
+    sleep: false,
+    uvc: true,
+    speed: '3' as const,
+  },
+] as const;
+
 // ─── Fan icon rotation ────────────────────────────────────────────────────────
 
 const FAN_DURATIONS: Record<string, number> = {
@@ -112,6 +145,15 @@ function QuickControlsComponent({
     if (mapped) onSelectFanSpeed(mapped);
   }, [onSelectFanSpeed]);
 
+  const handlePresetPress = useCallback((preset: (typeof PRESETS)[number]) => {
+    onToggleAutoMode(preset.auto);
+    onToggleSleepMode(preset.sleep);
+    onToggleUvc(preset.uvc);
+    onSelectFanSpeed(preset.speed);
+  }, [onSelectFanSpeed, onToggleAutoMode, onToggleSleepMode, onToggleUvc]);
+
+  const activePresetId = isSleepMode ? 'sleep' : isAutoMode && fanSpeed === 'turbo' ? 'fresh' : isAutoMode && fanSpeed === '3' ? 'deep' : null;
+
   // Fan speed label text
   const fanSpeedText = isAutoMode
     ? 'Auto mode'
@@ -141,6 +183,39 @@ function QuickControlsComponent({
         <Text style={[styles.statusText, isPoweredOn && styles.statusTextOn]}>
           Device is {isPoweredOn ? 'Active' : 'Standby'}
         </Text>
+      </View>
+
+      {/* ── Focus presets ───────────────────────────────── */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Focus presets</Text>
+          <Text style={styles.sectionHint}>Tap a preset to instantly refine your space.</Text>
+        </View>
+        <View style={styles.presetGrid}>
+          {PRESETS.map(preset => {
+            const isActive = preset.id === activePresetId;
+            return (
+              <TouchableOpacity
+                key={preset.id}
+                activeOpacity={0.85}
+                onPress={() => handlePresetPress(preset)}
+                style={[styles.presetCard, isActive && styles.presetCardActive]}
+              >
+                <View style={[styles.presetIconWrap, isActive && styles.presetIconWrapActive]}>
+                  <MaterialCommunityIcons
+                    name={preset.icon}
+                    size={18}
+                    color={isActive ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted}
+                  />
+                </View>
+                <View style={styles.presetTextWrap}>
+                  <Text style={[styles.presetLabel, isActive && styles.presetLabelActive]}>{preset.label}</Text>
+                  <Text style={styles.presetHintText}>{preset.hint}</Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
 
       {/* ── Mode Selection ────────────────────────────────── */}
@@ -310,12 +385,65 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 32,
   },
+  sectionHeader: {
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '800',
     color: dashboardTheme.colors.textPrimary,
-    marginBottom: 16,
     letterSpacing: -0.5,
+  },
+  sectionHint: {
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: '600',
+    color: dashboardTheme.colors.textMuted,
+  },
+  presetGrid: {
+    gap: 10,
+  },
+  presetCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 14,
+    borderRadius: 18,
+    backgroundColor: dashboardTheme.colors.surface,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    ...dashboardTheme.shadows.soft,
+  },
+  presetCardActive: {
+    borderColor: dashboardTheme.colors.primary,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+  },
+  presetIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: dashboardTheme.colors.surfaceElevated,
+  },
+  presetIconWrapActive: {
+    backgroundColor: dashboardTheme.colors.surface,
+  },
+  presetTextWrap: {
+    flex: 1,
+  },
+  presetLabel: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: dashboardTheme.colors.textPrimary,
+  },
+  presetLabelActive: {
+    color: dashboardTheme.colors.primary,
+  },
+  presetHintText: {
+    marginTop: 2,
+    fontSize: 12,
+    color: dashboardTheme.colors.textSecondary,
   },
 
   // Modes row
