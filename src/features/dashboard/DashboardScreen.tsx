@@ -33,7 +33,7 @@ type TabId = 'airquality' | 'fan' | 'light' | 'more';
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'airquality', label: 'Air quality', icon: 'lightning-bolt' },
-  { id: 'fan',        label: 'Fan',         icon: 'fan'            },
+  { id: 'fan',        label: 'Fan',         icon: 'weather-windy'  },
   { id: 'light',      label: 'Light',       icon: 'lightbulb-outline' },
   { id: 'more',       label: 'More',        icon: 'dots-horizontal' },
 ];
