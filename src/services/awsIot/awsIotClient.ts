@@ -6,6 +6,8 @@ import type {
   Esp32SensorKey,
   Esp32SensorReading,
 } from './esp32TelemetryContract';
+import { fetchLatestTelemetry, postDeviceCommand } from './awsTelemetryApiClient';
+import { telemetryApiConfig } from '../../config/awsIotConfig';
 
 type FlatEsp32Telemetry = DashboardTelemetryMessage & {
   device_id?: string;
@@ -57,6 +59,38 @@ export interface AwsIotClientHandlers {
 
 export class AwsIotClient {
   private client: RawMqttClient | null = null;
+  private pollTimer: number | null = null;
+
+  /**
+   * Fetches initial state from the API Gateway if configured.
+   */
+  async fetchInitialState(config: AwsIotConnectionConfig): Promise<DashboardTelemetryMessage | null> {
+    if (!config.deviceApiUrl) return null;
+
+    try {
+      console.log('[AirBuddi] Fetching initial state from API Gateway...');
+      const response = await fetch(config.deviceApiUrl);
+      if (!response.ok) {
+        throw new Error(`API Gateway returned ${response.status}`);
+      }
+
+      const data = await response.json();
+      const devices = Array.isArray(data) ? data : data.devices;
+
+      if (Array.isArray(devices)) {
+        // Find our specific device in the list
+        const myDevice = devices.find((d: any) => d.id === config.deviceId);
+        if (myDevice) {
+          console.log('[AirBuddi] Initial state found for device:', config.deviceId);
+          return parseJsonPayload(JSON.stringify(myDevice), config.deviceId);
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('[AirBuddi] Failed to fetch initial state:', error);
+      return null;
+    }
+  }
 
   async connect(config: AwsIotConnectionConfig, handlers: AwsIotClientHandlers) {
     if (!config.enabled || !config.endpoint) {
@@ -65,108 +99,64 @@ export class AwsIotClient {
 
     const mqtt = require('mqtt/dist/mqtt');
 
-    // ─────────────────────────────────────────────────────────────
-    // Certificate-based Mutual TLS (mTLS) Connection (Port 8883)
-    // matches behavior from old_app/airbuddi
-    // ─────────────────────────────────────────────────────────────
-    const { MY_IOT_MTLS_CREDENTIALS } = require('../../config/awsIotCredentials');
-
-    const { rootCA, deviceCert, privateKey } = MY_IOT_MTLS_CREDENTIALS as {
-      rootCA?: string;
-      deviceCert?: string;
-      privateKey?: string;
-    };
-
-    if (!rootCA || !deviceCert || !privateKey) {
-      handlers.onConnectionChange('offline');
-      handlers.onError(
-        new Error(
-          'MQTT mTLS credentials are missing. Please fill in rootCA, deviceCert, and privateKey in src/config/awsIotCredentials.ts.',
-        ),
-      );
-      return;
-    }
-
-    const connectionClientId = config.clientId;
-
-    console.log('[AirBuddi] Connecting via MQTT mTLS', {
-      host: config.endpoint,
-      port: 8883,
-      clientId: connectionClientId,
-    });
-
-    try {
-      this.client = mqtt.connect({
-        host: config.endpoint,
-        port: 8883,
-        protocol: 'mqtts',
-        clientId: connectionClientId,
-        clean: true,
-        keepalive: 60,
-        reconnectPeriod: 5000,
-        connectTimeout: 10000,
-        resubscribe: true,
-        rejectUnauthorized: true,
-        ca: rootCA,
-        cert: deviceCert,
-        key: privateKey,
-      }) as RawMqttClient;
-    } catch (e) {
-      handlers.onError(e instanceof Error ? e : new Error(String(e)));
-      return;
-    }
-
-    const topicsToSubscribe = [
-      config.topics.telemetry,
-      config.topics.status,
-      config.topics.connection,
-      'AQMG_5', // Legacy sensor topic from old_app
-    ];
-
-    this.client.on('connect', () => {
-      console.log('[AirBuddi] MQTT connected via mTLS');
-      handlers.onConnectionChange('connected');
-
-      this.client?.subscribe(topicsToSubscribe, { qos: 0 }, error => {
-        if (error) {
-          console.error('[AirBuddi] Subscribe error', error);
-          handlers.onError(error);
-          return;
-        }
-        console.log('[AirBuddi] Subscribed to:', topicsToSubscribe);
-      });
-    });
-
-    this.client.on('reconnect', () => {
+    // Simplified backend integration: poll the telemetry API for updates
+    // instead of using certificate-based MQTT mTLS from the mobile app.
+    if (telemetryApiConfig.baseUrl && telemetryApiConfig.baseUrl.includes('http')) {
       handlers.onConnectionChange('connecting');
-    });
 
-    this.client.on('offline', () => {
-      handlers.onConnectionChange('offline');
-    });
-
-    this.client.on('close', () => {
-      handlers.onConnectionChange('offline');
-    });
-
-    this.client.on('error', (error: unknown) => {
-      console.error('[AirBuddi] MQTT Error:', error);
-      handlers.onError(error instanceof Error ? error : new Error(String(error)));
-    });
-
-    this.client.on('message', (topic: string, payload: any) => {
-      const rawMessage = payload.toString();
-      const parsed = parseJsonPayload(rawMessage, config.deviceId);
-
-      if (parsed) {
-        handlers.onTelemetry(topic, parsed);
+      // One-off immediate fetch
+      try {
+        const initial = await fetchLatestTelemetry(config.deviceId);
+        if (initial) {
+          handlers.onTelemetry(config.topics.telemetry, initial);
+        }
+        handlers.onConnectionChange('connected');
+      } catch (e) {
+        handlers.onConnectionChange('offline');
+        handlers.onError(e instanceof Error ? e : new Error(String(e)));
       }
-    });
+
+      // Start polling loop
+      const intervalMs = (telemetryApiConfig.pollIntervalMs || 5000) as number;
+      this.pollTimer = setInterval(async () => {
+        try {
+          const latest = await fetchLatestTelemetry(config.deviceId);
+          if (latest) {
+            handlers.onTelemetry(config.topics.telemetry, latest);
+          }
+        } catch (e) {
+          handlers.onError(e instanceof Error ? e : new Error(String(e)));
+        }
+      }, intervalMs) as unknown as number;
+
+      return;
+    }
+
+    handlers.onConnectionChange('offline');
   }
 
   publishCommand(topic: string, payload: unknown) {
     if (!this.client) {
-      return Promise.resolve();
+      // Fallback: send command through telemetry API so backend can publish to IoT Core
+      try {
+        // Attempt to extract deviceId from payload or rely on config-level knowledge
+        const maybe = payload as any;
+        const deviceId = maybe?.deviceId || maybe?.device_id;
+        if (!deviceId) {
+          return Promise.reject(new Error('No MQTT client and payload lacks deviceId'));
+        }
+
+        // Legacy app publishes to topic 'esp32/control' with body { deviceId, command, value }
+        if (topic === 'esp32/control' || topic.endsWith('/command') || topic.endsWith('/commands')) {
+          const commandName = maybe?.command || 'command';
+          const value = maybe?.value ?? maybe;
+          return postDeviceCommand(deviceId, commandName, value);
+        }
+
+        return postDeviceCommand(deviceId, topic, payload);
+      } catch (e) {
+        return Promise.reject(e instanceof Error ? e : new Error(String(e)));
+      }
     }
 
     return new Promise<void>((resolve, reject) => {
@@ -181,12 +171,29 @@ export class AwsIotClient {
   }
 
   disconnect() {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer as unknown as number);
+      this.pollTimer = null;
+    }
+
     this.client?.end(true);
     this.client = null;
   }
 }
 
-function parseJsonPayload(payload: string, defaultDeviceId: string): DashboardTelemetryMessage | null {
+function payloadToString(payload: unknown) {
+  if (typeof payload === 'string') {
+    return payload;
+  }
+
+  if (payload && typeof (payload as { toString?: () => string }).toString === 'function') {
+    return (payload as { toString: () => string }).toString();
+  }
+
+  return String(payload);
+}
+
+export function parseJsonPayload(payload: string, defaultDeviceId: string): DashboardTelemetryMessage | null {
   try {
     const parsed = JSON.parse(payload);
 
@@ -201,7 +208,7 @@ function parseJsonPayload(payload: string, defaultDeviceId: string): DashboardTe
   }
 }
 
-function normalizeTelemetryMessage(message: any, defaultDeviceId: string): DashboardTelemetryMessage {
+export function normalizeTelemetryMessage(message: any, defaultDeviceId: string): DashboardTelemetryMessage {
   if (message.esp32) {
     return message;
   }
@@ -241,30 +248,25 @@ function normalizeEsp32Sensors(telemetry: any): Esp32SensorReading[] {
       .filter((s: any) => typeof s.value === 'number');
   }
 
-  const legacyMap: Record<string, Esp32SensorKey> = {
-    'Temperature': 'temperature',
-    'Humidity': 'humidity',
-    'PM 2.5': 'pm2_5',
-    'PM 10': 'pm10',
-    'C02 Equivalent': 'co2',
-    'CO2 Equivalent': 'co2',
-    'VOC\'s': 'voc',
-  };
+  // The ESP32 legacy publisher sends title-cased keys. Newer firmware uses
+  // lower-case keys. `typeof value === 'number'` deliberately preserves 0.
+  const readings: Array<[Esp32SensorKey, unknown]> = [
+    ['temperature', telemetry.Temperature ?? telemetry.temperature ?? telemetry.temp ?? telemetry.temperature_c],
+    ['humidity', telemetry.Humidity ?? telemetry.humidity ?? telemetry.humidity_percent],
+    ['pm2_5', telemetry['PM 2.5'] ?? telemetry.pm2_5 ?? telemetry.pm25],
+    ['pm10', telemetry['PM 10'] ?? telemetry.pm10],
+    ['co2', telemetry['C02 Equivalent'] ?? telemetry['CO2 Equivalent'] ?? telemetry.CO2 ?? telemetry.Co2 ?? telemetry.co2],
+    ['voc', telemetry["VOC's"] ?? telemetry.VOC ?? telemetry.VOCs ?? telemetry.voc],
+  ];
 
-  const sensors: Esp32SensorReading[] = [];
-  for (const [rawKey, sensorKey] of Object.entries(legacyMap)) {
-    const value = telemetry[rawKey];
-    if (typeof value === 'number') {
-      sensors.push({
-        key: sensorKey,
-        value,
-        unit: defaultSensorUnit(sensorKey),
-        status: 'good',
-      });
-    }
-  }
-
-  return sensors;
+  return readings
+    .filter(([, value]) => typeof value === 'number')
+    .map(([key, value]) => ({
+      key,
+      value: value as number,
+      unit: defaultSensorUnit(key),
+      status: 'good' as const,
+    }));
 }
 
 function defaultSensorUnit(key: Esp32SensorKey) {

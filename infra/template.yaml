@@ -1,0 +1,95 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SAM template for AirBuddi IoT -> Lambda -> DynamoDB -> API
+
+Globals:
+  Function:
+    Timeout: 10
+
+Resources:
+  TelemetryTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: AirBuddiTelemetry
+      AttributeDefinitions:
+        - AttributeName: deviceId
+          AttributeType: S
+        - AttributeName: timestamp
+          AttributeType: S
+      KeySchema:
+        - AttributeName: deviceId
+          KeyType: HASH
+        - AttributeName: timestamp
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  TelemetryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: AirBuddiTelemetryHandler
+      Runtime: nodejs18.x
+      Handler: index.handler
+      InlineCode: |
+        const AWS = require('aws-sdk');
+        const ddb = new AWS.DynamoDB.DocumentClient();
+
+        exports.handler = async (event) => {
+          // If invoked by API Gateway: expect query string ?deviceId=GPS_GPRS
+          const deviceId = event.queryStringParameters && event.queryStringParameters.deviceId;
+          if (!deviceId) {
+            return { statusCode: 400, body: JSON.stringify({ message: 'deviceId query param required' }) };
+          }
+
+          const params = {
+            TableName: process.env.TABLE_NAME,
+            KeyConditionExpression: 'deviceId = :d',
+            ExpressionAttributeValues: { ':d': deviceId },
+            ScanIndexForward: false,
+            Limit: 1,
+          };
+
+          const resp = await ddb.query(params).promise();
+          const item = resp.Items && resp.Items[0];
+          return { statusCode: 200, body: JSON.stringify(item || {}) };
+        };
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+              Resource: !GetAtt TelemetryTable.Arn
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref TelemetryTable
+      Events:
+        TelemetryApi:
+          Type: Api
+          Properties:
+            Path: /telemetry
+            Method: get
+
+  # Allow AWS IoT to invoke the Lambda
+  LambdaInvokePermissionFromIot:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt TelemetryFunction.Arn
+      Action: lambda:InvokeFunction
+      Principal: iot.amazonaws.com
+
+  IotTopicRule:
+    Type: AWS::IoT::TopicRule
+    Properties:
+      RuleName: AirBuddiForwardRule
+      TopicRulePayload:
+        Sql: "SELECT * FROM 'airbuddi/+/telemetry'"
+        Actions:
+          - Lambda:
+              FunctionArn: !GetAtt TelemetryFunction.Arn
+        RuleDisabled: false
+        AwsIotSqlVersion: '2016-03-23'
+
+Outputs:
+  TelemetryApi:
+    Description: 'Base URL for telemetry API (stage will be appended by SAM)'
+    Value: !Sub 'https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/telemetry'

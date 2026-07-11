@@ -21,6 +21,7 @@ export interface AwsIotConnectionConfig {
   clientId: string;
   deviceId: string;
   topics: AwsIotTopics;
+  deviceApiUrl?: string; // API Gateway URL from old app
 }
 
 

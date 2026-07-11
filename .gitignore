@@ -77,3 +77,5 @@ yarn-error.log
 # AWS IoT real credentials — DO NOT COMMIT
 src/config/awsIotCredentials.ts
 
+#old app lib folder
+old_app

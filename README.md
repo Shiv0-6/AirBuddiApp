@@ -138,26 +138,26 @@ The app is now prepared for ESP32 payloads that contain multiple sensor readings
 
 ```json
 {
-	"esp32": {
-		"deviceId": "airbuddi-pure-x",
-		"deviceName": "AirBuddi Pure X",
-		"ts": "2026-07-04T09:30:00Z",
-		"connection": "connected",
-		"power": "on",
-		"mode": "auto",
-		"fanSpeed": "2",
-		"aqi": 46,
-		"filterHealth": 78,
-		"remainingLifeDays": 42,
-		"sensors": [
-			{ "key": "temperature", "value": 24.6, "unit": "°C", "status": "good" },
-			{ "key": "humidity", "value": 52, "unit": "%", "status": "good" },
-			{ "key": "pm2_5", "value": 18, "unit": "µg/m³", "status": "warning" },
-			{ "key": "pm10", "value": 31, "unit": "µg/m³", "status": "good" },
-			{ "key": "co2", "value": 612, "unit": "ppm", "status": "good" },
-			{ "key": "voc", "value": 0.21, "unit": "ppm", "status": "good" }
-		]
-	}
+  "esp32": {
+    "deviceId": "airbuddi-pure-x",
+    "deviceName": "AirBuddi Pure X",
+    "ts": "2026-07-04T09:30:00Z",
+    "connection": "connected",
+    "power": "on",
+    "mode": "auto",
+    "fanSpeed": "2",
+    "aqi": 46,
+    "filterHealth": 78,
+    "remainingLifeDays": 42,
+    "sensors": [
+      { "key": "temperature", "value": 24.6, "unit": "°C", "status": "good" },
+      { "key": "humidity", "value": 52, "unit": "%", "status": "good" },
+      { "key": "pm2_5", "value": 18, "unit": "µg/m³", "status": "warning" },
+      { "key": "pm10", "value": 31, "unit": "µg/m³", "status": "good" },
+      { "key": "co2", "value": 612, "unit": "ppm", "status": "good" },
+      { "key": "voc", "value": 0.21, "unit": "ppm", "status": "good" }
+    ]
+  }
 }
 ```
 
@@ -185,6 +185,13 @@ Use AWS IoT Rules for persistence and downstream APIs:
 
 This keeps the live dashboard responsive while still giving you historical views and server-side features later.
 
+## Architecture & Infra
+
+- Diagram: see [ARCHITECTURE.md](ARCHITECTURE.md) for the system flow (ESP32 → IoT Core → IoT Rule → DynamoDB → Lambda → API → App).
+- Quick infra: `infra/template.yaml` is a SAM template that provisions an IoT Topic Rule, Lambda, DynamoDB table, and API Gateway. See [infra/README.md](infra/README.md) for deploy steps.
+- After deploying the SAM template, copy the `TelemetryApi` output URL into `telemetryApiConfig.baseUrl` in `src/config/awsIotConfig.ts`.
+- Device Thing name: use `GPS_GPRS` on your ESP32 so topics resolve to `airbuddi/GPS_GPRS/telemetry`.
+
 ## Enable AWS IoT Core
 
 Open [src/config/awsIotConfig.ts](src/config/awsIotConfig.ts) and set:
@@ -211,22 +218,22 @@ An `execute-api` hostname will not work for MQTT over WebSockets.
 
 ```ts
 export const awsIotConfig = {
-	enabled: true,
-	endpoint: 'your-endpoint-ats.iot.us-east-1.amazonaws.com',
-	region: 'us-east-1',
-	clientId: 'airbuddi-pure-x',
-	deviceId: 'airbuddi-pure-x',
-	topics: {
-		telemetry: 'airbuddi/airbuddi-pure-x/telemetry',
-		status: 'airbuddi/airbuddi-pure-x/status',
-		command: 'airbuddi/airbuddi-pure-x/command',
-		connection: 'airbuddi/airbuddi-pure-x/connection',
-	},
-	credentialsProvider: async () => ({
-		accessKeyId: 'TEMP_ACCESS_KEY',
-		secretAccessKey: 'TEMP_SECRET_KEY',
-		sessionToken: 'TEMP_SESSION_TOKEN',
-	}),
+  enabled: true,
+  endpoint: 'your-endpoint-ats.iot.us-east-1.amazonaws.com',
+  region: 'us-east-1',
+  clientId: 'airbuddi-pure-x',
+  deviceId: 'airbuddi-pure-x',
+  topics: {
+    telemetry: 'airbuddi/airbuddi-pure-x/telemetry',
+    status: 'airbuddi/airbuddi-pure-x/status',
+    command: 'airbuddi/airbuddi-pure-x/command',
+    connection: 'airbuddi/airbuddi-pure-x/connection',
+  },
+  credentialsProvider: async () => ({
+    accessKeyId: 'TEMP_ACCESS_KEY',
+    secretAccessKey: 'TEMP_SECRET_KEY',
+    sessionToken: 'TEMP_SESSION_TOKEN',
+  }),
 };
 ```
 
@@ -244,37 +251,37 @@ The IAM policy attached to the app credentials needs at least these IoT permissi
 
 ```json
 {
-	"Version": "2012-10-17",
-	"Statement": [
-		{
-			"Effect": "Allow",
-			"Action": ["iot:Connect"],
-			"Resource": "arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:client/airbuddi-mobile-airbuddi-pure-x"
-		},
-		{
-			"Effect": "Allow",
-			"Action": ["iot:Subscribe"],
-			"Resource": [
-				"arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topicfilter/airbuddi/airbuddi-pure-x/telemetry",
-				"arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topicfilter/airbuddi/airbuddi-pure-x/status",
-				"arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topicfilter/airbuddi/airbuddi-pure-x/connection"
-			]
-		},
-		{
-			"Effect": "Allow",
-			"Action": ["iot:Receive"],
-			"Resource": [
-				"arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topic/airbuddi/airbuddi-pure-x/telemetry",
-				"arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topic/airbuddi/airbuddi-pure-x/status",
-				"arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topic/airbuddi/airbuddi-pure-x/connection"
-			]
-		},
-		{
-			"Effect": "Allow",
-			"Action": ["iot:Publish"],
-			"Resource": "arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topic/airbuddi/airbuddi-pure-x/command"
-		}
-	]
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["iot:Connect"],
+      "Resource": "arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:client/airbuddi-mobile-airbuddi-pure-x"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["iot:Subscribe"],
+      "Resource": [
+        "arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topicfilter/airbuddi/airbuddi-pure-x/telemetry",
+        "arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topicfilter/airbuddi/airbuddi-pure-x/status",
+        "arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topicfilter/airbuddi/airbuddi-pure-x/connection"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["iot:Receive"],
+      "Resource": [
+        "arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topic/airbuddi/airbuddi-pure-x/telemetry",
+        "arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topic/airbuddi/airbuddi-pure-x/status",
+        "arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topic/airbuddi/airbuddi-pure-x/connection"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["iot:Publish"],
+      "Resource": "arn:aws:iot:eu-north-1:YOUR_ACCOUNT_ID:topic/airbuddi/airbuddi-pure-x/command"
+    }
+  ]
 }
 ```
 
@@ -284,21 +291,21 @@ The dashboard expects telemetry in JSON form. A good starting payload looks like
 
 ```json
 {
-	"aqi": 46,
-	"connection": "connected",
-	"device": {
-		"name": "AirBuddi Pure X",
-		"status": "Online",
-		"mode": "auto",
-		"power": "on",
-		"lastUpdated": "2026-07-03T09:30:00Z"
-	},
-	"filterHealth": 78,
-	"remainingLifeDays": 42,
-	"sensors": [
-		{ "id": "temp", "value": 24.6, "unit": "°C", "status": "good" },
-		{ "id": "humidity", "value": 52, "unit": "%", "status": "good" }
-	]
+  "aqi": 46,
+  "connection": "connected",
+  "device": {
+    "name": "AirBuddi Pure X",
+    "status": "Online",
+    "mode": "auto",
+    "power": "on",
+    "lastUpdated": "2026-07-03T09:30:00Z"
+  },
+  "filterHealth": 78,
+  "remainingLifeDays": 42,
+  "sensors": [
+    { "id": "temp", "value": 24.6, "unit": "°C", "status": "good" },
+    { "id": "humidity", "value": 52, "unit": "%", "status": "good" }
+  ]
 }
 ```
 
@@ -306,14 +313,14 @@ The app also accepts a simpler ESP32 test payload on `airbuddi/airbuddi-pure-x/t
 
 ```json
 {
-	"deviceId": "airbuddi-pure-x",
-	"aqi": 46,
-	"temperature": 24.6,
-	"humidity": 52,
-	"pm2_5": 18,
-	"pm10": 31,
-	"co2": 612,
-	"voc": 0.21
+  "deviceId": "airbuddi-pure-x",
+  "aqi": 46,
+  "temperature": 24.6,
+  "humidity": 52,
+  "pm2_5": 18,
+  "pm10": 31,
+  "co2": 612,
+  "voc": 0.21
 }
 ```
 

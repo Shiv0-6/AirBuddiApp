@@ -6,17 +6,14 @@
 
 ## What the app expects
 
-The dashboard is already wired to connect over MQTT with device certificates (mTLS) and to read live telemetry from AWS IoT Core.
+The dashboard reads persisted live telemetry through your HTTPS API. The ESP32
+connects to AWS IoT Core using its own mTLS certificate; the mobile app does
+not connect to the ESP32 or use its private key.
 
 By default, the app will:
 
-- connect to AWS IoT Core over port 8883 using mTLS
-- subscribe to:
-  - `AQMG_5` (legacy topic)
-  - `airbuddi/<deviceId>/telemetry`
-  - `airbuddi/<deviceId>/status`
-  - `airbuddi/<deviceId>/connection`
-- publish control commands to `esp32/control`
+- poll `GET /devices/<deviceId>/telemetry` on your API Gateway stage
+- send controls to `POST /devices/<deviceId>/commands`
 
 For the dashboard to display real data, your ESP32 or publisher must send a valid JSON payload on one of those telemetry topics.
 
@@ -87,7 +84,8 @@ Replace `REGION` and `ACCOUNT_ID` with your AWS values.
 4. Attach the policy you created to the certificate.
 5. Activate the certificate.
 
-These files are what the app uses for mTLS authentication.
+These files are used by the ESP32 only. Do not package a device certificate or
+private key in the mobile app.
 
 ---
 
@@ -103,11 +101,39 @@ You will paste this into the app config.
 
 ---
 
-## 5. Fill the app credentials
+## 5. Deploy the mobile telemetry API
 
-Open [src/config/awsIotCredentials.ts](src/config/awsIotCredentials.ts) and update the values in the two sections below:
+The ESP32 can publish directly to AWS IoT Core, but a React Native app must
+not reuse the ESP32 certificate or private key. Keep that certificate on the
+device only.
 
-### 5a. Endpoint, region, and deviceId
+Create this backend path instead:
+
+```txt
+ESP32 → AWS IoT Core → IoT Rule → Lambda/DynamoDB → API Gateway → app
+```
+
+Expose these endpoints from an API Gateway stage (the Lambda can read the
+latest DynamoDB record and publish commands to IoT Core):
+
+```txt
+GET  /devices/{deviceId}/telemetry
+POST /devices/{deviceId}/commands
+```
+
+`GET /devices/airbuddi-pure-x/telemetry` must return the JSON telemetry body
+described below, either directly or wrapped in `telemetry`, `payload`, or
+`data`. Configure the resulting API Gateway HTTPS stage URL in
+`telemetryApiConfig.baseUrl` in `src/config/awsIotConfig.ts`.
+
+## 6. Configure the IoT device
+
+Configure the endpoint, region, and device ID in
+[src/config/awsIotCredentials.ts](src/config/awsIotCredentials.ts). These
+values identify the device and its AWS IoT endpoint; they are not an API
+Gateway URL.
+
+### 6a. Endpoint, region, and deviceId
 
 Set:
 
@@ -115,21 +141,12 @@ Set:
 - `region` to your AWS region, for example `eu-north-1`
 - `deviceId` to your Thing name, for example `airbuddi-pure-x`
 
-### 5b. Certificate contents
-
-Paste the full contents of:
-
-- `rootCA` → the contents of `AmazonRootCA1.pem`
-- `deviceCert` → your device certificate `.pem.crt`
-- `privateKey` → your private key `.pem.key`
-
-Make sure you include the full `BEGIN` and `END` blocks.
-
 ---
 
-## 6. Publish telemetry in the format the dashboard expects
+## 7. Publish telemetry in the format the dashboard expects
 
-Your ESP32 publisher should send telemetry to one of the subscribed topics.
+Your ESP32 publisher should send telemetry to the IoT topic consumed by your
+IoT Rule.
 
 ### Recommended topic
 
@@ -185,7 +202,7 @@ If you want the dashboard cards to populate fully, your payload should include a
 
 ---
 
-## 7. Optional status and connection topics
+## 8. Optional status and connection topics
 
 You can also publish to these extra topics if you want richer status updates:
 
@@ -196,7 +213,7 @@ These are optional, but they help the app reflect connection and device state mo
 
 ---
 
-## 8. Test the live dashboard
+## 9. Test the live dashboard
 
 1. Start the app with `npm run android` or `npm run ios`.
 2. Make sure the dashboard shows a connected state.

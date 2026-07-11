@@ -28,8 +28,50 @@ export const awsIotConfig: AwsIotConnectionConfig = {
   clientId: `airbuddi-mobile-${MY_DEVICE_CONFIG.deviceId}`,
   deviceId: MY_DEVICE_CONFIG.deviceId,
 
+  // API Gateway URL from old app for fetching device list/initial state
+  deviceApiUrl: 'https://9fsa0alosl.execute-api.eu-north-1.amazonaws.com/devices',
+
   topics: createAwsIotTopics(MY_DEVICE_CONFIG.deviceId),
 };
+
+/**
+ * The mobile app reads telemetry through this HTTPS API.  It is deliberately
+ * separate from `awsIotConfig.endpoint`: an AWS IoT MQTT endpoint accepts
+ * MQTT traffic only and cannot be fetched by the app as an HTTP API.
+ *
+ * Set this to the API Gateway stage URL once the IoT Rule/Lambda endpoint has
+ * been deployed, for example: https://abc123.execute-api.eu-north-1.amazonaws.com/prod
+ */
+export const telemetryApiConfig = {
+  // API Gateway base URL (set to the deployed stage root). Do NOT include
+  // the `/devices` path here — the client app appends resource paths.
+  // Example root: https://9fsa0alosl.execute-api.eu-north-1.amazonaws.com
+  baseUrl: 'https://9fsa0alosl.execute-api.eu-north-1.amazonaws.com',
+  pollIntervalMs: 5_000,
+};
+
+export function validateTelemetryApiConfig() {
+  const { baseUrl } = telemetryApiConfig;
+
+  if (!baseUrl.trim()) {
+    return {
+      valid: false,
+      reason:
+        'Live telemetry API is not configured. Set telemetryApiConfig.baseUrl to your API Gateway stage URL.',
+    };
+  }
+
+  try {
+    const url = new URL(baseUrl);
+    if (url.protocol !== 'https:') {
+      return { valid: false, reason: 'Live telemetry API must use an HTTPS URL.' };
+    }
+  } catch {
+    return { valid: false, reason: 'Live telemetry API URL is invalid.' };
+  }
+
+  return { valid: true, reason: '' };
+}
 
 
 export function validateAwsIotConfig() {

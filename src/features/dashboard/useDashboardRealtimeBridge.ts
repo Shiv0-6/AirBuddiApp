@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-import { awsIotConfig, validateAwsIotConfig } from '../../config/awsIotConfig';
+import { awsIotConfig } from '../../config/awsIotConfig';
 import { useAppDispatch } from '../../store/hooks';
 import { AwsIotClient } from '../../services/awsIot/awsIotClient';
 import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
@@ -18,17 +18,18 @@ import {
 } from './dashboardSlice';
 
 /**
- * Hook that bridges the React Native Redux state with the AWS IoT Core MQTT client.
- * Now exclusively uses mTLS (port 8883) and the legacy topic structure to match old_app.
+ * Hook that bridges the React Native Redux state with AWS IoT Core.
+ * It combines immediate state fetching via API Gateway and real-time updates via MQTT mTLS.
  */
 export function useDashboardRealtimeBridge() {
   const dispatch = useAppDispatch();
   const clientRef = useRef<AwsIotClient | null>(null);
 
   useEffect(() => {
-    console.log('[AirBuddi] bridge init (mTLS mode)', {
+    console.log('[AirBuddi] bridge init (mTLS + API Gateway)', {
       endpoint: awsIotConfig.endpoint,
       deviceId: awsIotConfig.deviceId,
+      apiUrl: awsIotConfig.deviceApiUrl,
     });
 
     const client = new AwsIotClient();
@@ -40,19 +41,19 @@ export function useDashboardRealtimeBridge() {
       };
     }
 
-    const configCheck = validateAwsIotConfig();
-    if (!configCheck.valid) {
-      dispatch(setConnectionState('offline'));
-      dispatch(setErrorMessage(configCheck.reason));
-      return () => {
-        client.disconnect();
-      };
-    }
-
     dispatch(setConnectionState('connecting'));
 
     let active = true;
 
+    // 1. Fetch initial state from API Gateway (Fast initial load)
+    client.fetchInitialState(awsIotConfig).then(initialData => {
+      if (active && initialData) {
+        console.log('[AirBuddi] Applied initial state from API Gateway');
+        dispatch(applyTelemetry(initialData));
+      }
+    });
+
+    // 2. Connect via MQTT for real-time updates
     client
       .connect(awsIotConfig, {
         onConnectionChange: (status: ConnectionState) => {
@@ -62,7 +63,7 @@ export function useDashboardRealtimeBridge() {
         },
         onTelemetry: (topic: string, payload: DashboardTelemetryMessage) => {
           if (active) {
-            console.log('[AirBuddi] telemetry received', { topic, payload });
+            console.log('[AirBuddi] Real-time telemetry received', { topic, payload });
             dispatch(applyTelemetry(payload));
           }
         },
