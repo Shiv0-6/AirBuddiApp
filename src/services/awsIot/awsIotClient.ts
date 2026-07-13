@@ -6,7 +6,7 @@ import type {
   Esp32SensorKey,
   Esp32SensorReading,
 } from './esp32TelemetryContract';
-import { fetchLatestTelemetry, postDeviceCommand } from './awsTelemetryApiClient';
+import { fetchLatestTelemetry, postDeviceCommand, toDashboardTelemetryMessage } from './awsTelemetryApiClient';
 import { telemetryApiConfig } from '../../config/awsIotConfig';
 
 type FlatEsp32Telemetry = DashboardTelemetryMessage & {
@@ -75,15 +75,11 @@ export class AwsIotClient {
       }
 
       const data = await response.json();
-      const devices = Array.isArray(data) ? data : data.devices;
+      const parsed = toDashboardTelemetryMessage(data, config.deviceId);
 
-      if (Array.isArray(devices)) {
-        // Find our specific device in the list
-        const myDevice = devices.find((d: any) => d.id === config.deviceId);
-        if (myDevice) {
-          console.log('[AirBuddi] Initial state found for device:', config.deviceId);
-          return parseJsonPayload(JSON.stringify(myDevice), config.deviceId);
-        }
+      if (parsed) {
+        console.log('[AirBuddi] Initial state found for device:', config.deviceId);
+        return parsed;
       }
       return null;
     } catch (error) {
