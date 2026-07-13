@@ -8,9 +8,10 @@ type DashboardHeaderProps = {
   title: string;
   subtitle: string;
   onProfilePress: () => void;
+  onRefreshPress: () => void;
 };
 
-function DashboardHeaderComponent({ title, subtitle, onProfilePress }: DashboardHeaderProps) {
+function DashboardHeaderComponent({ title, subtitle, onProfilePress, onRefreshPress }: DashboardHeaderProps) {
   return (
     <View style={styles.wrapper}>
       <View style={styles.topActionRow}>
@@ -21,16 +22,29 @@ function DashboardHeaderComponent({ title, subtitle, onProfilePress }: Dashboard
           <Text style={styles.brandText}>AIRBUDDI</Text>
         </View>
 
-        <TouchableOpacity
-          accessibilityLabel="Open profile"
-          onPress={onProfilePress}
-          style={styles.profileBtn}
-          activeOpacity={0.75}
-        >
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>AB</Text>
-          </View>
-        </TouchableOpacity>
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity
+            accessibilityLabel="Refresh telemetry data"
+            onPress={onRefreshPress}
+            style={styles.refreshBtn}
+            activeOpacity={0.75}
+          >
+            <View style={styles.refreshIconContainer}>
+              <MaterialCommunityIcons name="refresh" size={22} color={dashboardTheme.colors.textPrimary} />
+            </View>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            accessibilityLabel="Open profile"
+            onPress={onProfilePress}
+            style={styles.profileBtn}
+            activeOpacity={0.75}
+          >
+            <View style={styles.avatarPlaceholder}>
+              <Text style={styles.avatarText}>AB</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.heroSection}>
@@ -135,5 +149,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0.5,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  refreshBtn: {
+    padding: 2,
+  },
+  refreshIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: dashboardTheme.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: dashboardTheme.colors.border,
+    ...dashboardTheme.shadows.soft,
   },
 });

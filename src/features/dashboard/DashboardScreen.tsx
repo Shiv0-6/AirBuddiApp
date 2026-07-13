@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
   Modal,
+  RefreshControl,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -48,9 +49,17 @@ export function DashboardScreen() {
     setSleepModeState,
     setUvcModeState,
     setFanSpeedState,
+    refreshData,
   } = useDashboardRealtimeBridge();
 
   const [activeTab, setActiveTab] = useState<TabId>('fan');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await refreshData();
+    setRefreshing(false);
+  }, [refreshData]);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [dailyGoalEnabled, setDailyGoalEnabled] = useState(true);
   const device = dashboard.device;
@@ -114,12 +123,21 @@ export function DashboardScreen() {
         title={deviceTitle}
         subtitle="Connected • Optimal Performance"
         onProfilePress={() => setIsProfileOpen(true)}
+        onRefreshPress={handleRefresh}
       />
 
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[dashboardTheme.colors.primary]}
+            tintColor={dashboardTheme.colors.primary}
+          />
+        }
       >
         {/* ── Fan Tab (main purifier control) ─────────────────── */}
         {activeTab === 'fan' && (

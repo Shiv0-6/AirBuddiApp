@@ -4,6 +4,7 @@ import { awsIotConfig } from '../../config/awsIotConfig';
 import { useAppDispatch } from '../../store/hooks';
 import { AwsIotClient } from '../../services/awsIot/awsIotClient';
 import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
+import { fetchLatestTelemetry } from '../../services/awsIot/awsTelemetryApiClient';
 import type { ConnectionState, DeviceMode, PowerState } from './dashboardTypes';
 import {
   applyTelemetry,
@@ -132,6 +133,20 @@ export function useDashboardRealtimeBridge() {
     cycleFanSpeed: async () => {
       dispatch(cycleLocalFanSpeed(undefined));
       await sendLegacyCommand('fanSpeed', 'cycle');
+    },
+
+    refreshData: async () => {
+      dispatch(setConnectionState('connecting'));
+      try {
+        const latest = await fetchLatestTelemetry(awsIotConfig.deviceId);
+        if (latest) {
+          dispatch(applyTelemetry(latest));
+        }
+        dispatch(setConnectionState('connected'));
+      } catch (error) {
+        dispatch(setConnectionState('offline'));
+        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
+      }
     },
   };
 }
