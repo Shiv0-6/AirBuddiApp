@@ -1,16 +1,10 @@
-# TODO - AirBuddiApp UI Enhancement
+# TODO - Light On/Off control via API Gateway + ESP32 topic
 
-## Plan items
-- [x] Add notification badge UI in `src/components/dashboard/DashboardHeader.tsx` (use `notificationCount` prop)
-- [x] Improve header styling (subtle tinted container / spacing consistency)
-- [x] Add premium background + consistent page padding in `src/features/dashboard/DashboardScreen.tsx`
-- [x] Add bottom navigation active-state indicator (tinted pill background)
-- [x] Polish disabled fan-speed buttons and quick control affordances in `src/components/dashboard/QuickControls.tsx`
-
-
-## Verification
-- [ ] Run `npm test` / `npm run lint` (if available)
-- [ ] Run typecheck (if available)
-- [ ] Manual visual check on emulator/device
-
+- [ ] Inspect existing light-related UI (Light tab placeholder) and existing command publishing path (`esp32/control` legacy topic).
+- [ ] Extend dashboard state/types to include `lightOn` boolean.
+- [ ] Extend telemetry normalization + slice merging to read `lightOn` from API/MQTT payload if available.
+- [ ] Add `setLightState()` command sender in `useDashboardRealtimeBridge` that publishes to `esp32/control`/API commands for ESP32 light.
+- [ ] Replace Light tab placeholder UI with a Light On/Off button wired to state and command sender.
+- [ ] Update any tests / TypeScript compile errors if introduced.
+- [ ] Run app build/tests to verify.
 

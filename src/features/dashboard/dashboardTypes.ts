@@ -7,6 +7,8 @@ export interface DashboardDevice {
   status: 'Online' | 'Offline';
   mode: DeviceMode;
   power: PowerState;
+  /** Air purifier light state (LED / lamp). */
+  lightOn?: boolean;
   lastUpdated: string;
   fanSpeed?: '1' | '2' | '3' | 'turbo';
   deviceId?: string;
@@ -14,6 +16,7 @@ export interface DashboardDevice {
   sleepMode?: boolean;
   uvc?: boolean;
 }
+
 
 export interface DashboardSensor {
   id: string;

@@ -21,6 +21,7 @@ import { SensorGrid } from '../../components/dashboard/SensorGrid';
 import { QuickControls } from '../../components/dashboard/QuickControls';
 import { FilterHealthCard } from '../../components/dashboard/FilterHealthCard';
 import { ConnectionPill } from '../../components/dashboard/ConnectionPill';
+import { LightControlPanel } from '../../components/dashboard/LightControlPanel';
 
 import { useAppSelector } from '../../store/hooks';
 import { selectDashboard } from './dashboardSelectors';
@@ -33,10 +34,10 @@ import { useDashboardRealtimeBridge } from './useDashboardRealtimeBridge';
 type TabId = 'airquality' | 'fan' | 'light' | 'more';
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'airquality', label: 'Air quality', icon: 'lightning-bolt' },
-  { id: 'fan',        label: 'Fan',         icon: 'weather-windy'  },
-  { id: 'light',      label: 'Light',       icon: 'lightbulb-outline' },
-  { id: 'more',       label: 'More',        icon: 'dots-horizontal' },
+  { id: 'fan',        label: 'Home',        icon: 'home-outline' },
+  { id: 'airquality', label: 'Monitor',     icon: 'chart-line' },
+  { id: 'light',      label: 'Control',     icon: 'lightbulb-outline' },
+  { id: 'more',       label: 'Settings',    icon: 'cog-outline' },
 ];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -49,6 +50,7 @@ export function DashboardScreen() {
     setSleepModeState,
     setUvcModeState,
     setFanSpeedState,
+    setLightStateState,
     refreshData,
   } = useDashboardRealtimeBridge();
 
@@ -106,6 +108,14 @@ export function DashboardScreen() {
     setFanSpeedState(speed);
   }, [setFanSpeedState]);
 
+  const handleLightOn = useCallback(() => {
+    setLightStateState(true);
+  }, [setLightStateState]);
+
+  const handleLightOff = useCallback(() => {
+    setLightStateState(false);
+  }, [setLightStateState]);
+
   // ── Device title (truncated to 20 chars for header) ───────────────────────
   const deviceTitle = device?.name ?? 'AirBuddi Pro';
 
@@ -139,7 +149,7 @@ export function DashboardScreen() {
           />
         }
       >
-        {/* ── Fan Tab (main purifier control) ─────────────────── */}
+        {/* ── Home Tab (main purifier control) ─────────────────── */}
         {activeTab === 'fan' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <QuickControls
@@ -177,7 +187,7 @@ export function DashboardScreen() {
           </Animated.View>
         )}
 
-        {/* ── Air Quality Tab ─────────────────────────────────── */}
+        {/* ── Monitor Tab ─────────────────────────────────────── */}
         {activeTab === 'airquality' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
@@ -189,10 +199,15 @@ export function DashboardScreen() {
           </Animated.View>
         )}
 
-        {/* ── Light Tab ───────────────────────────────────────── */}
+        {/* ── Control Tab ─────────────────────────────────────── */}
         {activeTab === 'light' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
+              <LightControlPanel
+                isLightOn={device?.lightOn ?? false}
+                onTurnOn={handleLightOn}
+                onTurnOff={handleLightOff}
+              />
               <View style={styles.placeholderCard}>
                 <View style={styles.placeholderIconWrap}>
                   <MaterialCommunityIcons
@@ -203,17 +218,17 @@ export function DashboardScreen() {
                 </View>
                 <Text style={styles.placeholderTitle}>Ambience Control</Text>
                 <Text style={styles.placeholderSub}>
-                  Customize your air purifier's LED ring colors and brightness to match your mood.
+                  Use the controls above to send on/off commands to the ESP32 light topic.
                 </Text>
-                <TouchableOpacity style={styles.comingSoonBadge}>
-                  <Text style={styles.comingSoonText}>COMING SOON</Text>
-                </TouchableOpacity>
+                <Text style={styles.noteText}>
+                  If you later add more lights, you can extend the same pattern by sending additional commands for each light.
+                </Text>
               </View>
             </View>
           </Animated.View>
         )}
 
-        {/* ── More Tab ────────────────────────────────────────── */}
+        {/* ── Settings Tab ────────────────────────────────────── */}
         {activeTab === 'more' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>

@@ -1,4 +1,4 @@
-import { createSlice, type PayloadAction } from '../../vendor/reduxToolkit';
+ import { createSlice, type PayloadAction } from '../../vendor/reduxToolkit';
 
 import { awsIotConfig } from '../../config/awsIotConfig';
 import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
@@ -31,11 +31,13 @@ const initialState: DashboardRuntimeState = {
     status: 'Offline',
     mode: 'manual',
     power: 'off',
+      lightOn: false,
     lastUpdated: 'Waiting for telemetry',
     deviceId: awsIotConfig.deviceId,
     sleepMode: false,
     uvc: true,
   },
+
   aqi: null,
   connection: awsIotConfig.enabled ? 'connecting' : 'offline',
   filterHealth: null,
@@ -120,7 +122,9 @@ function mergeEsp32Telemetry(
       lastSeenAt: telemetry.ts ?? currentDevice?.lastSeenAt ?? currentDevice?.lastUpdated,
       sleepMode: (telemetry as any).sleepMode ?? currentDevice?.sleepMode ?? false,
       uvc: (telemetry as any).uvc ?? currentDevice?.uvc ?? true,
+      lightOn: (telemetry as any).lightOn ?? (telemetry as any).light ?? currentDevice?.lightOn ?? false,
     },
+
     connection: telemetry.connection ?? current.connection,
     aqi: telemetry.aqi ?? current.aqi,
     filterHealth: telemetry.filterHealth ?? current.filterHealth,
@@ -172,6 +176,13 @@ const dashboardSlice = createSlice({
         state.device.lastUpdated = 'Just now';
       }
     },
+    setLightState(state, action: PayloadAction<boolean>) {
+      if (state.device) {
+        state.device.lightOn = action.payload;
+        state.device.lastUpdated = 'Just now';
+      }
+    },
+
     cycleLocalFanSpeed(state) {
       const speeds: ('1' | '2' | '3' | 'turbo')[] = ['1', '2', '3', 'turbo'];
       if (!state.device) {
@@ -257,9 +268,11 @@ export const {
   setSleepMode,
   setUvcState,
   setFanSpeed,
+  setLightState,
   cycleLocalFanSpeed,
   applyTelemetry,
   resetDashboard,
 } = dashboardSlice.actions;
+
 
 export const dashboardReducer = dashboardSlice.reducer;

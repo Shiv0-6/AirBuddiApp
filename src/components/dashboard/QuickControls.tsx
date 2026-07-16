@@ -31,20 +31,18 @@ type QuickControlsProps = {
   onSelectFanSpeed: (speed: '1' | '2' | '3' | 'turbo') => void;
 };
 
-// Maps 5 UI speed buttons to the 4 actual speed values
-const SPEED_LABELS = ['1', '2', '3', '4', '5'] as const;
+// Maps the visible fan speed labels to the app's underlying speed values
+const SPEED_LABELS = ['Low', 'Medium', 'High'] as const;
 const SPEED_MAP: Record<string, '1' | '2' | '3' | 'turbo'> = {
-  '1': '1',
-  '2': '2',
-  '3': '3',
-  '4': 'turbo',
-  '5': 'turbo',
+  Low: '1',
+  Medium: '2',
+  High: '3',
 };
 const SPEED_REVERSE_MAP: Record<string, string> = {
-  '1': '1',
-  '2': '2',
-  '3': '3',
-  turbo: '4',
+  '1': 'Low',
+  '2': 'Medium',
+  '3': 'High',
+  turbo: 'High',
 };
 
 const PRESETS = [
@@ -155,11 +153,15 @@ function QuickControlsComponent({
   const activePresetId = isSleepMode ? 'sleep' : isAutoMode && fanSpeed === 'turbo' ? 'fresh' : isAutoMode && fanSpeed === '3' ? 'deep' : null;
 
   // Fan speed label text
-  const fanSpeedText = isAutoMode
-    ? 'Auto mode'
-    : fanSpeed === 'turbo'
-    ? 'Turbo'
-    : `Level ${fanSpeed}`;
+  const fanSpeedText = !isPoweredOn
+    ? 'Off'
+    : isAutoMode
+    ? 'Auto'
+    : fanSpeed === 'turbo' || fanSpeed === '3'
+    ? 'High'
+    : fanSpeed === '2'
+    ? 'Medium'
+    : 'Low';
 
   return (
     <View style={styles.container}>
@@ -218,27 +220,27 @@ function QuickControlsComponent({
         </View>
       </View>
 
-      {/* ── Mode Selection ────────────────────────────────── */}
+      {/* ── Fan Modes ─────────────────────────────────────── */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Purification Modes</Text>
+        <Text style={styles.sectionTitle}>Fan Modes</Text>
         <View style={styles.modesRow}>
           <ModeCard
             iconName="auto-fix"
-            label="Smart"
+            label="Auto"
             value={isAutoMode}
-            onToggle={onToggleAutoMode}
+            onToggle={() => onToggleAutoMode(true)}
           />
           <ModeCard
-            iconName="weather-night"
-            label="Quiet"
-            value={isSleepMode}
-            onToggle={onToggleSleepMode}
+            iconName="gesture-tap-button"
+            label="Manual"
+            value={!isAutoMode && isPoweredOn}
+            onToggle={() => onToggleAutoMode(false)}
           />
           <ModeCard
-            iconName="shield-check"
-            label="UV-C"
-            value={isUvc}
-            onToggle={onToggleUvc}
+            iconName="power"
+            label="Off"
+            value={!isPoweredOn}
+            onToggle={onTogglePower}
           />
         </View>
       </View>
@@ -294,14 +296,14 @@ type ModeCardProps = {
   iconName: string;
   label: string;
   value: boolean;
-  onToggle: (v: boolean) => void;
+  onToggle: () => void;
 };
 
 function ModeCard({ iconName, label, value, onToggle }: ModeCardProps) {
   return (
     <TouchableOpacity
       activeOpacity={0.8}
-      onPress={() => onToggle(!value)}
+      onPress={onToggle}
       style={[modeStyles.card, value && modeStyles.cardActive]}
     >
       <View style={[modeStyles.iconWrap, value && modeStyles.iconWrapActive]}>

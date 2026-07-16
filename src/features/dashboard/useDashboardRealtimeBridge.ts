@@ -14,6 +14,7 @@ import {
   setDevicePower,
   setErrorMessage,
   setFanSpeed,
+  setLightState,
   setSleepMode,
   setUvcState,
 } from './dashboardSlice';
@@ -128,6 +129,11 @@ export function useDashboardRealtimeBridge() {
     setFanSpeedState: async (speed: '1' | '2' | '3' | 'turbo') => {
       dispatch(setFanSpeed(speed));
       await sendLegacyCommand('fanSpeed', speed);
+    },
+
+    setLightStateState: async (nextLightOn: boolean) => {
+      dispatch(setLightState(nextLightOn));
+      await sendLegacyCommand('light', nextLightOn ? 'start' : 'stop');
     },
 
     cycleFanSpeed: async () => {
