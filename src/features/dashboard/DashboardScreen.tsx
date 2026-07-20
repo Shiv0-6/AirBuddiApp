@@ -57,6 +57,30 @@ export function DashboardScreen() {
   const [activeTab, setActiveTab] = useState<TabId>('fan');
   const [refreshing, setRefreshing] = useState(false);
 
+  const lightZones = useMemo(
+    () => [
+      {
+        id: 'zone-1',
+        label: 'Ambient',
+        icon: 'lamp',
+        isOn: device?.lightZones?.['zone-1'] ?? false,
+      },
+      {
+        id: 'zone-2',
+        label: 'Task',
+        icon: 'desk-lamp',
+        isOn: device?.lightZones?.['zone-2'] ?? false,
+      },
+      {
+        id: 'zone-3',
+        label: 'Accent',
+        icon: 'spotlight',
+        isOn: device?.lightZones?.['zone-3'] ?? false,
+      },
+    ],
+    [device?.lightZones],
+  );
+
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
     await refreshData();
@@ -108,13 +132,10 @@ export function DashboardScreen() {
     setFanSpeedState(speed);
   }, [setFanSpeedState]);
 
-  const handleLightOn = useCallback(() => {
-    setLightStateState(true);
-  }, [setLightStateState]);
-
-  const handleLightOff = useCallback(() => {
-    setLightStateState(false);
-  }, [setLightStateState]);
+  const handleToggleLightZone = useCallback((zoneId: string) => {
+    const nextState = !(device?.lightZones?.[zoneId] ?? false);
+    setLightStateState(zoneId, nextState);
+  }, [device?.lightZones, setLightStateState]);
 
   // ── Device title (truncated to 20 chars for header) ───────────────────────
   const deviceTitle = device?.name ?? 'AirBuddi Pro';
@@ -204,9 +225,8 @@ export function DashboardScreen() {
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
               <LightControlPanel
-                isLightOn={device?.lightOn ?? false}
-                onTurnOn={handleLightOn}
-                onTurnOff={handleLightOff}
+                lights={lightZones}
+                onToggleLight={handleToggleLightZone}
               />
               <View style={styles.placeholderCard}>
                 <View style={styles.placeholderIconWrap}>
@@ -216,12 +236,12 @@ export function DashboardScreen() {
                     color={dashboardTheme.colors.primary}
                   />
                 </View>
-                <Text style={styles.placeholderTitle}>Ambience Control</Text>
+                <Text style={styles.placeholderTitle}>Zone Lighting</Text>
                 <Text style={styles.placeholderSub}>
-                  Use the controls above to send on/off commands to the ESP32 light topic.
+                  Use the controls above to send on/off commands for each lighting zone.
                 </Text>
                 <Text style={styles.noteText}>
-                  If you later add more lights, you can extend the same pattern by sending additional commands for each light.
+                  The command bridge is ready for additional lighting fixtures without changing the UI pattern.
                 </Text>
               </View>
             </View>

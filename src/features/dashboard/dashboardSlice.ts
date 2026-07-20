@@ -31,7 +31,12 @@ const initialState: DashboardRuntimeState = {
     status: 'Offline',
     mode: 'manual',
     power: 'off',
-      lightOn: false,
+    lightOn: false,
+    lightZones: {
+      'zone-1': false,
+      'zone-2': false,
+      'zone-3': false,
+    },
     lastUpdated: 'Waiting for telemetry',
     deviceId: awsIotConfig.deviceId,
     sleepMode: false,
@@ -76,6 +81,14 @@ function mergeEsp32Telemetry(
 ) {
   const currentDevice = current.device;
   const deviceStatus: DashboardDevice['status'] = telemetry.connection === 'offline' ? 'Offline' : 'Online';
+  const nextLightZones = {
+    ...(currentDevice?.lightZones ?? {
+      'zone-1': false,
+      'zone-2': false,
+      'zone-3': false,
+    }),
+    ...((telemetry as any).lightZones ?? {}),
+  };
 
   const nextSensors = telemetry.sensors.map(sensor => ({
     id: sensor.key,
@@ -122,7 +135,8 @@ function mergeEsp32Telemetry(
       lastSeenAt: telemetry.ts ?? currentDevice?.lastSeenAt ?? currentDevice?.lastUpdated,
       sleepMode: (telemetry as any).sleepMode ?? currentDevice?.sleepMode ?? false,
       uvc: (telemetry as any).uvc ?? currentDevice?.uvc ?? true,
-      lightOn: (telemetry as any).lightOn ?? (telemetry as any).light ?? currentDevice?.lightOn ?? false,
+      lightOn: (telemetry as any).lightOn ?? (telemetry as any).light ?? Object.values(nextLightZones).some(Boolean) ?? currentDevice?.lightOn ?? false,
+      lightZones: nextLightZones,
     },
 
     connection: telemetry.connection ?? current.connection,
@@ -176,11 +190,23 @@ const dashboardSlice = createSlice({
         state.device.lastUpdated = 'Just now';
       }
     },
-    setLightState(state, action: PayloadAction<boolean>) {
-      if (state.device) {
-        state.device.lightOn = action.payload;
-        state.device.lastUpdated = 'Just now';
+    setLightZoneState(state, action: PayloadAction<{ zoneId: string; isOn: boolean }>) {
+      if (!state.device) {
+        return;
       }
+
+      const nextZones = {
+        ...(state.device.lightZones ?? {
+          'zone-1': false,
+          'zone-2': false,
+          'zone-3': false,
+        }),
+        [action.payload.zoneId]: action.payload.isOn,
+      };
+
+      state.device.lightZones = nextZones;
+      state.device.lightOn = Object.values(nextZones).some(Boolean);
+      state.device.lastUpdated = 'Just now';
     },
 
     cycleLocalFanSpeed(state) {
@@ -268,7 +294,7 @@ export const {
   setSleepMode,
   setUvcState,
   setFanSpeed,
-  setLightState,
+  setLightZoneState,
   cycleLocalFanSpeed,
   applyTelemetry,
   resetDashboard,

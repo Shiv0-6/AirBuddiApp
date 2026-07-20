@@ -151,3 +151,21 @@ export async function postDeviceCommand(
   });
   await responseBody(response);
 }
+
+/**
+ * Sends a light control command to the ESP32 via API Gateway.
+ * Matches the tested Postman format:
+ *   POST /devices  →  { "command": "start" | "stop" }
+ */
+export async function postLightCommand(command: 'start' | 'stop') {
+  const response = await fetch(endpoint('/devices'), {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ command }),
+  });
+  // A 2xx response (even empty) is fine — just validate it didn't fail.
+  if (!response.ok) {
+    const text = await response.text().catch(() => response.statusText);
+    throw new Error(`Light command failed (${response.status}): ${text}`);
+  }
+}
