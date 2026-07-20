@@ -4,51 +4,58 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 
 import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
 
-type LightControlPanelProps = {
-  isLightOn: boolean;
-  onTurnOn: () => void;
-  onTurnOff: () => void;
+type LightZone = {
+  id: string;
+  label: string;
+  icon: string;
+  isOn: boolean;
 };
 
-export function LightControlPanel({ isLightOn, onTurnOn, onTurnOff }: LightControlPanelProps) {
+type LightControlPanelProps = {
+  lights: LightZone[];
+  onToggleLight: (lightId: string) => void;
+};
+
+export function LightControlPanel({ lights, onToggleLight }: LightControlPanelProps) {
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <View style={styles.iconWrap}>
           <MaterialCommunityIcons
-            name={isLightOn ? 'lightbulb-on' : 'lightbulb'}
+            name="lightbulb-on"
             size={28}
-            color={isLightOn ? dashboardTheme.colors.accent : dashboardTheme.colors.textMuted}
+            color={dashboardTheme.colors.accent}
           />
         </View>
         <View style={styles.titleWrap}>
           <Text style={styles.title}>Light Control</Text>
-          <Text style={styles.subtitle}>
-            {isLightOn ? 'Light is currently on' : 'Light is currently off'}
-          </Text>
+          <Text style={styles.subtitle}>Test lamp zones with professional lighting controls.</Text>
         </View>
       </View>
 
-      <View style={styles.buttonRow}>
-        <TouchableOpacity
-          accessibilityLabel="Turn on light"
-          activeOpacity={0.85}
-          onPress={onTurnOn}
-          style={[styles.button, styles.buttonPrimary, isLightOn && styles.buttonActive]}
-        >
-          <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color="#fff" />
-          <Text style={styles.buttonText}>Light On</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          accessibilityLabel="Turn off light"
-          activeOpacity={0.85}
-          onPress={onTurnOff}
-          style={[styles.button, styles.buttonSecondary, !isLightOn && styles.buttonInactive]}
-        >
-          <MaterialCommunityIcons name="lightbulb-off-outline" size={18} color={dashboardTheme.colors.textPrimary} />
-          <Text style={[styles.buttonText, styles.buttonTextSecondary]}>Light Off</Text>
-        </TouchableOpacity>
+      <View style={styles.lightGrid}>
+        {lights.map((light, index) => (
+          <TouchableOpacity
+            key={light.id}
+            accessibilityLabel={`Toggle ${light.label}`}
+            activeOpacity={0.88}
+            onPress={() => onToggleLight(light.id)}
+            style={[styles.lightCard, light.isOn && styles.lightCardActive]}
+          >
+            <View style={[styles.lightBadge, light.isOn && styles.lightBadgeActive]}>
+              <MaterialCommunityIcons
+                name={light.icon}
+                size={20}
+                color={light.isOn ? '#fff' : dashboardTheme.colors.textPrimary}
+              />
+            </View>
+            <Text style={[styles.lightLabel, light.isOn && styles.lightLabelActive]}>{light.label}</Text>
+            <Text style={styles.zoneLabel}>{`Zone ${index + 1}`}</Text>
+            <Text style={[styles.statusPill, light.isOn && styles.statusPillActive]}>
+              {light.isOn ? 'On' : 'Off'}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );
@@ -90,39 +97,61 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  buttonRow: {
+  lightGrid: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
-  button: {
+  lightCard: {
     flex: 1,
-    flexDirection: 'row',
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: dashboardTheme.colors.surfaceSecondary,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    alignItems: 'flex-start',
+  },
+  lightCardActive: {
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    borderColor: dashboardTheme.colors.primary,
+  },
+  lightBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    gap: 8,
+    backgroundColor: dashboardTheme.colors.surface,
+    marginBottom: 10,
   },
-  buttonPrimary: {
+  lightBadgeActive: {
     backgroundColor: dashboardTheme.colors.primary,
   },
-  buttonSecondary: {
-    backgroundColor: dashboardTheme.colors.surfaceSecondary,
-  },
-  buttonActive: {
-    backgroundColor: dashboardTheme.colors.accent,
-  },
-  buttonInactive: {
-    backgroundColor: dashboardTheme.colors.surfaceSecondary,
-    opacity: 0.85,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 14,
-  },
-  buttonTextSecondary: {
+  lightLabel: {
     color: dashboardTheme.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  lightLabelActive: {
+    color: dashboardTheme.colors.primary,
+  },
+  zoneLabel: {
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 11,
+    marginBottom: 10,
+  },
+  statusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: dashboardTheme.colors.surface,
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+    overflow: 'hidden',
+  },
+  statusPillActive: {
+    backgroundColor: dashboardTheme.colors.primary,
+    color: '#fff',
   },
 });

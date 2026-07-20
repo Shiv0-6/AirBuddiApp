@@ -9,6 +9,8 @@ export interface DashboardDevice {
   power: PowerState;
   /** Air purifier light state (LED / lamp). */
   lightOn?: boolean;
+  /** Optional zone-based light state for controlled testing of device commands. */
+  lightZones?: Record<string, boolean>;
   lastUpdated: string;
   fanSpeed?: '1' | '2' | '3' | 'turbo';
   deviceId?: string;

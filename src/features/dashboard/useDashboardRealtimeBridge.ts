@@ -4,7 +4,7 @@ import { awsIotConfig } from '../../config/awsIotConfig';
 import { useAppDispatch } from '../../store/hooks';
 import { AwsIotClient } from '../../services/awsIot/awsIotClient';
 import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
-import { fetchLatestTelemetry } from '../../services/awsIot/awsTelemetryApiClient';
+import { fetchLatestTelemetry, postLightCommand } from '../../services/awsIot/awsTelemetryApiClient';
 import type { ConnectionState, DeviceMode, PowerState } from './dashboardTypes';
 import {
   applyTelemetry,
@@ -14,7 +14,7 @@ import {
   setDevicePower,
   setErrorMessage,
   setFanSpeed,
-  setLightState,
+  setLightZoneState,
   setSleepMode,
   setUvcState,
 } from './dashboardSlice';
@@ -131,9 +131,20 @@ export function useDashboardRealtimeBridge() {
       await sendLegacyCommand('fanSpeed', speed);
     },
 
-    setLightStateState: async (nextLightOn: boolean) => {
-      dispatch(setLightState(nextLightOn));
-      await sendLegacyCommand('light', nextLightOn ? 'start' : 'stop');
+    setLightStateState: async (zoneId: string, nextLightOn: boolean) => {
+      // Optimistic UI update immediately
+      dispatch(setLightZoneState({ zoneId, isOn: nextLightOn }));
+      try {
+        // POST /devices  →  { "command": "start" } or { "command": "stop" }
+        // This matches the exact format tested and confirmed working in Postman.
+        await postLightCommand(nextLightOn ? 'start' : 'stop');
+        console.log('[AirBuddi] Light command sent:', nextLightOn ? 'start' : 'stop');
+      } catch (error) {
+        console.error('[AirBuddi] Light command failed:', error);
+        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
+        // Revert UI if command failed
+        dispatch(setLightZoneState({ zoneId, isOn: !nextLightOn }));
+      }
     },
 
     cycleFanSpeed: async () => {

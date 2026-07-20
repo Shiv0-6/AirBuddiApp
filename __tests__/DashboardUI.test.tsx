@@ -39,15 +39,18 @@ describe('QuickControls UI', () => {
     expect(flattenedText).toContain('High');
   });
 
-  it('shows on and off buttons for the light control', () => {
+  it('shows three professional light zones for command testing', () => {
     let tree: renderer.ReactTestRenderer;
 
     act(() => {
       tree = renderer.create(
         <LightControlPanel
-          isLightOn={false}
-          onTurnOn={() => {}}
-          onTurnOff={() => {}}
+          lights={[
+            { id: 'zone-1', label: 'Ambient', icon: 'lamp', isOn: false },
+            { id: 'zone-2', label: 'Task', icon: 'desk-lamp', isOn: true },
+            { id: 'zone-3', label: 'Accent', icon: 'spotlight', isOn: false },
+          ]}
+          onToggleLight={() => {}}
         />,
       );
     });
@@ -56,7 +59,11 @@ describe('QuickControls UI', () => {
     const flattenedText = textContent.flat().join(' ');
 
     expect(flattenedText).toContain('Light Control');
-    expect(flattenedText).toContain('Light On');
-    expect(flattenedText).toContain('Light Off');
+    expect(flattenedText).toContain('Ambient');
+    expect(flattenedText).toContain('Task');
+    expect(flattenedText).toContain('Accent');
+    expect(flattenedText).toContain('Zone 1');
+    expect(flattenedText).toContain('Zone 2');
+    expect(flattenedText).toContain('Zone 3');
   });
 });
