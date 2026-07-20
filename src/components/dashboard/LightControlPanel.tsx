@@ -22,6 +22,7 @@ type LightControlPanelProps = {
   onToggleLight: (lightId: string) => void;
 };
 
+<<<<<<< HEAD
 // ─── Single zone tile with animation ────────────────────────────────────────
 
 function ZoneTile({
@@ -135,19 +136,29 @@ export function LightControlPanel({ lights, onToggleLight }: LightControlPanelPr
   const anyOn = lights.some(l => l.isOn);
   const onCount = lights.filter(l => l.isOn).length;
 
+=======
+export function LightControlPanel({ lights, onToggleLight }: LightControlPanelProps) {
+>>>>>>> dce543d3977b55143118d5a7aa6db9d218862f4a
   return (
     <View style={styles.card}>
       {/* Header */}
       <View style={styles.headerRow}>
         <View style={[styles.headerIconWrap, anyOn && styles.headerIconWrapOn]}>
           <MaterialCommunityIcons
+<<<<<<< HEAD
             name={anyOn ? 'lightbulb-on' : 'lightbulb-outline'}
             size={26}
             color={anyOn ? '#fff' : dashboardTheme.colors.textMuted}
+=======
+            name="lightbulb-on"
+            size={28}
+            color={dashboardTheme.colors.accent}
+>>>>>>> dce543d3977b55143118d5a7aa6db9d218862f4a
           />
         </View>
         <View style={styles.headerText}>
           <Text style={styles.title}>Light Control</Text>
+<<<<<<< HEAD
           <Text style={styles.subtitle}>
             {anyOn
               ? `${onCount} zone${onCount > 1 ? 's' : ''} active — ESP32 receiving commands`
@@ -187,6 +198,35 @@ export function LightControlPanel({ lights, onToggleLight }: LightControlPanelPr
         <Text style={styles.footerHintText}>
           Sends <Text style={styles.codeText}>start</Text> / <Text style={styles.codeText}>stop</Text> to your API Gateway → ESP32
         </Text>
+=======
+          <Text style={styles.subtitle}>Test lamp zones with professional lighting controls.</Text>
+        </View>
+      </View>
+
+      <View style={styles.lightGrid}>
+        {lights.map((light, index) => (
+          <TouchableOpacity
+            key={light.id}
+            accessibilityLabel={`Toggle ${light.label}`}
+            activeOpacity={0.88}
+            onPress={() => onToggleLight(light.id)}
+            style={[styles.lightCard, light.isOn && styles.lightCardActive]}
+          >
+            <View style={[styles.lightBadge, light.isOn && styles.lightBadgeActive]}>
+              <MaterialCommunityIcons
+                name={light.icon}
+                size={20}
+                color={light.isOn ? '#fff' : dashboardTheme.colors.textPrimary}
+              />
+            </View>
+            <Text style={[styles.lightLabel, light.isOn && styles.lightLabelActive]}>{light.label}</Text>
+            <Text style={styles.zoneLabel}>{`Zone ${index + 1}`}</Text>
+            <Text style={[styles.statusPill, light.isOn && styles.statusPillActive]}>
+              {light.isOn ? 'On' : 'Off'}
+            </Text>
+          </TouchableOpacity>
+        ))}
+>>>>>>> dce543d3977b55143118d5a7aa6db9d218862f4a
       </View>
     </View>
   );
@@ -235,6 +275,7 @@ const styles = StyleSheet.create({
     marginTop: 3,
     lineHeight: 16,
   },
+<<<<<<< HEAD
   masterPill: {
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -383,9 +424,39 @@ const styles = StyleSheet.create({
     borderColor: dashboardTheme.colors.border,
   },
   powerBtnOn: {
+=======
+  lightGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  lightCard: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: dashboardTheme.colors.surfaceSecondary,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    alignItems: 'flex-start',
+  },
+  lightCardActive: {
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    borderColor: dashboardTheme.colors.primary,
+  },
+  lightBadge: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: dashboardTheme.colors.surface,
+    marginBottom: 10,
+  },
+  lightBadgeActive: {
+>>>>>>> dce543d3977b55143118d5a7aa6db9d218862f4a
     backgroundColor: dashboardTheme.colors.primary,
     borderColor: dashboardTheme.colors.primary,
   },
+<<<<<<< HEAD
   powerBtnText: {
     fontSize: 10,
     fontWeight: '700',
@@ -412,5 +483,34 @@ const styles = StyleSheet.create({
   codeText: {
     fontWeight: '800',
     color: dashboardTheme.colors.primary,
+=======
+  lightLabel: {
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  lightLabelActive: {
+    color: dashboardTheme.colors.primary,
+  },
+  zoneLabel: {
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 11,
+    marginBottom: 10,
+  },
+  statusPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 999,
+    backgroundColor: dashboardTheme.colors.surface,
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+    overflow: 'hidden',
+  },
+  statusPillActive: {
+    backgroundColor: dashboardTheme.colors.primary,
+    color: '#fff',
+>>>>>>> dce543d3977b55143118d5a7aa6db9d218862f4a
   },
 });
