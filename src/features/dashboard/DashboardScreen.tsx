@@ -54,6 +54,9 @@ export function DashboardScreen() {
     refreshData,
   } = useDashboardRealtimeBridge();
 
+  const device = dashboard.device;
+  const sensors = dashboard.sensors ?? [];
+
   const [activeTab, setActiveTab] = useState<TabId>('fan');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -88,8 +91,6 @@ export function DashboardScreen() {
   }, [refreshData]);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [dailyGoalEnabled, setDailyGoalEnabled] = useState(true);
-  const device = dashboard.device;
-  const sensors = dashboard.sensors ?? [];
   const contentOpacity = useSharedValue(1);
   const contentTranslateY = useSharedValue(0);
 
