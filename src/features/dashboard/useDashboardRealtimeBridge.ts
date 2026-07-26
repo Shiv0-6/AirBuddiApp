@@ -176,10 +176,14 @@ export function useDashboardRealtimeBridge() {
       // Optimistic UI update immediately
       dispatch(setLightZoneState({ zoneId, isOn: nextLightOn }));
       try {
-        // POST /devices  →  { "command": "start" } or { "command": "stop" }
-        // EDIT THIS ARRAY for the light button.
-        // You can add multiple messages if one tap should trigger several ESP commands.
-        await sendEspCommands([nextLightOn ? 'L1_on' : 'L1_off']);
+        // Map zone-1 (Ambient) -> L1, zone-2 (Task) -> L2, zone-3 (Accent) -> L3
+        let commandPrefix = 'L1';
+        if (zoneId === 'zone-2') {
+          commandPrefix = 'L2';
+        } else if (zoneId === 'zone-3') {
+          commandPrefix = 'L3';
+        }
+        await sendEspCommands([nextLightOn ? `${commandPrefix}_on` : `${commandPrefix}_off`]);
       } catch (error) {
         console.error('[AirBuddi] Light command failed:', error);
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
