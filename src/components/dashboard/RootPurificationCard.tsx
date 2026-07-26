@@ -1,17 +1,21 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
 
 type RootPurificationCardProps = {
-  upperBedChamber?: string;
-  lowerBedChamber?: string;
+  upperBedChamber?: 'Active' | 'Standby';
+  lowerBedChamber?: 'Active' | 'Standby';
+  onUpperPress?: () => void;
+  onLowerPress?: () => void;
 };
 
 export function RootPurificationCard({
   upperBedChamber = 'Active',
   lowerBedChamber = 'Standby',
+  onUpperPress,
+  onLowerPress,
 }: RootPurificationCardProps) {
   return (
     <View style={styles.card}>
@@ -36,11 +40,16 @@ export function RootPurificationCard({
           <Text style={styles.chamberLabel}>Upper Bed Chamber</Text>
           <Text style={styles.chamberValue}>{upperBedChamber}</Text>
         </View>
-        <View style={[styles.statusPill, upperBedChamber === 'Active' ? styles.statusPillOn : styles.statusPillOff]}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={onUpperPress}
+          style={[styles.statusPill, upperBedChamber === 'Active' ? styles.statusPillOn : styles.statusPillOff]}
+          accessibilityLabel="Toggle upper bed chamber"
+        >
           <Text style={[styles.statusText, upperBedChamber === 'Active' ? styles.statusTextOn : styles.statusTextOff]}>
             {upperBedChamber}
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.chamberRow}>
@@ -48,11 +57,16 @@ export function RootPurificationCard({
           <Text style={styles.chamberLabel}>Lower Bed Chamber</Text>
           <Text style={styles.chamberValue}>{lowerBedChamber}</Text>
         </View>
-        <View style={[styles.statusPill, lowerBedChamber === 'Active' ? styles.statusPillOn : styles.statusPillOff]}>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={onLowerPress}
+          style={[styles.statusPill, lowerBedChamber === 'Active' ? styles.statusPillOn : styles.statusPillOff]}
+          accessibilityLabel="Toggle lower bed chamber"
+        >
           <Text style={[styles.statusText, lowerBedChamber === 'Active' ? styles.statusTextOn : styles.statusTextOff]}>
             {lowerBedChamber}
           </Text>
-        </View>
+        </TouchableOpacity>
       </View>
     </View>
   );

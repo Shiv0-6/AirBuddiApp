@@ -52,6 +52,8 @@ export function DashboardScreen() {
     setUvcModeState,
     setFanSpeedState,
     setLightStateState,
+    setUpperBedChamberStateState,
+    setLowerBedChamberStateState,
     refreshData,
   } = useDashboardRealtimeBridge();
 
@@ -231,8 +233,16 @@ export function DashboardScreen() {
                 onToggleLight={handleToggleLightZone}
               />
               <RootPurificationCard
-                upperBedChamber="Active"
-                lowerBedChamber="Standby"
+                upperBedChamber={device?.upperBedChamber ?? 'Active'}
+                lowerBedChamber={device?.lowerBedChamber ?? 'Standby'}
+                onUpperPress={() => {
+                  const currentVal = device?.upperBedChamber ?? 'Active';
+                  setUpperBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
+                }}
+                onLowerPress={() => {
+                  const currentVal = device?.lowerBedChamber ?? 'Standby';
+                  setLowerBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
+                }}
               />
               <View style={styles.placeholderCard}>
                 <View style={styles.placeholderIconWrap}>

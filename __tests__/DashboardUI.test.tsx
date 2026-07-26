@@ -1,6 +1,6 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
-import { Text } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 
 import { QuickControls } from '../src/components/dashboard/QuickControls';
 import { LightControlPanel } from '../src/components/dashboard/LightControlPanel';
@@ -88,5 +88,35 @@ describe('QuickControls UI', () => {
     expect(flattenedText).toContain('Lower Bed Chamber');
     expect(flattenedText).toContain('Active');
     expect(flattenedText).toContain('Standby');
+  });
+
+  it('triggers onUpperPress and onLowerPress when bed chambers are pressed', () => {
+    const onUpperPress = jest.fn();
+    const onLowerPress = jest.fn();
+    let tree: renderer.ReactTestRenderer;
+
+    act(() => {
+      tree = renderer.create(
+        <RootPurificationCard
+          upperBedChamber="Active"
+          lowerBedChamber="Standby"
+          onUpperPress={onUpperPress}
+          onLowerPress={onLowerPress}
+        />,
+      );
+    });
+
+    const touchables = tree!.root.findAllByType(TouchableOpacity);
+    expect(touchables.length).toBe(2);
+
+    act(() => {
+      touchables[0].props.onPress();
+    });
+    expect(onUpperPress).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      touchables[1].props.onPress();
+    });
+    expect(onLowerPress).toHaveBeenCalledTimes(1);
   });
 });

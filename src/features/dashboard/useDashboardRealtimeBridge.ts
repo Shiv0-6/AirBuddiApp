@@ -15,6 +15,8 @@ import {
   setErrorMessage,
   setFanSpeed,
   setLightZoneState,
+  setUpperBedChamberState,
+  setLowerBedChamberState,
   setSleepMode,
   setUvcState,
 } from './dashboardSlice';
@@ -183,6 +185,32 @@ export function useDashboardRealtimeBridge() {
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
         // Revert UI if command failed
         dispatch(setLightZoneState({ zoneId, isOn: !nextLightOn }));
+      }
+    },
+
+    setUpperBedChamberStateState: async (nextVal: 'Active' | 'Standby') => {
+      const currentVal = nextVal === 'Active' ? 'Standby' : 'Active';
+      dispatch(setUpperBedChamberState(nextVal));
+      try {
+        await sendEspCommands([nextVal === 'Active' ? 'upper_on' : 'upper_off']);
+      } catch (error) {
+        console.error('[AirBuddi] Upper bed chamber command failed:', error);
+        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
+        // Revert UI if command failed
+        dispatch(setUpperBedChamberState(currentVal));
+      }
+    },
+
+    setLowerBedChamberStateState: async (nextVal: 'Active' | 'Standby') => {
+      const currentVal = nextVal === 'Active' ? 'Standby' : 'Active';
+      dispatch(setLowerBedChamberState(nextVal));
+      try {
+        await sendEspCommands([nextVal === 'Active' ? 'lower_on' : 'lower_off']);
+      } catch (error) {
+        console.error('[AirBuddi] Lower bed chamber command failed:', error);
+        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
+        // Revert UI if command failed
+        dispatch(setLowerBedChamberState(currentVal));
       }
     },
 

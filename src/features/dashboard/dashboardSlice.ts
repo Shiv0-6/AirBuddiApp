@@ -41,6 +41,8 @@ const initialState: DashboardRuntimeState = {
     deviceId: awsIotConfig.deviceId,
     sleepMode: false,
     uvc: true,
+    upperBedChamber: 'Active',
+    lowerBedChamber: 'Standby',
   },
 
   aqi: null,
@@ -137,6 +139,8 @@ function mergeEsp32Telemetry(
       uvc: (telemetry as any).uvc ?? currentDevice?.uvc ?? true,
       lightOn: (telemetry as any).lightOn ?? (telemetry as any).light ?? Object.values(nextLightZones).some(Boolean) ?? currentDevice?.lightOn ?? false,
       lightZones: nextLightZones,
+      upperBedChamber: (telemetry as any).upperBedChamber ?? currentDevice?.upperBedChamber ?? 'Active',
+      lowerBedChamber: (telemetry as any).lowerBedChamber ?? currentDevice?.lowerBedChamber ?? 'Standby',
     },
 
     connection: telemetry.connection ?? current.connection,
@@ -207,6 +211,20 @@ const dashboardSlice = createSlice({
       state.device.lightZones = nextZones;
       state.device.lightOn = Object.values(nextZones).some(Boolean);
       state.device.lastUpdated = 'Just now';
+    },
+
+    setUpperBedChamberState(state, action: PayloadAction<'Active' | 'Standby'>) {
+      if (state.device) {
+        state.device.upperBedChamber = action.payload;
+        state.device.lastUpdated = 'Just now';
+      }
+    },
+
+    setLowerBedChamberState(state, action: PayloadAction<'Active' | 'Standby'>) {
+      if (state.device) {
+        state.device.lowerBedChamber = action.payload;
+        state.device.lastUpdated = 'Just now';
+      }
     },
 
     cycleLocalFanSpeed(state) {
@@ -295,6 +313,8 @@ export const {
   setUvcState,
   setFanSpeed,
   setLightZoneState,
+  setUpperBedChamberState,
+  setLowerBedChamberState,
   cycleLocalFanSpeed,
   applyTelemetry,
   resetDashboard,

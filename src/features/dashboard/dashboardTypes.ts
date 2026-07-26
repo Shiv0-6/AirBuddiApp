@@ -17,6 +17,8 @@ export interface DashboardDevice {
   lastSeenAt?: string;
   sleepMode?: boolean;
   uvc?: boolean;
+  upperBedChamber?: 'Active' | 'Standby';
+  lowerBedChamber?: 'Active' | 'Standby';
 }
 
 
