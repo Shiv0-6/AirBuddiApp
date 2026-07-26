@@ -4,6 +4,7 @@ import { Text } from 'react-native';
 
 import { QuickControls } from '../src/components/dashboard/QuickControls';
 import { LightControlPanel } from '../src/components/dashboard/LightControlPanel';
+import { RootPurificationCard } from '../src/components/dashboard/RootPurificationCard';
 
 describe('QuickControls UI', () => {
   it('shows modern focus presets for a polished experience', () => {
@@ -62,8 +63,30 @@ describe('QuickControls UI', () => {
     expect(flattenedText).toContain('Ambient');
     expect(flattenedText).toContain('Task');
     expect(flattenedText).toContain('Accent');
-    expect(flattenedText).toContain('Zone 1');
-    expect(flattenedText).toContain('Zone 2');
-    expect(flattenedText).toContain('Zone 3');
+    expect(flattenedText).toContain('Zone');
+    expect(flattenedText).toContain('Tap to Start');
+    expect(flattenedText).toContain('Tap to Stop');
+  });
+
+  it('shows upper and lower bed chambers for root purification', () => {
+    let tree: renderer.ReactTestRenderer;
+
+    act(() => {
+      tree = renderer.create(
+        <RootPurificationCard
+          upperBedChamber="Active"
+          lowerBedChamber="Standby"
+        />,
+      );
+    });
+
+    const textContent = tree!.root.findAllByType(Text).map(node => node.props.children);
+    const flattenedText = textContent.flat().join(' ');
+
+    expect(flattenedText).toContain('Root Purification');
+    expect(flattenedText).toContain('Upper Bed Chamber');
+    expect(flattenedText).toContain('Lower Bed Chamber');
+    expect(flattenedText).toContain('Active');
+    expect(flattenedText).toContain('Standby');
   });
 });

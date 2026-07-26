@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -22,6 +22,7 @@ import { QuickControls } from '../../components/dashboard/QuickControls';
 import { FilterHealthCard } from '../../components/dashboard/FilterHealthCard';
 import { ConnectionPill } from '../../components/dashboard/ConnectionPill';
 import { LightControlPanel } from '../../components/dashboard/LightControlPanel';
+import { RootPurificationCard } from '../../components/dashboard/RootPurificationCard';
 
 import { useAppSelector } from '../../store/hooks';
 import { selectDashboard } from './dashboardSelectors';
@@ -228,6 +229,10 @@ export function DashboardScreen() {
               <LightControlPanel
                 lights={lightZones}
                 onToggleLight={handleToggleLightZone}
+              />
+              <RootPurificationCard
+                upperBedChamber="Active"
+                lowerBedChamber="Standby"
               />
               <View style={styles.placeholderCard}>
                 <View style={styles.placeholderIconWrap}>

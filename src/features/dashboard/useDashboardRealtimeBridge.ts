@@ -4,7 +4,7 @@ import { awsIotConfig } from '../../config/awsIotConfig';
 import { useAppDispatch } from '../../store/hooks';
 import { AwsIotClient } from '../../services/awsIot/awsIotClient';
 import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
-import { fetchLatestTelemetry, postLightCommand } from '../../services/awsIot/awsTelemetryApiClient';
+import { fetchLatestTelemetry, postEspCommand, postEspCommands } from '../../services/awsIot/awsTelemetryApiClient';
 import type { ConnectionState, DeviceMode, PowerState } from './dashboardTypes';
 import {
   applyTelemetry,
@@ -103,32 +103,71 @@ export function useDashboardRealtimeBridge() {
     }
   };
 
+  const sendEspCommand = async (message: string) => {
+    try {
+      // Single-message helper for a button that should send one ESP command.
+      await postEspCommand(message);
+      console.log('[AirBuddi] ESP command sent:', message);
+    } catch (error) {
+      console.error('[AirBuddi] ESP command failed:', error);
+      dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
+      throw error;
+    }
+  };
+
+  const sendEspCommands = async (messages: string[]) => {
+    try {
+      // Use this when one button should send multiple commands to the ESP endpoint.
+      await postEspCommands(messages);
+      console.log('[AirBuddi] ESP commands sent:', messages);
+    } catch (error) {
+      console.error('[AirBuddi] ESP commands failed:', error);
+      dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
+      throw error;
+    }
+  };
+
   return {
+    sendEspCommand,
+    sendEspCommands,
+
     setPowerState: async (nextPower: boolean) => {
       const power: PowerState = nextPower ? 'on' : 'off';
       dispatch(setDevicePower(power));
       await sendLegacyCommand('power', power);
+      // EDIT THIS ARRAY for the power button.
+      // Each string becomes a separate POST to /devices with { "command": "..." }.
+      await sendEspCommands([nextPower ? 'power_on' : 'power_off']);
     },
 
     setAutoMode: async (nextAutoMode: boolean) => {
       const mode: DeviceMode = nextAutoMode ? 'auto' : 'manual';
       dispatch(setDeviceMode(mode));
       await sendLegacyCommand('autoMode', mode);
+      // EDIT THIS ARRAY for the auto/manual button.
+      await sendEspCommands([nextAutoMode ? 'auto_on' : 'auto_off']);
     },
 
     setSleepModeState: async (nextSleepMode: boolean) => {
       dispatch(setSleepMode(nextSleepMode));
       await sendLegacyCommand('autoMode', nextSleepMode ? 'sleep' : 'off');
+      // EDIT THIS ARRAY for the sleep button.
+      await sendEspCommands([nextSleepMode ? 'sleep_on' : 'sleep_off']);
     },
 
     setUvcModeState: async (nextUvc: boolean) => {
       dispatch(setUvcState(nextUvc));
       await sendLegacyCommand('autoMode', nextUvc ? 'uvc_on' : 'uvc_off');
+      // EDIT THIS ARRAY for the UV/C button.
+      await sendEspCommands([nextUvc ? 'uvc_on' : 'uvc_off']);
     },
 
     setFanSpeedState: async (speed: '1' | '2' | '3' | 'turbo') => {
       dispatch(setFanSpeed(speed));
       await sendLegacyCommand('fanSpeed', speed);
+      // EDIT THIS ARRAY for the fan speed button.
+      // Example: ['fan_1'], ['fan_2'], ['fan_3'], ['fan_turbo'], or multiple messages.
+      await sendEspCommands([`fan_${speed}`]);
     },
 
     setLightStateState: async (zoneId: string, nextLightOn: boolean) => {
@@ -136,9 +175,9 @@ export function useDashboardRealtimeBridge() {
       dispatch(setLightZoneState({ zoneId, isOn: nextLightOn }));
       try {
         // POST /devices  →  { "command": "start" } or { "command": "stop" }
-        // This matches the exact format tested and confirmed working in Postman.
-        await postLightCommand(nextLightOn ? 'start' : 'stop');
-        console.log('[AirBuddi] Light command sent:', nextLightOn ? 'start' : 'stop');
+        // EDIT THIS ARRAY for the light button.
+        // You can add multiple messages if one tap should trigger several ESP commands.
+        await sendEspCommands([nextLightOn ? 'L1_on' : 'L1_off']);
       } catch (error) {
         console.error('[AirBuddi] Light command failed:', error);
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
