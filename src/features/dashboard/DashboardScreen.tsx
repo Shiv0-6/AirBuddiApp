@@ -1,4 +1,4 @@
- import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -29,16 +29,15 @@ import { selectDashboard } from './dashboardSelectors';
 import type { DashboardRuntimeState } from './dashboardSlice';
 import { useDashboardRealtimeBridge } from './useDashboardRealtimeBridge';
 
-
-// ─── Bottom Tab Config
+// ─── Bottom Tab Config ────────────────────────────────────────────────────────
 
 type TabId = 'airquality' | 'fan' | 'light' | 'more';
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'fan',        label: 'Home',        icon: 'home-outline' },
-  { id: 'airquality', label: 'Monitor',     icon: 'chart-line' },
-  { id: 'light',      label: 'Control',     icon: 'lightbulb-outline' },
-  { id: 'more',       label: 'Settings',    icon: 'cog-outline' },
+  { id: 'fan',        label: 'Home',     icon: 'home-outline' },
+  { id: 'airquality', label: 'Monitor',  icon: 'chart-line' },
+  { id: 'light',      label: 'Control',  icon: 'lightbulb-outline' },
+  { id: 'more',       label: 'Settings', icon: 'cog-outline' },
 ];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
@@ -62,27 +61,14 @@ export function DashboardScreen() {
 
   const [activeTab, setActiveTab] = useState<TabId>('fan');
   const [refreshing, setRefreshing] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [dailyGoalEnabled, setDailyGoalEnabled] = useState(true);
 
   const lightZones = useMemo(
     () => [
-      {
-        id: 'zone-1',
-        label: 'Ambient',
-        icon: 'lamp',
-        isOn: device?.lightZones?.['zone-1'] ?? false,
-      },
-      {
-        id: 'zone-2',
-        label: 'Task',
-        icon: 'desk-lamp',
-        isOn: device?.lightZones?.['zone-2'] ?? false,
-      },
-      {
-        id: 'zone-3',
-        label: 'Accent',
-        icon: 'spotlight',
-        isOn: device?.lightZones?.['zone-3'] ?? false,
-      },
+      { id: 'zone-1', label: 'Ambient', icon: 'lamp',      isOn: device?.lightZones?.['zone-1'] ?? false },
+      { id: 'zone-2', label: 'Task',    icon: 'desk-lamp', isOn: device?.lightZones?.['zone-2'] ?? false },
+      { id: 'zone-3', label: 'Accent',  icon: 'spotlight', isOn: device?.lightZones?.['zone-3'] ?? false },
     ],
     [device?.lightZones],
   );
@@ -92,8 +78,8 @@ export function DashboardScreen() {
     await refreshData();
     setRefreshing(false);
   }, [refreshData]);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [dailyGoalEnabled, setDailyGoalEnabled] = useState(true);
+
+  // Tab transition animation
   const contentOpacity = useSharedValue(1);
   const contentTranslateY = useSharedValue(0);
 
@@ -114,7 +100,8 @@ export function DashboardScreen() {
     [dashboard.connection],
   );
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
   const handleTogglePower = useCallback(() => {
     if (!device) { return; }
     setPowerState(device.power !== 'on');
@@ -141,14 +128,13 @@ export function DashboardScreen() {
     setLightStateState(zoneId, nextState);
   }, [device?.lightZones, setLightStateState]);
 
-  // ── Device title (truncated to 20 chars for header) ───────────────────────
   const deviceTitle = device?.name ?? 'AirBuddi Pro';
 
-  // ─────────────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Dynamic Background */}
+      {/* Subtle background decor */}
       <View pointerEvents="none" style={styles.bgContainer}>
         <View style={styles.bgCirclePrimary} />
         <View style={styles.bgCircleSecondary} />
@@ -156,7 +142,7 @@ export function DashboardScreen() {
 
       <DashboardHeader
         title={deviceTitle}
-        subtitle="Connected • Optimal Performance"
+        subtitle="Connected · Optimal Performance"
         onProfilePress={() => setIsProfileOpen(true)}
         onRefreshPress={handleRefresh}
       />
@@ -174,7 +160,7 @@ export function DashboardScreen() {
           />
         }
       >
-        {/* ── Home Tab (main purifier control) ─────────────────── */}
+        {/* ── Home Tab ──────────────────────────────────────────────── */}
         {activeTab === 'fan' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <QuickControls
@@ -192,16 +178,17 @@ export function DashboardScreen() {
             <View style={styles.tabPad}>
               <View style={styles.goalCard}>
                 <View style={styles.goalIcon}>
-                  <MaterialCommunityIcons name="leaf-circle-outline" size={24} color={dashboardTheme.colors.primary} />
+                  <MaterialCommunityIcons name="leaf-circle-outline" size={22} color={dashboardTheme.colors.primary} />
                 </View>
                 <View style={styles.goalCopy}>
-                  <Text style={styles.goalTitle}>Clean-air goal</Text>
+                  <Text style={styles.goalTitle}>Clean-air Goal</Text>
                   <Text style={styles.goalSubtitle}>
-                    {dailyGoalEnabled ? 'Tracking your healthy-air time today.' : 'Turn this on for gentle daily insights.'}
+                    {dailyGoalEnabled ? 'Tracking healthy-air time today.' : 'Turn on for daily air insights.'}
                   </Text>
                 </View>
                 <TouchableOpacity
                   accessibilityLabel="Toggle clean-air goal"
+                  activeOpacity={0.8}
                   onPress={() => setDailyGoalEnabled(value => !value)}
                   style={[styles.goalToggle, dailyGoalEnabled && styles.goalToggleOn]}
                 >
@@ -212,7 +199,7 @@ export function DashboardScreen() {
           </Animated.View>
         )}
 
-        {/* ── Monitor Tab ─────────────────────────────────────── */}
+        {/* ── Monitor Tab ───────────────────────────────────────────── */}
         {activeTab === 'airquality' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
@@ -224,7 +211,7 @@ export function DashboardScreen() {
           </Animated.View>
         )}
 
-        {/* ── Control Tab ─────────────────────────────────────── */}
+        {/* ── Control Tab ───────────────────────────────────────────── */}
         {activeTab === 'light' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
@@ -244,27 +231,11 @@ export function DashboardScreen() {
                   setLowerBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
                 }}
               />
-              <View style={styles.placeholderCard}>
-                <View style={styles.placeholderIconWrap}>
-                  <MaterialCommunityIcons
-                    name="lightbulb-variant"
-                    size={48}
-                    color={dashboardTheme.colors.primary}
-                  />
-                </View>
-                <Text style={styles.placeholderTitle}>Zone Lighting</Text>
-                <Text style={styles.placeholderSub}>
-                  Use the controls above to send on/off commands for each lighting zone.
-                </Text>
-                <Text style={styles.noteText}>
-                  The command bridge is ready for additional lighting fixtures without changing the UI pattern.
-                </Text>
-              </View>
             </View>
           </Animated.View>
         )}
 
-        {/* ── Settings Tab ────────────────────────────────────── */}
+        {/* ── Settings Tab ──────────────────────────────────────────── */}
         {activeTab === 'more' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
@@ -285,6 +256,7 @@ export function DashboardScreen() {
         <View style={styles.bottomSpace} />
       </ScrollView>
 
+      {/* ── Profile Bottom Sheet ────────────────────────────────────── */}
       <Modal
         animationType="slide"
         transparent
@@ -300,25 +272,39 @@ export function DashboardScreen() {
           <View style={styles.profileSheet}>
             <View style={styles.sheetHandle} />
             <View style={styles.profileIdentity}>
-              <View style={styles.profileAvatar}><Text style={styles.profileAvatarText}>AB</Text></View>
+              <View style={styles.profileAvatar}>
+                <Text style={styles.profileAvatarText}>AB</Text>
+              </View>
               <View>
-                <Text style={styles.profileName}>AirBuddi member</Text>
+                <Text style={styles.profileName}>AirBuddi Member</Text>
                 <Text style={styles.profileEmail}>Your home, healthier</Text>
               </View>
             </View>
             <Text style={styles.sheetLabel}>ACCOUNT</Text>
-            <TouchableOpacity style={styles.profileAction} onPress={() => { setIsProfileOpen(false); setActiveTab('more'); }}>
-              <MaterialCommunityIcons name="air-filter" size={21} color={dashboardTheme.colors.primary} />
-              <Text style={styles.profileActionText}>My devices</Text>
+            <TouchableOpacity
+              style={styles.profileAction}
+              activeOpacity={0.75}
+              onPress={() => { setIsProfileOpen(false); setActiveTab('more'); }}
+            >
+              <MaterialCommunityIcons name="air-filter" size={20} color={dashboardTheme.colors.primary} />
+              <Text style={styles.profileActionText}>My Devices</Text>
               <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.profileAction} onPress={() => { setIsProfileOpen(false); setActiveTab('airquality'); }}>
-              <MaterialCommunityIcons name="chart-line" size={21} color={dashboardTheme.colors.accent} />
-              <Text style={styles.profileActionText}>Air quality history</Text>
+            <TouchableOpacity
+              style={styles.profileAction}
+              activeOpacity={0.75}
+              onPress={() => { setIsProfileOpen(false); setActiveTab('airquality'); }}
+            >
+              <MaterialCommunityIcons name="chart-line" size={20} color={dashboardTheme.colors.primary} />
+              <Text style={styles.profileActionText}>Air Quality History</Text>
               <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.profileAction} onPress={() => setIsProfileOpen(false)}>
-              <MaterialCommunityIcons name="cog-outline" size={21} color={dashboardTheme.colors.textSecondary} />
+            <TouchableOpacity
+              style={styles.profileAction}
+              activeOpacity={0.75}
+              onPress={() => setIsProfileOpen(false)}
+            >
+              <MaterialCommunityIcons name="cog-outline" size={20} color={dashboardTheme.colors.textSecondary} />
               <Text style={styles.profileActionText}>Settings</Text>
               <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
             </TouchableOpacity>
@@ -326,7 +312,7 @@ export function DashboardScreen() {
         </View>
       </Modal>
 
-      {/* ── Modern Bottom Navigation ─────────────────────────── */}
+      {/* ── Bottom Navigation Bar ────────────────────────────────────── */}
       <View style={styles.navBarWrapper}>
         <View style={styles.navBar}>
           {TABS.map(tab => {
@@ -335,16 +321,15 @@ export function DashboardScreen() {
               <TouchableOpacity
                 key={tab.id}
                 activeOpacity={0.7}
-                style={[styles.navItem, isActive && styles.navItemActive]}
+                style={styles.navItem}
                 onPress={() => setActiveTab(tab.id)}
               >
                 <View style={[styles.navIconContainer, isActive && styles.navIconContainerActive]}>
                   <MaterialCommunityIcons
                     name={isActive ? tab.icon.replace('-outline', '') : tab.icon}
-                    size={24}
-                    color={isActive ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted}
+                    size={22}
+                    color={isActive ? '#FFFFFF' : dashboardTheme.colors.textMuted}
                   />
-                  {isActive && <View style={styles.activeDot} />}
                 </View>
                 <Text style={[styles.navLabel, isActive && styles.navLabelActive]}>
                   {tab.label}
@@ -372,29 +357,29 @@ const styles = StyleSheet.create({
   },
   bgCirclePrimary: {
     position: 'absolute',
-    top: -100,
-    right: -100,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
+    top: -80,
+    right: -80,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
     backgroundColor: dashboardTheme.colors.primarySoft,
-    opacity: 0.5,
+    opacity: 0.6,
   },
   bgCircleSecondary: {
     position: 'absolute',
-    bottom: 100,
-    left: -150,
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: 'rgba(59, 130, 246, 0.05)',
+    bottom: 120,
+    left: -120,
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: 'rgba(34, 197, 94, 0.04)',
   },
   flex: {
     flex: 1,
   },
   contentContainer: {
     paddingTop: 8,
-    paddingBottom: 100, // Extra space for floating nav
+    paddingBottom: 110,
   },
   tabContent: {
     width: '100%',
@@ -403,33 +388,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   gap: {
-    marginTop: 20,
+    marginTop: 16,
   },
   bottomSpace: {
-    height: 40,
+    height: 32,
   },
+
+  // Clean-air goal card
   goalCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: dashboardTheme.colors.surface,
     borderRadius: dashboardTheme.radii.md,
     padding: 16,
-    marginTop: 20,
+    marginTop: 16,
     borderWidth: 1,
     borderColor: dashboardTheme.colors.border,
+    ...dashboardTheme.shadows.soft,
   },
   goalIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: dashboardTheme.colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
   },
   goalCopy: { flex: 1, paddingRight: 10 },
-  goalTitle: { color: dashboardTheme.colors.textPrimary, fontSize: 15, fontWeight: '800' },
-  goalSubtitle: { color: dashboardTheme.colors.textMuted, fontSize: 12, lineHeight: 17, marginTop: 3 },
+  goalTitle: {
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  goalSubtitle: {
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 2,
+  },
   goalToggle: {
     width: 46,
     height: 28,
@@ -438,123 +435,131 @@ const styles = StyleSheet.create({
     backgroundColor: dashboardTheme.colors.surfaceSecondary,
   },
   goalToggleOn: { backgroundColor: dashboardTheme.colors.primary },
-  goalToggleThumb: { width: 22, height: 22, borderRadius: 11, backgroundColor: dashboardTheme.colors.textMuted },
-  goalToggleThumbOn: { alignSelf: 'flex-end', backgroundColor: dashboardTheme.colors.dark },
+  goalToggleThumb: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.5,
+  },
+  goalToggleThumbOn: { alignSelf: 'flex-end', opacity: 1 },
 
-  // Placeholder card (Light tab)
-  placeholderCard: {
-    backgroundColor: dashboardTheme.colors.surface,
-    borderRadius: dashboardTheme.radii.lg,
-    padding: 32,
-    alignItems: 'center',
-    ...dashboardTheme.shadows.medium,
-  },
-  placeholderIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: dashboardTheme.colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
-  placeholderTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: dashboardTheme.colors.textPrimary,
-    marginBottom: 12,
-  },
-  placeholderSub: {
-    fontSize: 14,
-    color: dashboardTheme.colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  comingSoonBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: dashboardTheme.colors.dark,
-  },
-  comingSoonText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-
-  // Modern Floating Bottom Nav
+  // Bottom nav
   navBarWrapper: {
     position: 'absolute',
-    bottom: 24,
-    left: 20,
-    right: 20,
+    bottom: 20,
+    left: 16,
+    right: 16,
     zIndex: 10,
   },
   navBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    borderRadius: 24,
-    paddingVertical: 12,
-    paddingHorizontal: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: dashboardTheme.colors.border,
     ...dashboardTheme.shadows.strong,
+    alignItems: 'center',
   },
   navItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  navItemActive: {
-    backgroundColor: dashboardTheme.colors.surfaceSecondary,
+    paddingVertical: 4,
   },
   navIconContainer: {
-    width: 44,
-    height: 40,
+    width: 42,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
+    borderRadius: 12,
   },
   navIconContainerActive: {
-    // No background needed for this style
-  },
-  activeDot: {
-    position: 'absolute',
-    bottom: -2,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
     backgroundColor: dashboardTheme.colors.primary,
+    ...dashboardTheme.shadows.soft,
   },
   navLabel: {
     fontSize: 10,
     fontWeight: '600',
     color: dashboardTheme.colors.textMuted,
-    marginTop: 4,
+    marginTop: 3,
   },
   navLabelActive: {
-    color: dashboardTheme.colors.primary,
+    color: dashboardTheme.colors.primaryDark,
     fontWeight: '700',
   },
-  profileBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(2, 6, 23, 0.62)' },
+
+  // Profile sheet
+  profileBackdrop: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(13, 40, 24, 0.55)',
+  },
   profileSheet: {
-    backgroundColor: dashboardTheme.colors.surfaceElevated,
+    backgroundColor: dashboardTheme.colors.surface,
     borderTopLeftRadius: dashboardTheme.radii.xl,
     borderTopRightRadius: dashboardTheme.radii.xl,
     padding: 20,
     paddingBottom: 44,
   },
-  sheetHandle: { alignSelf: 'center', width: 38, height: 4, borderRadius: 2, backgroundColor: dashboardTheme.colors.textMuted, opacity: 0.45, marginBottom: 22 },
-  profileIdentity: { flexDirection: 'row', alignItems: 'center', gap: 13, marginBottom: 28 },
-  profileAvatar: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', backgroundColor: dashboardTheme.colors.primary },
-  profileAvatarText: { color: dashboardTheme.colors.dark, fontSize: 16, fontWeight: '900' },
-  profileName: { color: dashboardTheme.colors.textPrimary, fontSize: 18, fontWeight: '800' },
-  profileEmail: { color: dashboardTheme.colors.textMuted, fontSize: 13, marginTop: 3 },
-  sheetLabel: { color: dashboardTheme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginBottom: 8 },
-  profileAction: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingVertical: 15, borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
-  profileActionText: { flex: 1, color: dashboardTheme.colors.textPrimary, fontSize: 16, fontWeight: '600' },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: dashboardTheme.colors.border,
+    marginBottom: 22,
+  },
+  profileIdentity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    marginBottom: 28,
+  },
+  profileAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: dashboardTheme.colors.primary,
+  },
+  profileAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  profileName: {
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  profileEmail: {
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 13,
+    marginTop: 2,
+  },
+  sheetLabel: {
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginBottom: 8,
+  },
+  profileAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: dashboardTheme.colors.border,
+  },
+  profileActionText: {
+    flex: 1,
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
 });

@@ -150,8 +150,8 @@ export function LightControlPanel({ lights, onToggleLight }: LightControlPanelPr
           <Text style={styles.title}>Light Control</Text>
           <Text style={styles.subtitle}>
             {anyOn
-              ? `${onCount} zone${onCount > 1 ? 's' : ''} active — ESP32 receiving commands`
-              : 'All zones off — tap a tile to send start command'}
+              ? `${onCount} zone${onCount > 1 ? 's' : ''} active`
+              : 'All zones off · tap a tile to toggle'}
           </Text>
         </View>
         {/* Master status pill */}
@@ -177,17 +177,7 @@ export function LightControlPanel({ lights, onToggleLight }: LightControlPanelPr
         ))}
       </View>
 
-      {/* Footer hint */}
-      <View style={styles.footerHint}>
-        <MaterialCommunityIcons
-          name="information-outline"
-          size={13}
-          color={dashboardTheme.colors.textMuted}
-        />
-        <Text style={styles.footerHintText}>
-          Sends <Text style={styles.codeText}>start</Text> / <Text style={styles.codeText}>stop</Text> to your API Gateway → ESP32
-        </Text>
-      </View>
+
     </View>
   );
 }
@@ -395,22 +385,4 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
 
-  // Footer
-  footerHint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginTop: 14,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: dashboardTheme.colors.border,
-  },
-  footerHintText: {
-    fontSize: 11,
-    color: dashboardTheme.colors.textMuted,
-  },
-  codeText: {
-    fontWeight: '800',
-    color: dashboardTheme.colors.primary,
-  },
 });

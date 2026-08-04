@@ -64,7 +64,7 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
       <SectionCard tone="default" padding={24}>
         <View style={styles.header}>
           <Text style={styles.title}>Air Quality Index</Text>
-          <Text style={styles.subtitle}>Purifier Zone Telemetry</Text>
+          <Text style={styles.subtitle}>Real-time Monitoring</Text>
         </View>
 
         <View style={styles.emptyState}>
@@ -76,9 +76,7 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
           <View style={[styles.badge, styles.badgeNeutral]}>
             <Text style={styles.badgeText}>WAITING FOR DATA</Text>
           </View>
-          <Text style={styles.description}>
-            Connecting to your AirBuddi device to retrieve real-time air quality metrics.
-          </Text>
+          <Text style={styles.description}>Connecting to your AirBuddi device.</Text>
         </View>
       </SectionCard>
     );
@@ -140,7 +138,7 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
           <Text style={[styles.badgeText, { color: descriptor.color }]}>{descriptor.label.toUpperCase()}</Text>
         </View>
         <Text style={styles.description}>
-          The indoor air is currently <Text style={[styles.highlightText, { color: descriptor.color }]}>{descriptor.label.toLowerCase()}</Text>. The system is optimizing filtration.
+          Air is currently <Text style={[styles.highlightText, { color: descriptor.color }]}>{descriptor.label.toLowerCase()}</Text>. Filtration is optimized.
         </Text>
       </View>
 

@@ -15,40 +15,39 @@ function DashboardHeaderComponent({ title, subtitle, onProfilePress, onRefreshPr
   return (
     <View style={styles.wrapper}>
       <View style={styles.topActionRow}>
+        {/* Brand */}
         <View style={styles.brandRow}>
           <View style={styles.brandMark}>
-            <MaterialCommunityIcons name="air-filter" size={20} color={dashboardTheme.colors.primary} />
+            <MaterialCommunityIcons name="air-filter" size={18} color={dashboardTheme.colors.primary} />
           </View>
           <Text style={styles.brandText}>AIRBUDDI</Text>
         </View>
 
+        {/* Actions */}
         <View style={styles.actionsContainer}>
           <TouchableOpacity
-            accessibilityLabel="Refresh telemetry data"
+            accessibilityLabel="Refresh data"
             onPress={onRefreshPress}
-            style={styles.refreshBtn}
             activeOpacity={0.75}
+            style={styles.iconBtn}
           >
-            <View style={styles.refreshIconContainer}>
-              <MaterialCommunityIcons name="refresh" size={22} color={dashboardTheme.colors.textPrimary} />
-            </View>
+            <MaterialCommunityIcons name="refresh" size={20} color={dashboardTheme.colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity
             accessibilityLabel="Open profile"
             onPress={onProfilePress}
-            style={styles.profileBtn}
             activeOpacity={0.75}
+            style={styles.avatarBtn}
           >
-            <View style={styles.avatarPlaceholder}>
-              <Text style={styles.avatarText}>AB</Text>
-            </View>
+            <Text style={styles.avatarText}>AB</Text>
           </TouchableOpacity>
         </View>
       </View>
 
+      {/* Hero text */}
       <View style={styles.heroSection}>
-        <Text style={styles.welcomeText}>Your space</Text>
+        <Text style={styles.welcomeText}>Your Space</Text>
         <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
             {title}
@@ -77,16 +76,66 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 20,
   },
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  brandMark: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  brandText: {
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 1.8,
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: dashboardTheme.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    ...dashboardTheme.shadows.soft,
+  },
+  avatarBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: dashboardTheme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...dashboardTheme.shadows.soft,
+  },
+  avatarText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
   heroSection: {
-    gap: 6,
-    paddingHorizontal: 4,
+    gap: 4,
+    paddingHorizontal: 2,
     paddingBottom: 6,
   },
   welcomeText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
-    color: dashboardTheme.colors.textSecondary,
-    letterSpacing: 0.5,
+    color: dashboardTheme.colors.textMuted,
+    letterSpacing: 0.4,
   },
   titleRow: {
     flexDirection: 'row',
@@ -97,76 +146,18 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: dashboardTheme.colors.success,
+    backgroundColor: dashboardTheme.colors.primary,
     marginTop: 4,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     color: dashboardTheme.colors.textPrimary,
     letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
     color: dashboardTheme.colors.textMuted,
-  },
-  brandRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  brandMark: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: dashboardTheme.colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brandText: {
-    color: dashboardTheme.colors.textPrimary,
-    fontSize: 13,
-    fontWeight: '900',
-    letterSpacing: 1.6,
-  },
-  profileBtn: {
-    padding: 2,
-  },
-  avatarPlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: dashboardTheme.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: dashboardTheme.colors.surfaceElevated,
-    ...dashboardTheme.shadows.soft,
-  },
-  avatarText: {
-    color: dashboardTheme.colors.dark,
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 0.5,
-  },
-  actionsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  refreshBtn: {
-    padding: 2,
-  },
-  refreshIconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: dashboardTheme.colors.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: dashboardTheme.colors.border,
-    ...dashboardTheme.shadows.soft,
   },
 });

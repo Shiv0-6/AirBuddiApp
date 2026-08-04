@@ -17,7 +17,7 @@ function DeviceCardComponent({ device }: DeviceCardProps) {
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.title}>Device</Text>
-            <Text style={styles.subtitle}>Waiting for ESP32 telemetry</Text>
+            <Text style={styles.subtitle}>Waiting for device data</Text>
           </View>
           <View style={styles.statusChip}>
             <View style={[styles.statusDot, styles.offline]} />
@@ -26,7 +26,7 @@ function DeviceCardComponent({ device }: DeviceCardProps) {
         </View>
 
         <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>No live device data received yet.</Text>
+          <Text style={styles.subtitle}>No device data yet</Text>
         </View>
       </SectionCard>
     );
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.06)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: dashboardTheme.colors.border,
   },
   statusDot: {
     width: 6,
@@ -123,9 +123,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 14,
     borderRadius: dashboardTheme.radii.md,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: dashboardTheme.colors.surfaceSecondary,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: dashboardTheme.colors.border,
     gap: 6,
   },
   metaLabel: {
@@ -142,9 +142,9 @@ const styles = StyleSheet.create({
     marginTop: 18,
     padding: 16,
     borderRadius: dashboardTheme.radii.md,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: dashboardTheme.colors.surfaceTint,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: dashboardTheme.colors.border,
   },
   emptyStateText: {
     color: dashboardTheme.colors.textSecondary,

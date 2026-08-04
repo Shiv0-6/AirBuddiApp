@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     height: 10,
     borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: dashboardTheme.colors.surfaceSecondary,
     overflow: 'hidden',
   },
   progressFill: {
@@ -173,9 +173,9 @@ const styles = StyleSheet.create({
     marginTop: 18,
     padding: 16,
     borderRadius: dashboardTheme.radii.md,
-    backgroundColor: 'rgba(255,255,255,0.04)',
+    backgroundColor: dashboardTheme.colors.surfaceTint,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
+    borderColor: dashboardTheme.colors.border,
   },
   emptyStateText: {
     color: dashboardTheme.colors.textSecondary,

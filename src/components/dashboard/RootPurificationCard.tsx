@@ -29,7 +29,7 @@ export function RootPurificationCard({
         </View>
         <View style={styles.headerText}>
           <Text style={styles.title}>Root Purification</Text>
-          <Text style={styles.subtitle}>Upper and lower bed chamber monitoring</Text>
+          <Text style={styles.subtitle}>Upper & lower bed chambers</Text>
         </View>
       </View>
 

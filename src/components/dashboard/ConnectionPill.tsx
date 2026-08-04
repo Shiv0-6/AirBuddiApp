@@ -1,5 +1,6 @@
 import React, { memo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
 import { getConnectionTone } from '../../features/dashboard/dashboardUtils';
@@ -13,9 +14,14 @@ function ConnectionPillComponent({ label, status }: ConnectionPillProps) {
   const tone = getConnectionTone(status);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { borderColor: tone + '30' }]}>
       <View style={[styles.dot, { backgroundColor: tone }]} />
-      <Text style={styles.label}>{label}</Text>
+      <MaterialCommunityIcons
+        name={status === 'connected' ? 'wifi' : status === 'connecting' ? 'wifi-sync' : 'wifi-off'}
+        size={14}
+        color={tone}
+      />
+      <Text style={[styles.label, { color: tone }]}>{label}</Text>
     </View>
   );
 }
@@ -27,22 +33,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: 999,
     backgroundColor: dashboardTheme.colors.surface,
-    borderWidth: 1,
-    borderColor: dashboardTheme.colors.border,
-    gap: 8,
+    borderWidth: 1.5,
+    gap: 7,
+    ...dashboardTheme.shadows.soft,
   },
   dot: {
-    width: 8,
-    height: 8,
+    width: 7,
+    height: 7,
     borderRadius: 4,
   },
   label: {
-    color: dashboardTheme.colors.textSecondary,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
 });

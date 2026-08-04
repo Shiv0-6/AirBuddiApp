@@ -54,7 +54,7 @@ function SensorGridComponent({ sensors }: SensorGridProps) {
       <SectionCard padding={18}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>Environmental Sensors</Text>
-          <Text style={styles.subtitle}>Waiting for live telemetry</Text>
+          <Text style={styles.subtitle}>Waiting for readings</Text>
         </View>
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateText}>No sensor readings received yet.</Text>

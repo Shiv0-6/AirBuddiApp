@@ -16,7 +16,7 @@ import Animated, {
 
 import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type QuickControlsProps = {
   isPoweredOn: boolean;
@@ -31,7 +31,6 @@ type QuickControlsProps = {
   onSelectFanSpeed: (speed: '1' | '2' | '3' | 'turbo') => void;
 };
 
-// Maps the visible fan speed labels to the app's underlying speed values
 const SPEED_LABELS = ['Low', 'Medium', 'High'] as const;
 const SPEED_MAP: Record<string, '1' | '2' | '3' | 'turbo'> = {
   Low: '1',
@@ -49,7 +48,7 @@ const PRESETS = [
   {
     id: 'fresh',
     label: 'Fresh Air',
-    hint: 'Auto + Turbo',
+    hint: 'Auto · Turbo speed',
     icon: 'weather-partly-cloudy',
     auto: true,
     sleep: false,
@@ -59,7 +58,7 @@ const PRESETS = [
   {
     id: 'sleep',
     label: 'Quiet Sleep',
-    hint: 'Low noise',
+    hint: 'Silent · Low noise',
     icon: 'weather-night',
     auto: false,
     sleep: true,
@@ -69,7 +68,7 @@ const PRESETS = [
   {
     id: 'deep',
     label: 'Deep Clean',
-    hint: 'Maximum filtration',
+    hint: 'Max filtration',
     icon: 'shield-check',
     auto: true,
     sleep: false,
@@ -78,7 +77,7 @@ const PRESETS = [
   },
 ] as const;
 
-// ─── Fan icon rotation ────────────────────────────────────────────────────────
+// ─── Fan rotation speeds ──────────────────────────────────────────────────────
 
 const FAN_DURATIONS: Record<string, number> = {
   '1': 2400,
@@ -87,7 +86,7 @@ const FAN_DURATIONS: Record<string, number> = {
   turbo: 380,
 };
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
 function QuickControlsComponent({
   isPoweredOn,
@@ -101,18 +100,14 @@ function QuickControlsComponent({
   onToggleUvc,
   onSelectFanSpeed,
 }: QuickControlsProps) {
-  // Power ring pulse
   const ringScale = useSharedValue(1);
-  const ringOpacity = useSharedValue(0.2);
-
-  // Fan rotation
+  const ringOpacity = useSharedValue(0.15);
   const rotation = useSharedValue(0);
 
   useEffect(() => {
     if (isPoweredOn) {
       ringScale.value = withRepeat(withTiming(1.15, { duration: 2000 }), -1, true);
       ringOpacity.value = withRepeat(withTiming(0.4, { duration: 2000 }), -1, true);
-
       const duration = FAN_DURATIONS[fanSpeed] ?? 1400;
       rotation.value = withRepeat(
         withTiming(360, { duration, easing: Easing.linear }),
@@ -121,7 +116,7 @@ function QuickControlsComponent({
       );
     } else {
       ringScale.value = withTiming(1, { duration: 500 });
-      ringOpacity.value = withTiming(0.2, { duration: 500 });
+      ringOpacity.value = withTiming(0.15, { duration: 500 });
       rotation.value = withTiming(0, { duration: 1000 });
     }
   }, [isPoweredOn, fanSpeed, ringScale, ringOpacity, rotation]);
@@ -135,12 +130,11 @@ function QuickControlsComponent({
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
-  // Determine active UI speed button
-  const activeSpeedLabel = SPEED_REVERSE_MAP[fanSpeed] ?? '2';
+  const activeSpeedLabel = SPEED_REVERSE_MAP[fanSpeed] ?? 'Medium';
 
   const handleSpeedPress = useCallback((label: string) => {
     const mapped = SPEED_MAP[label];
-    if (mapped) onSelectFanSpeed(mapped);
+    if (mapped) { onSelectFanSpeed(mapped); }
   }, [onSelectFanSpeed]);
 
   const handlePresetPress = useCallback((preset: (typeof PRESETS)[number]) => {
@@ -150,9 +144,14 @@ function QuickControlsComponent({
     onSelectFanSpeed(preset.speed);
   }, [onSelectFanSpeed, onToggleAutoMode, onToggleSleepMode, onToggleUvc]);
 
-  const activePresetId = isSleepMode ? 'sleep' : isAutoMode && fanSpeed === 'turbo' ? 'fresh' : isAutoMode && fanSpeed === '3' ? 'deep' : null;
+  const activePresetId = isSleepMode
+    ? 'sleep'
+    : isAutoMode && fanSpeed === 'turbo'
+    ? 'fresh'
+    : isAutoMode && fanSpeed === '3'
+    ? 'deep'
+    : null;
 
-  // Fan speed label text
   const fanSpeedText = !isPoweredOn
     ? 'Off'
     : isAutoMode
@@ -165,13 +164,13 @@ function QuickControlsComponent({
 
   return (
     <View style={styles.container}>
-      {/* ── Visual Status Area ────────────────────────────── */}
+      {/* ── Power Button Hero ──────────────────────────────────── */}
       <View style={styles.statusHero}>
         <View style={styles.powerSection}>
           <Animated.View style={[styles.ringOuter, outerRingStyle]} />
           <View style={styles.ringMid} />
           <TouchableOpacity
-            activeOpacity={0.9}
+            activeOpacity={0.85}
             onPress={onTogglePower}
             style={[styles.powerBtn, isPoweredOn && styles.powerBtnOn]}
           >
@@ -183,23 +182,20 @@ function QuickControlsComponent({
           </TouchableOpacity>
         </View>
         <Text style={[styles.statusText, isPoweredOn && styles.statusTextOn]}>
-          Device is {isPoweredOn ? 'Active' : 'Standby'}
+          {isPoweredOn ? 'Active' : 'Standby'}
         </Text>
       </View>
 
-      {/* ── Focus presets ───────────────────────────────── */}
+      {/* ── Focus Presets ─────────────────────────────────────── */}
       <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Focus presets</Text>
-          <Text style={styles.sectionHint}>Tap a preset to instantly refine your space.</Text>
-        </View>
+        <Text style={styles.sectionTitle}>Presets</Text>
         <View style={styles.presetGrid}>
           {PRESETS.map(preset => {
             const isActive = preset.id === activePresetId;
             return (
               <TouchableOpacity
                 key={preset.id}
-                activeOpacity={0.85}
+                activeOpacity={0.75}
                 onPress={() => handlePresetPress(preset)}
                 style={[styles.presetCard, isActive && styles.presetCardActive]}
               >
@@ -207,22 +203,27 @@ function QuickControlsComponent({
                   <MaterialCommunityIcons
                     name={preset.icon}
                     size={18}
-                    color={isActive ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted}
+                    color={isActive ? '#FFFFFF' : dashboardTheme.colors.textMuted}
                   />
                 </View>
                 <View style={styles.presetTextWrap}>
                   <Text style={[styles.presetLabel, isActive && styles.presetLabelActive]}>{preset.label}</Text>
                   <Text style={styles.presetHintText}>{preset.hint}</Text>
                 </View>
+                {isActive && (
+                  <View style={styles.presetCheck}>
+                    <MaterialCommunityIcons name="check" size={14} color={dashboardTheme.colors.primary} />
+                  </View>
+                )}
               </TouchableOpacity>
             );
           })}
         </View>
       </View>
 
-      {/* ── Fan Modes ─────────────────────────────────────── */}
+      {/* ── Fan Modes ─────────────────────────────────────────── */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Fan Modes</Text>
+        <Text style={styles.sectionTitle}>Mode</Text>
         <View style={styles.modesRow}>
           <ModeCard
             iconName="auto-fix"
@@ -245,20 +246,20 @@ function QuickControlsComponent({
         </View>
       </View>
 
-      {/* ── Fan Speed Intensity ───────────────────────────── */}
+      {/* ── Fan Speed ─────────────────────────────────────────── */}
       <View style={styles.section}>
         <View style={styles.fanHeader}>
           <View style={styles.fanIconWrapper}>
             <Animated.View style={fanStyle}>
               <MaterialCommunityIcons
                 name="fan"
-                size={24}
+                size={22}
                 color={isPoweredOn ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted}
               />
             </Animated.View>
           </View>
           <View>
-            <Text style={styles.fanTitle}>Fan Intensity</Text>
+            <Text style={styles.fanTitle}>Fan Speed</Text>
             <Text style={styles.fanLabel}>{fanSpeedText}</Text>
           </View>
         </View>
@@ -269,7 +270,7 @@ function QuickControlsComponent({
             return (
               <TouchableOpacity
                 key={label}
-                activeOpacity={0.7}
+                activeOpacity={0.75}
                 disabled={!isPoweredOn}
                 onPress={() => handleSpeedPress(label)}
                 style={[
@@ -302,15 +303,15 @@ type ModeCardProps = {
 function ModeCard({ iconName, label, value, onToggle }: ModeCardProps) {
   return (
     <TouchableOpacity
-      activeOpacity={0.8}
+      activeOpacity={0.75}
       onPress={onToggle}
       style={[modeStyles.card, value && modeStyles.cardActive]}
     >
       <View style={[modeStyles.iconWrap, value && modeStyles.iconWrapActive]}>
         <MaterialCommunityIcons
           name={iconName}
-          size={24}
-          color={value ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted}
+          size={22}
+          color={value ? '#FFFFFF' : dashboardTheme.colors.textMuted}
         />
       </View>
       <Text style={[modeStyles.label, value && modeStyles.labelActive]}>{label}</Text>
@@ -323,29 +324,32 @@ export const QuickControls = memo(QuickControlsComponent);
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
-const POWER_BTN_SIZE = 90;
-const RING_MID_SIZE = 140;
-const RING_OUTER_SIZE = 180;
+const POWER_BTN_SIZE = 88;
+const RING_MID_SIZE = 138;
+const RING_OUTER_SIZE = 176;
 
 const styles = StyleSheet.create({
   container: {
     paddingBottom: 20,
   },
+
+  // Hero
   statusHero: {
     alignItems: 'center',
-    marginVertical: 10,
+    marginVertical: 8,
   },
   statusText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: dashboardTheme.colors.textMuted,
-    marginTop: 10,
+    marginTop: 12,
+    letterSpacing: 0.5,
   },
   statusTextOn: {
     color: dashboardTheme.colors.primary,
   },
 
-  // Power
+  // Power rings
   powerSection: {
     width: RING_OUTER_SIZE + 20,
     height: RING_OUTER_SIZE + 20,
@@ -372,7 +376,7 @@ const styles = StyleSheet.create({
     width: POWER_BTN_SIZE,
     height: POWER_BTN_SIZE,
     borderRadius: POWER_BTN_SIZE / 2,
-    backgroundColor: '#CBD5E1',
+    backgroundColor: '#B0BFBA',
     alignItems: 'center',
     justifyContent: 'center',
     ...dashboardTheme.shadows.medium,
@@ -385,23 +389,17 @@ const styles = StyleSheet.create({
   section: {
     width: '100%',
     paddingHorizontal: 20,
-    marginTop: 32,
-  },
-  sectionHeader: {
-    marginBottom: 12,
+    marginTop: 28,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '800',
     color: dashboardTheme.colors.textPrimary,
-    letterSpacing: -0.5,
+    letterSpacing: -0.3,
+    marginBottom: 12,
   },
-  sectionHint: {
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: '600',
-    color: dashboardTheme.colors.textMuted,
-  },
+
+  // Presets
   presetGrid: {
     gap: 10,
   },
@@ -410,9 +408,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     padding: 14,
-    borderRadius: 18,
+    borderRadius: 16,
     backgroundColor: dashboardTheme.colors.surface,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: dashboardTheme.colors.border,
     ...dashboardTheme.shadows.soft,
   },
@@ -426,32 +424,40 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: dashboardTheme.colors.surfaceElevated,
+    backgroundColor: dashboardTheme.colors.surfaceSecondary,
   },
   presetIconWrapActive: {
-    backgroundColor: dashboardTheme.colors.surface,
+    backgroundColor: dashboardTheme.colors.primary,
   },
   presetTextWrap: {
     flex: 1,
   },
   presetLabel: {
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     color: dashboardTheme.colors.textPrimary,
   },
   presetLabelActive: {
-    color: dashboardTheme.colors.primary,
+    color: dashboardTheme.colors.primaryDark,
   },
   presetHintText: {
     marginTop: 2,
     fontSize: 12,
     color: dashboardTheme.colors.textSecondary,
   },
+  presetCheck: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-  // Modes row
+  // Modes
   modesRow: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 10,
   },
 
   // Fan speed
@@ -459,57 +465,58 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   fanIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 16,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     backgroundColor: dashboardTheme.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
     ...dashboardTheme.shadows.soft,
   },
   fanTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
     color: dashboardTheme.colors.textPrimary,
   },
   fanLabel: {
     fontSize: 13,
     fontWeight: '500',
-    color: dashboardTheme.colors.textSecondary,
+    color: dashboardTheme.colors.textMuted,
   },
   speedRow: {
     flexDirection: 'row',
     gap: 10,
-    justifyContent: 'space-between',
   },
   speedBtn: {
     flex: 1,
-    height: 56,
-    borderRadius: 16,
+    height: 52,
+    borderRadius: 14,
     backgroundColor: dashboardTheme.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'transparent',
+    borderWidth: 1.5,
+    borderColor: dashboardTheme.colors.border,
     ...dashboardTheme.shadows.soft,
   },
   speedBtnDisabled: {
-    opacity: 0.5,
+    opacity: 0.45,
   },
   speedBtnActive: {
     borderColor: dashboardTheme.colors.primary,
     backgroundColor: dashboardTheme.colors.primarySoft,
   },
   speedBtnText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: dashboardTheme.colors.textSecondary,
   },
   speedBtnTextActive: {
-    color: dashboardTheme.colors.primary,
+    color: dashboardTheme.colors.primaryDark,
   },
 });
 
@@ -517,16 +524,17 @@ const modeStyles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: dashboardTheme.colors.surface,
-    borderRadius: 20,
-    padding: 16,
+    borderRadius: 18,
+    padding: 14,
     alignItems: 'center',
-    gap: 10,
-    borderWidth: 1,
-    borderColor: 'transparent',
-    ...dashboardTheme.shadows.medium,
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: dashboardTheme.colors.border,
+    ...dashboardTheme.shadows.soft,
   },
   cardActive: {
-    borderColor: `${dashboardTheme.colors.primary}20`,
+    borderColor: dashboardTheme.colors.primary,
+    backgroundColor: dashboardTheme.colors.primarySoft,
   },
   iconWrap: {
     width: 44,
@@ -537,15 +545,15 @@ const modeStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconWrapActive: {
-    backgroundColor: dashboardTheme.colors.primarySoft,
+    backgroundColor: dashboardTheme.colors.primary,
   },
   label: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: dashboardTheme.colors.textSecondary,
   },
   labelActive: {
-    color: dashboardTheme.colors.textPrimary,
+    color: dashboardTheme.colors.primaryDark,
   },
   indicator: {
     width: 4,
