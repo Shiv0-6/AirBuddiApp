@@ -195,26 +195,21 @@ function QuickControlsComponent({
             return (
               <TouchableOpacity
                 key={preset.id}
-                activeOpacity={0.75}
+                activeOpacity={0.8}
                 onPress={() => handlePresetPress(preset)}
                 style={[styles.presetCard, isActive && styles.presetCardActive]}
               >
-                <View style={[styles.presetIconWrap, isActive && styles.presetIconWrapActive]}>
-                  <MaterialCommunityIcons
-                    name={preset.icon}
-                    size={18}
-                    color={isActive ? '#FFFFFF' : dashboardTheme.colors.textMuted}
-                  />
-                </View>
-                <View style={styles.presetTextWrap}>
-                  <Text style={[styles.presetLabel, isActive && styles.presetLabelActive]}>{preset.label}</Text>
-                  <Text style={styles.presetHintText}>{preset.hint}</Text>
-                </View>
-                {isActive && (
-                  <View style={styles.presetCheck}>
-                    <MaterialCommunityIcons name="check" size={14} color={dashboardTheme.colors.primary} />
-                  </View>
-                )}
+                <MaterialCommunityIcons
+                  name={preset.icon}
+                  size={24}
+                  color={isActive ? '#FFFFFF' : dashboardTheme.colors.primary}
+                />
+                <Text style={[styles.presetLabel, isActive && styles.presetLabelActive]} numberOfLines={1}>
+                  {preset.label}
+                </Text>
+                <Text style={[styles.presetHintText, isActive && styles.presetHintTextActive]} numberOfLines={1}>
+                  {preset.hint}
+                </Text>
               </TouchableOpacity>
             );
           })}
@@ -401,57 +396,43 @@ const styles = StyleSheet.create({
 
   // Presets
   presetGrid: {
+    flexDirection: 'row',
     gap: 10,
   },
   presetCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 14,
-    borderRadius: 16,
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRadius: 18,
     backgroundColor: dashboardTheme.colors.surface,
     borderWidth: 1.5,
     borderColor: dashboardTheme.colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     ...dashboardTheme.shadows.soft,
   },
   presetCardActive: {
     borderColor: dashboardTheme.colors.primary,
-    backgroundColor: dashboardTheme.colors.primarySoft,
-  },
-  presetIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: dashboardTheme.colors.surfaceSecondary,
-  },
-  presetIconWrapActive: {
     backgroundColor: dashboardTheme.colors.primary,
   },
-  presetTextWrap: {
-    flex: 1,
-  },
   presetLabel: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     color: dashboardTheme.colors.textPrimary,
+    textAlign: 'center',
   },
   presetLabelActive: {
-    color: dashboardTheme.colors.primaryDark,
+    color: '#FFFFFF',
   },
   presetHintText: {
-    marginTop: 2,
-    fontSize: 12,
-    color: dashboardTheme.colors.textSecondary,
+    fontSize: 10,
+    fontWeight: '600',
+    color: dashboardTheme.colors.textMuted,
+    textAlign: 'center',
   },
-  presetCheck: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: dashboardTheme.colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
+  presetHintTextActive: {
+    color: 'rgba(255, 255, 255, 0.85)',
   },
 
   // Modes
