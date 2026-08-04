@@ -23,8 +23,9 @@ type ActionCreators<Reducers extends SliceReducers<any>> = {
 };
 
 function cloneState<State>(state: State): State {
-  if (typeof structuredClone === 'function') {
-    return structuredClone(state);
+  const globalRef = typeof globalThis !== 'undefined' ? globalThis : {};
+  if (typeof (globalRef as any).structuredClone === 'function') {
+    return (globalRef as any).structuredClone(state);
   }
 
   return JSON.parse(JSON.stringify(state)) as State;

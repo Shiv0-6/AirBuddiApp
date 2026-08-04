@@ -2,7 +2,7 @@ import { postEspCommand, postEspCommands } from '../src/services/awsIot/awsTelem
 
 describe('postEspCommand', () => {
   beforeEach(() => {
-    global.fetch = jest.fn().mockResolvedValue({
+    (globalThis as any).fetch = jest.fn().mockResolvedValue({
       ok: true,
       text: async () => '',
     }) as unknown as typeof fetch;
@@ -11,7 +11,7 @@ describe('postEspCommand', () => {
   it('posts an arbitrary command message to the devices endpoint', async () => {
     await postEspCommand('fan_high');
 
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect((globalThis as any).fetch).toHaveBeenCalledWith(
       expect.stringContaining('/devices'),
       expect.objectContaining({
         method: 'POST',
@@ -23,15 +23,15 @@ describe('postEspCommand', () => {
   it('posts multiple command messages to the devices endpoint', async () => {
     await postEspCommands(['power_on', 'fan_high']);
 
-    expect(global.fetch).toHaveBeenCalledTimes(2);
-    expect(global.fetch).toHaveBeenNthCalledWith(
+    expect((globalThis as any).fetch).toHaveBeenCalledTimes(2);
+    expect((globalThis as any).fetch).toHaveBeenNthCalledWith(
       1,
       expect.stringContaining('/devices'),
       expect.objectContaining({
         body: JSON.stringify({ command: 'power_on' }),
       }),
     );
-    expect(global.fetch).toHaveBeenNthCalledWith(
+    expect((globalThis as any).fetch).toHaveBeenNthCalledWith(
       2,
       expect.stringContaining('/devices'),
       expect.objectContaining({

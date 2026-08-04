@@ -8,6 +8,7 @@ import {
   View,
   Modal,
   RefreshControl,
+  Image,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
@@ -273,7 +274,11 @@ export function DashboardScreen() {
             <View style={styles.sheetHandle} />
             <View style={styles.profileIdentity}>
               <View style={styles.profileAvatar}>
-                <Text style={styles.profileAvatarText}>AB</Text>
+                <Image
+                  source={require('../../../assets/airbuddi-favicon.png')}
+                  style={styles.profileAvatarImage}
+                  resizeMode="contain"
+                />
               </View>
               <View>
                 <Text style={styles.profileName}>AirBuddi Member</Text>
@@ -524,7 +529,12 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: dashboardTheme.colors.primary,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    overflow: 'hidden',
+  },
+  profileAvatarImage: {
+    width: 36,
+    height: 36,
   },
   profileAvatarText: {
     color: '#FFFFFF',

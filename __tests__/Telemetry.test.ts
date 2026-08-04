@@ -47,8 +47,8 @@ describe('Telemetry Parser', () => {
     const targetDeviceId = "F4:65:0B:49:82:BC";
     const telemetryMessage = toDashboardTelemetryMessage(mockApiResponse, targetDeviceId);
 
-    expect(telemetryMessage.deviceId).toBe(targetDeviceId);
-    expect(telemetryMessage.deviceName).toBe("MONITOR 3");
+    expect(telemetryMessage.esp32?.deviceId).toBe(targetDeviceId);
+    expect(telemetryMessage.esp32?.deviceName).toBe("MONITOR 3");
     expect(telemetryMessage.connection).toBe("offline"); // since online: false
     expect(telemetryMessage.esp32).toBeDefined();
     expect(telemetryMessage.esp32?.deviceId).toBe(targetDeviceId);

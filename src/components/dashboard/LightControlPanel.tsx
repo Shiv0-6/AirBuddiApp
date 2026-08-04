@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   glowHalo: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderRadius: 18,
     backgroundColor: dashboardTheme.colors.primary,
     // spread glow outside the card boundaries

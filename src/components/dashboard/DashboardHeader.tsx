@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
@@ -18,7 +18,11 @@ function DashboardHeaderComponent({ title, subtitle, onProfilePress, onRefreshPr
         {/* Brand */}
         <View style={styles.brandRow}>
           <View style={styles.brandMark}>
-            <MaterialCommunityIcons name="air-filter" size={18} color={dashboardTheme.colors.primary} />
+            <Image
+              source={require('../../../assets/airbuddi-favicon.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
           <Text style={styles.brandText}>AIRBUDDI</Text>
         </View>
@@ -40,7 +44,11 @@ function DashboardHeaderComponent({ title, subtitle, onProfilePress, onRefreshPr
             activeOpacity={0.75}
             style={styles.avatarBtn}
           >
-            <Text style={styles.avatarText}>AB</Text>
+            <Image
+              source={require('../../../assets/airbuddi-favicon.png')}
+              style={styles.avatarImage}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
         </View>
       </View>
@@ -88,6 +96,11 @@ const styles = StyleSheet.create({
     backgroundColor: dashboardTheme.colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  logoImage: {
+    width: 24,
+    height: 24,
   },
   brandText: {
     color: dashboardTheme.colors.textPrimary,
@@ -115,16 +128,17 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: dashboardTheme.colors.primary,
+    backgroundColor: dashboardTheme.colors.primarySoft,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
     ...dashboardTheme.shadows.soft,
   },
-  avatarText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+  avatarImage: {
+    width: 26,
+    height: 26,
   },
   heroSection: {
     gap: 4,
