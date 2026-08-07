@@ -223,7 +223,7 @@ function QuickControlsComponent({
           <ModeCard
             iconName="auto-fix"
             label="Auto"
-            value={isAutoMode}
+            value={isAutoMode && isPoweredOn}
             onToggle={() => onToggleAutoMode(true)}
           />
           <ModeCard
