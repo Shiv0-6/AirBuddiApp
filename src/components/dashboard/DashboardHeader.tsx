@@ -39,7 +39,7 @@ function DashboardHeaderComponent({ title, subtitle, onProfilePress, onRefreshPr
           </TouchableOpacity>
 
           <TouchableOpacity
-            accessibilityLabel="More options"
+            accessibilityLabel="Open profile"
             onPress={onProfilePress}
             activeOpacity={0.75}
             style={styles.iconBtn}
