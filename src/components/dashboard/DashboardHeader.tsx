@@ -39,17 +39,16 @@ function DashboardHeaderComponent({ title, subtitle, onProfilePress, onRefreshPr
           </TouchableOpacity>
 
           <TouchableOpacity
-            accessibilityLabel="Open profile"
+            accessibilityLabel="More options"
             onPress={onProfilePress}
             activeOpacity={0.75}
-            style={styles.avatarBtn}
-          >
-            <Image
-              source={require('../../../assets/airbuddi-favicon.png')}
-              style={styles.avatarImage}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
+            style={styles.iconBtn}
+            >
+            <MaterialCommunityIcons
+            name="dots-vertical" 
+            size={24} 
+            color={dashboardTheme.colors.textSecondary} />
+            </TouchableOpacity>
         </View>
       </View>
 
