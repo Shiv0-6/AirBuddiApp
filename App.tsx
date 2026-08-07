@@ -2,7 +2,8 @@ import 'react-native-url-polyfill/auto';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+// 1. Import SafeAreaView along with SafeAreaProvider
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { DashboardScreen } from './src/features/dashboard/DashboardScreen';
 
@@ -25,9 +26,12 @@ function App() {
 
 function AppContent() {
   return (
-    <View style={styles.container}>
+    // 2. Change your root View here to a SafeAreaView.
+    // 3. Use edges={['top']} so padding is applied *only* to the top area 
+    // where your status bar/battery icons sit, leaving the bottom unaffected.
+    <SafeAreaView style={styles.container} edges={['top']}>
       <DashboardScreen />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -37,6 +41,9 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    // 4. Match the background color to your app layout (#F4F9F5 or white) 
+    // so the safe padding area blends seamlessly with your dashboard header.
+    backgroundColor: '#F4F9F5', 
   },
 });
 
