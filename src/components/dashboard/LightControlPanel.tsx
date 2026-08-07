@@ -121,7 +121,7 @@ function ZoneTile({
             color={light.isOn ? '#fff' : dashboardTheme.colors.textMuted}
           />
           <Text style={[styles.powerBtnText, light.isOn && styles.powerBtnTextOn]}>
-            {light.isOn ? 'Tap to Stop' : 'Tap to Start'}
+            {light.isOn ? 'Stop' : 'Start'}
           </Text>
         </View>
       </TouchableOpacity>
