@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
@@ -12,6 +12,8 @@ type DashboardHeaderProps = {
 };
 
 function DashboardHeaderComponent({ title, subtitle, onProfilePress, onRefreshPress }: DashboardHeaderProps) {
+  const [menuVisible, setMenuVisible] = useState(false);
+
   return (
     <View style={styles.wrapper}>
       <View style={styles.topActionRow}>
@@ -38,17 +40,62 @@ function DashboardHeaderComponent({ title, subtitle, onProfilePress, onRefreshPr
             <MaterialCommunityIcons name="refresh" size={20} color={dashboardTheme.colors.textSecondary} />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            accessibilityLabel="Open profile"
-            onPress={onProfilePress}
-            activeOpacity={0.75}
-            style={styles.iconBtn}
+          {/* Anchor Container for the Overlapping Dropdown Menu */}
+          <View style={{ position: 'relative', zIndex: 100 }}>
+            <TouchableOpacity
+              accessibilityLabel="Open profile"
+              onPress={() => setMenuVisible(!menuVisible)}
+              activeOpacity={0.75}
+              style={styles.iconBtn}
             >
-            <MaterialCommunityIcons
-            name="dots-vertical" 
-            size={24} 
-            color={dashboardTheme.colors.textSecondary} />
+              <MaterialCommunityIcons
+                name="dots-vertical"
+                size={24}
+                color={dashboardTheme.colors.textSecondary} 
+              />
             </TouchableOpacity>
+
+            {/* Overlapping Dropdown Menu Layer */}
+            {menuVisible && (
+              <>
+                {/* Invisible backdrop layer to close the menu when tapping anywhere else */}
+                <TouchableOpacity 
+                  style={styles.menuBackdrop} 
+                  activeOpacity={1} 
+                  onPress={() => setMenuVisible(false)} 
+                />
+                
+                {/* Floating Menu Card Layout */}
+                <View style={styles.dropdownMenu}>
+                  <TouchableOpacity 
+                    style={styles.menuItem} 
+                    onPress={() => { setMenuVisible(false); /* Add My Devices navigation action here */ }}
+                  >
+                    <MaterialCommunityIcons name="cellphone-link" size={18} color="#555" style={{ marginRight: 12 }} />
+                    <Text style={styles.menuText}>My Devices</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity 
+                    style={styles.menuItem} 
+                    onPress={() => { setMenuVisible(false); /* Add History navigation action here */ }}
+                  >
+                    <MaterialCommunityIcons name="history" size={18} color="#555" style={{ marginRight: 12 }} />
+                    <Text style={styles.menuText}>Air Quality History</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.menuDivider} />
+
+                  <TouchableOpacity 
+                    style={styles.menuItem} 
+                    onPress={() => { setMenuVisible(false); /* Add Settings navigation action here */ }}
+                  >
+                    <MaterialCommunityIcons name="cog" size={18} color="#555" style={{ marginRight: 12 }} />
+                    <Text style={styles.menuText}>Settings</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
         </View>
       </View>
 
@@ -76,6 +123,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
+    zIndex: 10, // Gives the header layout priority over lower components
   },
   topActionRow: {
     flexDirection: 'row',
@@ -172,5 +220,44 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     color: dashboardTheme.colors.textMuted,
+  },
+  /* Added styles for the Dropdown Popup */
+  menuBackdrop: {
+    position: 'absolute',
+    top: -500,
+    right: -500,
+    width: 2000, 
+    height: 2000,
+    zIndex: 99,
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 45, 
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    paddingVertical: 6,
+    width: 210,
+    zIndex: 100, 
+    elevation: 5, 
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  menuText: {
+    fontSize: 15,
+    color: '#333333',
+  },
+  menuDivider: {
+    height: 1,
+    backgroundColor: '#EAEAEA',
+    marginVertical: 4,
   },
 });
