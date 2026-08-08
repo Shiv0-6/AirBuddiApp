@@ -128,7 +128,14 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
           />
         </Svg>
         <View style={styles.centerOverlay}>
-          <Text style={[styles.aqiValue, { color: dashboardTheme.colors.textPrimary }]}>{aqi}</Text>
+          <Text
+            style={[styles.aqiValue, { color: dashboardTheme.colors.textPrimary }]}
+            adjustsFontSizeToFit
+            numberOfLines={1}
+            minimumFontScale={0.65}
+          >
+            {aqi}
+          </Text>
           <Text style={[styles.aqiLabel, { color: descriptor.color }]}>AQI</Text>
         </View>
       </View>
@@ -192,14 +199,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
+    width: SIZE - 40,
+    height: SIZE - 40,
+    paddingHorizontal: 10,
   },
   aqiValue: {
-    fontSize: 64,
+    fontSize: 56,
     fontWeight: '900',
-    letterSpacing: -3,
+    letterSpacing: -2,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
   aqiLabel: {
-    marginTop: -8,
+    marginTop: 2,
     fontSize: 14,
     fontWeight: '800',
     letterSpacing: 2,

@@ -27,16 +27,44 @@ function findMatchingDeviceEntry(payload: unknown, fallbackDeviceId: string) {
 
   const normalizedFallback = fallbackDeviceId?.trim().toLowerCase() ?? '';
 
-  const match = candidates.find((entry: unknown) => {
+  const exactMatch = candidates.find((entry: unknown) => {
     if (!isRecord(entry)) return false;
 
     const candidateIds = [entry.id, entry.deviceId, entry.device_id, entry.deviceID].map(asString);
     const name = asString(entry.NAME ?? entry.name ?? entry.deviceName);
 
     return candidateIds.some(id => id.toLowerCase() === normalizedFallback) || name.toLowerCase() === normalizedFallback;
-  });
+  }) as Record<string, unknown> | undefined;
 
-  return (match as Record<string, unknown> | undefined) ?? (candidates[0] as Record<string, unknown> | undefined) ?? null;
+  const onlineCandidates = candidates.filter((entry: unknown) => {
+    if (!isRecord(entry)) return false;
+    return entry.online === true || entry.online === 'true';
+  }) as Record<string, unknown>[];
+
+  if (onlineCandidates.length) {
+    const latestOnline = onlineCandidates.reduce<Record<string, unknown> | null>((best, current) => {
+      if (!best) return current;
+
+      const currentTs = typeof current.timestamp === 'number' ? current.timestamp : 0;
+      const bestTs = typeof (best as Record<string, unknown>).timestamp === 'number' ? (best as Record<string, unknown>).timestamp as number : 0;
+      return currentTs > bestTs ? current : best;
+    }, null);
+
+    if (latestOnline) {
+      const hasTelemetry = Object.keys(latestOnline).some(key => key === 'Temperature' || key === 'Humidity' || key === 'IAQ' || key === 'PM 2.5' || key === 'PM 10' || key === 'VOC\'s' || key === 'VOC' || key === 'C02 Equivalent' || key === 'CO2 Equivalent');
+      const hasNumericTelemetry = hasTelemetry && (typeof latestOnline.Temperature === 'number' || typeof latestOnline.Humidity === 'number' || typeof latestOnline.IAQ === 'number' || typeof latestOnline['PM 2.5'] === 'number' || typeof latestOnline['PM 10'] === 'number' || typeof latestOnline["VOC's"] === 'number' || typeof latestOnline.VOC === 'number' || typeof latestOnline['C02 Equivalent'] === 'number' || typeof latestOnline['CO2 Equivalent'] === 'number');
+
+      if (hasNumericTelemetry) {
+        return latestOnline;
+      }
+    }
+  }
+
+  if (exactMatch) {
+    return exactMatch;
+  }
+
+  return (candidates[0] as Record<string, unknown> | undefined) ?? null;
 }
 
 function buildSensorReadings(entry: Record<string, unknown>) {
@@ -52,10 +80,33 @@ function buildSensorReadings(entry: Record<string, unknown>) {
   return readings
     .filter(([, value]) => typeof value === 'number')
     .map(([key, value]) => ({
-      key,
+      id: key,
+      name: key === 'temperature'
+        ? 'Temperature'
+        : key === 'humidity'
+          ? 'Humidity'
+          : key === 'pm2_5'
+            ? 'PM2.5'
+            : key === 'pm10'
+              ? 'PM10'
+              : key === 'co2'
+                ? 'CO₂'
+                : 'VOC',
       value: value as number,
       unit: key === 'temperature' ? 'C' : key === 'humidity' ? '%' : key === 'pm2_5' || key === 'pm10' ? 'ug/m3' : 'ppm',
+      icon: key === 'temperature'
+        ? 'thermometer'
+        : key === 'humidity'
+          ? 'water-percent'
+          : key === 'pm2_5'
+            ? 'blur'
+            : key === 'pm10'
+              ? 'grain'
+              : key === 'co2'
+                ? 'molecule-co2'
+                : 'air-filter',
       status: 'good' as const,
+      source: 'cloud' as const,
     }));
 }
 

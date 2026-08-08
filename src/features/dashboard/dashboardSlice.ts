@@ -61,8 +61,7 @@ function mergeSensors(current: DashboardSensor[] | null, next: DashboardTelemetr
   }
 
   const currentSensors = current ?? [];
-
-  return currentSensors.map(sensor => {
+  const merged = currentSensors.map(sensor => {
     const update = next.find(item => item.id === sensor.id);
 
     if (!update) {
@@ -75,6 +74,26 @@ function mergeSensors(current: DashboardSensor[] | null, next: DashboardTelemetr
       status: update.status ?? sensor.status,
     };
   });
+
+  next.forEach(item => {
+    const id = item.id;
+
+    if (!id || merged.some(sensor => sensor.id === id)) {
+      return;
+    }
+
+    merged.push({
+      id,
+      name: item.name ?? id,
+      value: item.value ?? 0,
+      unit: item.unit ?? '',
+      icon: item.icon ?? 'air-filter',
+      status: item.status ?? 'good',
+      source: item.source ?? 'cloud',
+    });
+  });
+
+  return merged;
 }
 
 function mergeEsp32Telemetry(
