@@ -63,7 +63,6 @@ export function DashboardScreen() {
   const [activeTab, setActiveTab] = useState<TabId>('fan');
   const [refreshing, setRefreshing] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [dailyGoalEnabled, setDailyGoalEnabled] = useState(true);
 
   const lightZones = useMemo(
     () => [
@@ -176,27 +175,6 @@ export function DashboardScreen() {
               onToggleUvc={handleToggleUvc}
               onSelectFanSpeed={handleSelectFanSpeed}
             />
-            <View style={styles.tabPad}>
-              <View style={styles.goalCard}>
-                <View style={styles.goalIcon}>
-                  <MaterialCommunityIcons name="leaf-circle-outline" size={22} color={dashboardTheme.colors.primary} />
-                </View>
-                <View style={styles.goalCopy}>
-                  <Text style={styles.goalTitle}>Clean-air Goal</Text>
-                  <Text style={styles.goalSubtitle}>
-                    {dailyGoalEnabled ? 'Tracking healthy-air time today.' : 'Turn on for daily air insights.'}
-                  </Text>
-                </View>
-                <TouchableOpacity
-                  accessibilityLabel="Toggle clean-air goal"
-                  activeOpacity={0.8}
-                  onPress={() => setDailyGoalEnabled(value => !value)}
-                  style={[styles.goalToggle, dailyGoalEnabled && styles.goalToggleOn]}
-                >
-                  <View style={[styles.goalToggleThumb, dailyGoalEnabled && styles.goalToggleThumbOn]} />
-                </TouchableOpacity>
-              </View>
-            </View>
           </Animated.View>
         )}
 
@@ -398,56 +376,6 @@ const styles = StyleSheet.create({
   bottomSpace: {
     height: 32,
   },
-
-  // Clean-air goal card
-  goalCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: dashboardTheme.colors.surface,
-    borderRadius: dashboardTheme.radii.md,
-    padding: 16,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: dashboardTheme.colors.border,
-    ...dashboardTheme.shadows.soft,
-  },
-  goalIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: dashboardTheme.colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  goalCopy: { flex: 1, paddingRight: 10 },
-  goalTitle: {
-    color: dashboardTheme.colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  goalSubtitle: {
-    color: dashboardTheme.colors.textMuted,
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 2,
-  },
-  goalToggle: {
-    width: 46,
-    height: 28,
-    borderRadius: 14,
-    padding: 3,
-    backgroundColor: dashboardTheme.colors.surfaceSecondary,
-  },
-  goalToggleOn: { backgroundColor: dashboardTheme.colors.primary },
-  goalToggleThumb: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#FFFFFF',
-    opacity: 0.5,
-  },
-  goalToggleThumbOn: { alignSelf: 'flex-end', opacity: 1 },
 
   // Bottom nav
   navBarWrapper: {
