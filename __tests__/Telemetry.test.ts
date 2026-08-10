@@ -61,5 +61,13 @@ describe('Telemetry Parser', () => {
     expect(pm25Sensor?.value).toBe(184);
     expect(pm10Sensor?.value).toBe(196);
     expect(tempSensor?.value).toBe(22.5);
+
+    const pressureSensor = telemetryMessage.esp32?.sensors.find(s => s.key === 'pressure');
+    const gasResistanceSensor = telemetryMessage.esp32?.sensors.find(s => s.key === 'gas_resistance');
+
+    expect(pressureSensor).toBeDefined();
+    expect(pressureSensor?.value).toBe(0);
+    expect(gasResistanceSensor).toBeDefined();
+    expect(gasResistanceSensor?.value).toBe(0);
   });
 });

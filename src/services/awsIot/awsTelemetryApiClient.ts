@@ -1,6 +1,7 @@
 import { telemetryApiConfig } from '../../config/awsIotConfig';
 import type { DashboardTelemetryMessage } from './awsIotTypes';
 import { normalizeTelemetryMessage } from './awsIotClient';
+import { esp32SensorDisplay, type Esp32SensorKey } from './esp32TelemetryContract';
 
 function endpoint(path: string) {
   const url = `${telemetryApiConfig.baseUrl.replace(/\/$/, '')}${path}`;
@@ -51,8 +52,19 @@ function findMatchingDeviceEntry(payload: unknown, fallbackDeviceId: string) {
     }, null);
 
     if (latestOnline) {
-      const hasTelemetry = Object.keys(latestOnline).some(key => key === 'Temperature' || key === 'Humidity' || key === 'IAQ' || key === 'PM 2.5' || key === 'PM 10' || key === 'VOC\'s' || key === 'VOC' || key === 'C02 Equivalent' || key === 'CO2 Equivalent');
-      const hasNumericTelemetry = hasTelemetry && (typeof latestOnline.Temperature === 'number' || typeof latestOnline.Humidity === 'number' || typeof latestOnline.IAQ === 'number' || typeof latestOnline['PM 2.5'] === 'number' || typeof latestOnline['PM 10'] === 'number' || typeof latestOnline["VOC's"] === 'number' || typeof latestOnline.VOC === 'number' || typeof latestOnline['C02 Equivalent'] === 'number' || typeof latestOnline['CO2 Equivalent'] === 'number');
+      const hasTelemetry = Object.keys(latestOnline).some(key =>
+        key === 'Temperature' || key === 'Humidity' || key === 'IAQ' || key === 'PM 2.5' || key === 'PM 10'
+        || key === 'VOC\'s' || key === 'VOC' || key === 'C02 Equivalent' || key === 'CO2 Equivalent'
+        || key === 'Pressure' || key === 'Gas Resistance',
+      );
+      const hasNumericTelemetry = hasTelemetry && (
+        typeof latestOnline.Temperature === 'number' || typeof latestOnline.Humidity === 'number'
+        || typeof latestOnline.IAQ === 'number' || typeof latestOnline['PM 2.5'] === 'number'
+        || typeof latestOnline['PM 10'] === 'number' || typeof latestOnline["VOC's"] === 'number'
+        || typeof latestOnline.VOC === 'number' || typeof latestOnline['C02 Equivalent'] === 'number'
+        || typeof latestOnline['CO2 Equivalent'] === 'number' || typeof latestOnline.Pressure === 'number'
+        || typeof latestOnline['Gas Resistance'] === 'number'
+      );
 
       if (hasNumericTelemetry) {
         return latestOnline;
@@ -68,46 +80,37 @@ function findMatchingDeviceEntry(payload: unknown, fallbackDeviceId: string) {
 }
 
 function buildSensorReadings(entry: Record<string, unknown>) {
-  const readings: Array<[string, unknown]> = [
+  const gasResistanceRaw = entry['Gas Resistance'] ?? entry.gasResistance ?? entry.gas_resistance;
+  const gasResistanceValue = typeof gasResistanceRaw === 'number'
+    ? gasResistanceRaw / 1000
+    : undefined;
+
+  const readings: Array<[Esp32SensorKey, unknown]> = [
     ['temperature', entry.Temperature ?? entry.temperature ?? entry.temp ?? entry.temperature_c],
     ['humidity', entry.Humidity ?? entry.humidity ?? entry.humidity_percent],
     ['pm2_5', entry['PM 2.5'] ?? entry.pm2_5 ?? entry.pm25],
     ['pm10', entry['PM 10'] ?? entry.pm10],
     ['co2', entry['C02 Equivalent'] ?? entry['CO2 Equivalent'] ?? entry.CO2 ?? entry.co2],
     ['voc', entry["VOC's"] ?? entry.VOC ?? entry.VOCs ?? entry.voc],
+    ['pressure', entry.Pressure ?? entry.pressure],
+    ['gas_resistance', gasResistanceValue],
   ];
 
   return readings
     .filter(([, value]) => typeof value === 'number')
-    .map(([key, value]) => ({
-      id: key,
-      name: key === 'temperature'
-        ? 'Temperature'
-        : key === 'humidity'
-          ? 'Humidity'
-          : key === 'pm2_5'
-            ? 'PM2.5'
-            : key === 'pm10'
-              ? 'PM10'
-              : key === 'co2'
-                ? 'CO₂'
-                : 'VOC',
-      value: value as number,
-      unit: key === 'temperature' ? 'C' : key === 'humidity' ? '%' : key === 'pm2_5' || key === 'pm10' ? 'ug/m3' : 'ppm',
-      icon: key === 'temperature'
-        ? 'thermometer'
-        : key === 'humidity'
-          ? 'water-percent'
-          : key === 'pm2_5'
-            ? 'blur'
-            : key === 'pm10'
-              ? 'grain'
-              : key === 'co2'
-                ? 'molecule-co2'
-                : 'air-filter',
-      status: 'good' as const,
-      source: 'cloud' as const,
-    }));
+    .map(([key, value]) => {
+      const display = esp32SensorDisplay(key);
+
+      return {
+        id: key,
+        name: display.name,
+        value: value as number,
+        unit: display.unit,
+        icon: display.icon,
+        status: 'good' as const,
+        source: 'cloud' as const,
+      };
+    });
 }
 
 export function toDashboardTelemetryMessage(payload: unknown, fallbackDeviceId: string): DashboardTelemetryMessage {

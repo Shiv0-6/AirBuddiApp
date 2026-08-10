@@ -3,6 +3,7 @@
 import { awsIotConfig } from '../../config/awsIotConfig';
 import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
 import type { Esp32DeviceTelemetry } from '../../services/awsIot/esp32TelemetryContract';
+import { esp32SensorDisplay } from '../../services/awsIot/esp32TelemetryContract';
 import type {
   ConnectionState,
   DashboardDevice,
@@ -111,37 +112,19 @@ function mergeEsp32Telemetry(
     ...((telemetry as any).lightZones ?? {}),
   };
 
-  const nextSensors = telemetry.sensors.map(sensor => ({
-    id: sensor.key,
-    name:
-      sensor.key === 'pm2_5'
-        ? 'PM2.5'
-        : sensor.key === 'co2'
-        ? 'CO₂'
-        : sensor.key === 'voc'
-        ? 'VOC'
-        : sensor.key === 'pm10'
-        ? 'PM10'
-        : sensor.key === 'temperature'
-        ? 'Temperature'
-        : 'Humidity',
-    value: sensor.value,
-    unit: sensor.unit,
-    icon:
-      sensor.key === 'temperature'
-        ? 'thermometer'
-        : sensor.key === 'humidity'
-        ? 'water-percent'
-        : sensor.key === 'pm2_5'
-        ? 'blur'
-        : sensor.key === 'pm10'
-        ? 'grain'
-        : sensor.key === 'co2'
-        ? 'molecule-co2'
-        : 'air-filter',
-    status: sensor.status ?? 'good',
-    source: 'esp32' as const,
-  }));
+  const nextSensors = telemetry.sensors.map(sensor => {
+    const display = esp32SensorDisplay(sensor.key);
+
+    return {
+      id: sensor.key,
+      name: display.name,
+      value: sensor.value,
+      unit: sensor.unit,
+      icon: display.icon,
+      status: sensor.status ?? 'good',
+      source: 'esp32' as const,
+    };
+  });
 
   return {
     ...current,

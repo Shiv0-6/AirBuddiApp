@@ -6,6 +6,7 @@ import type {
   Esp32SensorKey,
   Esp32SensorReading,
 } from './esp32TelemetryContract';
+import { esp32SensorDisplay } from './esp32TelemetryContract';
 import { fetchLatestTelemetry, postDeviceCommand, toDashboardTelemetryMessage } from './awsTelemetryApiClient';
 import { telemetryApiConfig } from '../../config/awsIotConfig';
 
@@ -22,6 +23,8 @@ type FlatEsp32Telemetry = DashboardTelemetryMessage & {
   pm10?: number;
   co2?: number;
   voc?: number;
+  pressure?: number;
+  gas_resistance?: number;
   deviceId?: string;
   deviceName?: string;
   ts?: string;
@@ -237,7 +240,7 @@ function normalizeEsp32Sensors(telemetry: any): Esp32SensorReading[] {
         return {
           key,
           value: sensor.value,
-          unit: sensor.unit ?? defaultSensorUnit(key),
+          unit: sensor.unit ?? esp32SensorDisplay(key).unit,
           status: sensor.status,
         };
       })
@@ -246,6 +249,11 @@ function normalizeEsp32Sensors(telemetry: any): Esp32SensorReading[] {
 
   // The ESP32 legacy publisher sends title-cased keys. Newer firmware uses
   // lower-case keys. `typeof value === 'number'` deliberately preserves 0.
+  const gasResistanceRaw = telemetry['Gas Resistance'] ?? telemetry.gasResistance ?? telemetry.gas_resistance;
+  const gasResistanceValue = typeof gasResistanceRaw === 'number'
+    ? gasResistanceRaw / 1000
+    : undefined;
+
   const readings: Array<[Esp32SensorKey, unknown]> = [
     ['temperature', telemetry.Temperature ?? telemetry.temperature ?? telemetry.temp ?? telemetry.temperature_c],
     ['humidity', telemetry.Humidity ?? telemetry.humidity ?? telemetry.humidity_percent],
@@ -253,6 +261,8 @@ function normalizeEsp32Sensors(telemetry: any): Esp32SensorReading[] {
     ['pm10', telemetry['PM 10'] ?? telemetry.pm10],
     ['co2', telemetry['C02 Equivalent'] ?? telemetry['CO2 Equivalent'] ?? telemetry.CO2 ?? telemetry.Co2 ?? telemetry.co2],
     ['voc', telemetry["VOC's"] ?? telemetry.VOC ?? telemetry.VOCs ?? telemetry.voc],
+    ['pressure', telemetry.Pressure ?? telemetry.pressure],
+    ['gas_resistance', gasResistanceValue],
   ];
 
   return readings
@@ -260,19 +270,7 @@ function normalizeEsp32Sensors(telemetry: any): Esp32SensorReading[] {
     .map(([key, value]) => ({
       key,
       value: value as number,
-      unit: defaultSensorUnit(key),
+      unit: esp32SensorDisplay(key).unit,
       status: 'good' as const,
     }));
-}
-
-function defaultSensorUnit(key: Esp32SensorKey) {
-  switch (key) {
-    case 'temperature': return 'C';
-    case 'humidity': return '%';
-    case 'pm2_5':
-    case 'pm10': return 'ug/m3';
-    case 'co2':
-    case 'voc': return 'ppm';
-    default: return '';
-  }
 }

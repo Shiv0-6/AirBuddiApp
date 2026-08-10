@@ -19,6 +19,7 @@ import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { DeviceCard } from '../../components/dashboard/DeviceCard';
 import { AirQualityCard } from '../../components/dashboard/AirQualityCard';
 import { SensorGrid } from '../../components/dashboard/SensorGrid';
+import { ChamberStatusCard } from '../../components/dashboard/ChamberStatusCard';
 import { QuickControls } from '../../components/dashboard/QuickControls';
 import { FilterHealthCard } from '../../components/dashboard/FilterHealthCard';
 import { ConnectionPill } from '../../components/dashboard/ConnectionPill';
@@ -207,6 +208,12 @@ export function DashboardScreen() {
               <AirQualityCard aqi={dashboard.aqi} />
               <View style={styles.gap}>
                 <SensorGrid sensors={sensors} />
+              </View>
+              <View style={styles.gap}>
+                <ChamberStatusCard
+                  upperBedChamber={device?.upperBedChamber ?? 'Standby'}
+                  lowerBedChamber={device?.lowerBedChamber ?? 'Standby'}
+                />
               </View>
             </View>
           </Animated.View>
