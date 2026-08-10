@@ -1,4 +1,4 @@
-import { postEspCommand, postEspCommands } from '../src/services/awsIot/awsTelemetryApiClient';
+import { postEspCommand, postEspCommands, toDashboardTelemetryMessage } from '../src/services/awsIot/awsTelemetryApiClient';
 
 describe('postEspCommand', () => {
   beforeEach(() => {
@@ -38,5 +38,33 @@ describe('postEspCommand', () => {
         body: JSON.stringify({ command: 'fan_high' }),
       }),
     );
+  });
+
+  it('includes numeric upper and lower chamber readings in telemetry sensors', () => {
+    const message = toDashboardTelemetryMessage({
+      devices: [
+        {
+          id: 'airbuddi-1',
+          NAME: 'AirBuddi 1',
+          online: true,
+          Temperature: 24.5,
+          upperBedChamber: 12,
+          lowerBedChamber: 18.4,
+        },
+      ],
+    }, 'airbuddi-1');
+
+    expect(message.sensors).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'upper_bed_chamber',
+        name: 'Upper Chamber',
+        value: 12,
+      }),
+      expect.objectContaining({
+        id: 'lower_bed_chamber',
+        name: 'Lower Chamber',
+        value: 18.4,
+      }),
+    ]));
   });
 });

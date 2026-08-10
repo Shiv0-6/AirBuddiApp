@@ -55,7 +55,10 @@ function findMatchingDeviceEntry(payload: unknown, fallbackDeviceId: string) {
       const hasTelemetry = Object.keys(latestOnline).some(key =>
         key === 'Temperature' || key === 'Humidity' || key === 'IAQ' || key === 'PM 2.5' || key === 'PM 10'
         || key === 'VOC\'s' || key === 'VOC' || key === 'C02 Equivalent' || key === 'CO2 Equivalent'
-        || key === 'Pressure' || key === 'Gas Resistance',
+        || key === 'Pressure' || key === 'Gas Resistance'
+        || key === 'upperBedChamber' || key === 'lowerBedChamber'
+        || key === 'upper_bed_chamber' || key === 'lower_bed_chamber'
+        || key === 'Upper Chamber' || key === 'Lower Chamber',
       );
       const hasNumericTelemetry = hasTelemetry && (
         typeof latestOnline.Temperature === 'number' || typeof latestOnline.Humidity === 'number'
@@ -64,6 +67,9 @@ function findMatchingDeviceEntry(payload: unknown, fallbackDeviceId: string) {
         || typeof latestOnline.VOC === 'number' || typeof latestOnline['C02 Equivalent'] === 'number'
         || typeof latestOnline['CO2 Equivalent'] === 'number' || typeof latestOnline.Pressure === 'number'
         || typeof latestOnline['Gas Resistance'] === 'number'
+        || typeof latestOnline.upperBedChamber === 'number' || typeof latestOnline.lowerBedChamber === 'number'
+        || typeof latestOnline.upper_bed_chamber === 'number' || typeof latestOnline.lower_bed_chamber === 'number'
+        || typeof latestOnline['Upper Chamber'] === 'number' || typeof latestOnline['Lower Chamber'] === 'number'
       );
 
       if (hasNumericTelemetry) {
@@ -85,7 +91,16 @@ function buildSensorReadings(entry: Record<string, unknown>) {
     ? gasResistanceRaw / 1000
     : undefined;
 
-  const readings: Array<[Esp32SensorKey, unknown]> = [
+  const upperChamberValue = entry.upperBedChamber
+    ?? entry.upper_bed_chamber
+    ?? entry['Upper Chamber']
+    ?? entry.upperChamber;
+  const lowerChamberValue = entry.lowerBedChamber
+    ?? entry.lower_bed_chamber
+    ?? entry['Lower Chamber']
+    ?? entry.lowerChamber;
+
+  const readings: Array<[string, unknown]> = [
     ['temperature', entry.Temperature ?? entry.temperature ?? entry.temp ?? entry.temperature_c],
     ['humidity', entry.Humidity ?? entry.humidity ?? entry.humidity_percent],
     ['pm2_5', entry['PM 2.5'] ?? entry.pm2_5 ?? entry.pm25],
@@ -94,12 +109,26 @@ function buildSensorReadings(entry: Record<string, unknown>) {
     ['voc', entry["VOC's"] ?? entry.VOC ?? entry.VOCs ?? entry.voc],
     ['pressure', entry.Pressure ?? entry.pressure],
     ['gas_resistance', gasResistanceValue],
+    ['upper_bed_chamber', upperChamberValue],
+    ['lower_bed_chamber', lowerChamberValue],
   ];
 
   return readings
     .filter(([, value]) => typeof value === 'number')
     .map(([key, value]) => {
-      const display = esp32SensorDisplay(key);
+      if (key === 'upper_bed_chamber' || key === 'lower_bed_chamber') {
+        return {
+          id: key,
+          name: key === 'upper_bed_chamber' ? 'Upper Chamber' : 'Lower Chamber',
+          value: value as number,
+          unit: '',
+          icon: 'sprout',
+          status: 'good' as const,
+          source: 'cloud' as const,
+        };
+      }
+
+      const display = esp32SensorDisplay(key as Esp32SensorKey);
 
       return {
         id: key,
