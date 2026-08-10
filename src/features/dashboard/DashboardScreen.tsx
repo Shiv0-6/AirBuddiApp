@@ -281,6 +281,7 @@ export function DashboardScreen() {
               <LightControlPanel
                 lights={lightZones}
                 onToggleLight={handleToggleLightZone}
+                disabled={device?.power !== 'on'}
               />
               <RootPurificationCard
                 upperBedChamber={device?.upperBedChamber ?? 'Active'}
@@ -293,6 +294,7 @@ export function DashboardScreen() {
                   const currentVal = device?.lowerBedChamber ?? 'Standby';
                   setLowerBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
                 }}
+                disabled={device?.power !== 'on'}
               />
             </View>
           </Animated.View>

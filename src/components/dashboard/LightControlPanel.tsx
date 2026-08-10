@@ -20,6 +20,7 @@ type LightZone = {
 type LightControlPanelProps = {
   lights: LightZone[];
   onToggleLight: (lightId: string) => void;
+  disabled?: boolean;
 };
 
 // ─── Single zone tile with animation ────────────────────────────────────────
@@ -28,10 +29,12 @@ function ZoneTile({
   light,
   index,
   onToggleLight,
+  disabled,
 }: {
   light: LightZone;
   index: number;
   onToggleLight: (id: string) => void;
+  disabled: boolean;
 }) {
   // Glow pulse animation when ON
   const glowAnim = useRef(new Animated.Value(0)).current;
@@ -64,6 +67,7 @@ function ZoneTile({
   }, [light.isOn, glowAnim]);
 
   const handlePress = () => {
+    if (disabled) { return; }
     // Brief press scale animation
     Animated.sequence([
       Animated.timing(scaleAnim, { toValue: 0.93, duration: 80, useNativeDriver: true }),
@@ -86,8 +90,9 @@ function ZoneTile({
 
       <TouchableOpacity
         activeOpacity={0.85}
+        disabled={disabled}
         onPress={handlePress}
-        style={[styles.tile, light.isOn && styles.tileOn]}
+        style={[styles.tile, disabled && styles.tileDisabled, light.isOn && styles.tileOn]}
         accessibilityLabel={`Toggle ${light.label} light zone ${index + 1}`}
       >
         {/* Top row: icon + ON/OFF badge */}
@@ -131,7 +136,7 @@ function ZoneTile({
 
 // ─── Panel ───────────────────────────────────────────────────────────────────
 
-export function LightControlPanel({ lights, onToggleLight }: LightControlPanelProps) {
+export function LightControlPanel({ lights, onToggleLight, disabled = false }: LightControlPanelProps) {
   const anyOn = lights.some(l => l.isOn);
   const onCount = lights.filter(l => l.isOn).length;
 
@@ -149,7 +154,9 @@ export function LightControlPanel({ lights, onToggleLight }: LightControlPanelPr
         <View style={styles.headerText}>
           <Text style={styles.title}>Light Control</Text>
           <Text style={styles.subtitle}>
-            {anyOn
+            {disabled
+              ? 'Turn on the purifier to control lights'
+              : anyOn
               ? `${onCount} zone${onCount > 1 ? 's' : ''} active`
               : 'All zones off · tap a tile to toggle'}
           </Text>
@@ -173,6 +180,7 @@ export function LightControlPanel({ lights, onToggleLight }: LightControlPanelPr
             light={light}
             index={index}
             onToggleLight={onToggleLight}
+            disabled={disabled}
           />
         ))}
       </View>
@@ -288,6 +296,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ECFDF5',        // very light green tint
     borderColor: dashboardTheme.colors.primary,
   },
+  tileDisabled: { opacity: 0.45 },
 
   // Top row inside tile
   tileTopRow: {

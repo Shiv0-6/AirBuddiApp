@@ -17,12 +17,9 @@ function DashboardHeaderComponent({ title, subtitle, onProfilePress, onRefreshPr
     <View style={styles.wrapper}>
       <View style={styles.topActionRow}>
         <View style={styles.brandRow}>
-          <TouchableOpacity accessibilityLabel="Edit profile" onPress={onProfilePress} activeOpacity={0.75} style={styles.profileBtn}>
-            <MaterialCommunityIcons name="account-circle-outline" size={22} color={dashboardTheme.colors.primaryDark} />
-          </TouchableOpacity>
-          <View style={styles.brandMark}>
+          <TouchableOpacity accessibilityLabel="Open profile" onPress={onProfilePress} activeOpacity={0.75} style={styles.brandMark}>
             <Image source={require('../../../assets/airbuddi-favicon.png')} style={styles.logoImage} resizeMode="contain" />
-          </View>
+          </TouchableOpacity>
           <Text style={styles.brandText}>AIRBUDDI</Text>
         </View>
 
@@ -54,7 +51,6 @@ const styles = StyleSheet.create({
   wrapper: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 10 },
   topActionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
   brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  profileBtn: { width: 34, height: 34, borderRadius: 17, backgroundColor: dashboardTheme.colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: dashboardTheme.colors.border, ...dashboardTheme.shadows.soft },
   brandMark: { width: 34, height: 34, borderRadius: 10, backgroundColor: dashboardTheme.colors.primarySoft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   logoImage: { width: 24, height: 24 },
   brandText: { color: dashboardTheme.colors.textPrimary, fontSize: 13, fontWeight: '900', letterSpacing: 1.8 },

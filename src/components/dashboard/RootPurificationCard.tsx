@@ -9,6 +9,7 @@ type RootPurificationCardProps = {
   lowerBedChamber?: 'Active' | 'Standby';
   onUpperPress?: () => void;
   onLowerPress?: () => void;
+  disabled?: boolean;
 };
 
 export function RootPurificationCard({
@@ -16,6 +17,7 @@ export function RootPurificationCard({
   lowerBedChamber = 'Standby',
   onUpperPress,
   onLowerPress,
+  disabled = false,
 }: RootPurificationCardProps) {
   return (
     <View style={styles.card}>
@@ -42,8 +44,9 @@ export function RootPurificationCard({
         </View>
         <TouchableOpacity
           activeOpacity={0.7}
+          disabled={disabled}
           onPress={onUpperPress}
-          style={[styles.statusPill, upperBedChamber === 'Active' ? styles.statusPillOn : styles.statusPillOff]}
+          style={[styles.statusPill, disabled && styles.statusPillDisabled, upperBedChamber === 'Active' ? styles.statusPillOn : styles.statusPillOff]}
           accessibilityLabel="Toggle upper bed chamber"
         >
           <Text style={[styles.statusText, upperBedChamber === 'Active' ? styles.statusTextOn : styles.statusTextOff]}>
@@ -59,8 +62,9 @@ export function RootPurificationCard({
         </View>
         <TouchableOpacity
           activeOpacity={0.7}
+          disabled={disabled}
           onPress={onLowerPress}
-          style={[styles.statusPill, lowerBedChamber === 'Active' ? styles.statusPillOn : styles.statusPillOff]}
+          style={[styles.statusPill, disabled && styles.statusPillDisabled, lowerBedChamber === 'Active' ? styles.statusPillOn : styles.statusPillOff]}
           accessibilityLabel="Toggle lower bed chamber"
         >
           <Text style={[styles.statusText, lowerBedChamber === 'Active' ? styles.statusTextOn : styles.statusTextOff]}>
@@ -147,6 +151,7 @@ const styles = StyleSheet.create({
     backgroundColor: dashboardTheme.colors.surfaceSecondary,
     borderColor: dashboardTheme.colors.border,
   },
+  statusPillDisabled: { opacity: 0.45 },
   statusText: {
     fontSize: 11,
     fontWeight: '800',

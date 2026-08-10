@@ -196,8 +196,9 @@ function QuickControlsComponent({
               <TouchableOpacity
                 key={preset.id}
                 activeOpacity={0.8}
+                disabled={!isPoweredOn}
                 onPress={() => handlePresetPress(preset)}
-                style={[styles.presetCard, isActive && styles.presetCardActive]}
+                style={[styles.presetCard, !isPoweredOn && styles.controlDisabled, isActive && styles.presetCardActive]}
               >
                 <MaterialCommunityIcons
                   name={preset.icon}
@@ -224,18 +225,21 @@ function QuickControlsComponent({
             iconName="auto-fix"
             label="Auto"
             value={isAutoMode && isPoweredOn}
+            disabled={!isPoweredOn}
             onToggle={() => onToggleAutoMode(true)}
           />
           <ModeCard
             iconName="gesture-tap-button"
             label="Manual"
             value={!isAutoMode && isPoweredOn}
+            disabled={!isPoweredOn}
             onToggle={() => onToggleAutoMode(false)}
           />
           <ModeCard
             iconName="power"
             label="Off"
             value={!isPoweredOn}
+            disabled={!isPoweredOn}
             onToggle={onTogglePower}
           />
         </View>
@@ -292,15 +296,17 @@ type ModeCardProps = {
   iconName: string;
   label: string;
   value: boolean;
+  disabled?: boolean;
   onToggle: () => void;
 };
 
-function ModeCard({ iconName, label, value, onToggle }: ModeCardProps) {
+function ModeCard({ iconName, label, value, disabled = false, onToggle }: ModeCardProps) {
   return (
     <TouchableOpacity
       activeOpacity={0.75}
+      disabled={disabled}
       onPress={onToggle}
-      style={[modeStyles.card, value && modeStyles.cardActive]}
+      style={[modeStyles.card, disabled && modeStyles.cardDisabled, value && modeStyles.cardActive]}
     >
       <View style={[modeStyles.iconWrap, value && modeStyles.iconWrapActive]}>
         <MaterialCommunityIcons
@@ -416,6 +422,7 @@ const styles = StyleSheet.create({
     borderColor: dashboardTheme.colors.primary,
     backgroundColor: dashboardTheme.colors.primary,
   },
+  controlDisabled: { opacity: 0.45 },
   presetLabel: {
     fontSize: 12,
     fontWeight: '700',
@@ -517,6 +524,7 @@ const modeStyles = StyleSheet.create({
     borderColor: dashboardTheme.colors.primary,
     backgroundColor: dashboardTheme.colors.primarySoft,
   },
+  cardDisabled: { opacity: 0.45 },
   iconWrap: {
     width: 44,
     height: 44,
