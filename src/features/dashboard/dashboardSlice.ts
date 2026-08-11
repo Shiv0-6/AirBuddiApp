@@ -26,7 +26,7 @@ export interface DashboardRuntimeState {
 }
 
 const initialState: DashboardRuntimeState = {
-  appTitle: 'AirBuddi',
+  appTitle: 'GreenVerse',
   device: {
     name: 'AirBuddi',
     status: 'Offline',

@@ -20,7 +20,7 @@ function DashboardHeaderComponent({ title, subtitle, onProfilePress, onRefreshPr
           <TouchableOpacity accessibilityLabel="Open profile" onPress={onProfilePress} activeOpacity={0.75} style={styles.brandMark}>
             <Image source={require('../../../assets/airbuddi-favicon.png')} style={styles.logoImage} resizeMode="contain" />
           </TouchableOpacity>
-          <Text style={styles.brandText}>AIRBUDDI</Text>
+          <Text style={styles.brandText}>GREENVERSE</Text>
         </View>
 
         <View style={styles.actionsContainer}>
