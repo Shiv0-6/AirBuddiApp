@@ -9,7 +9,7 @@ export function getAqiDescriptor(aqi: number) {
   const fallback = aqiLegend[aqiLegend.length - 1];
 
   return (
-    aqiLegend.find(entry => aqi >= entry.min && aqi <= entry.max) ?? fallback
+    aqiLegend.find(entry => aqi >= entry.min && aqi < entry.max) ?? fallback
   );
 }
 
