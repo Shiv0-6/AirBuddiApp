@@ -1,4 +1,4 @@
-import { postEspCommand, postEspCommands, toDashboardTelemetryMessage } from '../src/services/awsIot/awsTelemetryApiClient';
+import { fetchLatestTelemetry, postEspCommand, postEspCommands, toDashboardTelemetryMessage } from '../src/services/awsIot/awsTelemetryApiClient';
 
 describe('postEspCommand', () => {
   beforeEach(() => {
@@ -37,6 +37,20 @@ describe('postEspCommand', () => {
       expect.objectContaining({
         body: JSON.stringify({ command: 'fan_high' }),
       }),
+    );
+  });
+
+  it('fetches telemetry from the MAC-address device route', async () => {
+    (globalThis as any).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ id: 'F4:65:0B:49:12:60', online: true, Temperature: 22 }),
+    });
+
+    await fetchLatestTelemetry('F4:65:0B:49:12:60');
+
+    expect((globalThis as any).fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/devices\/F4%3A65%3A0B%3A49%3A12%3A60$/),
+      expect.any(Object),
     );
   });
 

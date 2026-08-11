@@ -1,6 +1,5 @@
  import { createSlice, type PayloadAction } from '../../vendor/reduxToolkit';
 
-import { awsIotConfig } from '../../config/awsIotConfig';
 import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
 import type { Esp32DeviceTelemetry } from '../../services/awsIot/esp32TelemetryContract';
 import { esp32SensorDisplay } from '../../services/awsIot/esp32TelemetryContract';
@@ -27,31 +26,14 @@ export interface DashboardRuntimeState {
 
 const initialState: DashboardRuntimeState = {
   appTitle: 'GreenVerse',
-  device: {
-    name: 'AirBuddi',
-    status: 'Offline',
-    mode: 'manual',
-    power: 'off',
-    lightOn: false,
-    lightZones: {
-      'zone-1': false,
-      'zone-2': false,
-      'zone-3': false,
-    },
-    lastUpdated: 'Waiting for telemetry',
-    deviceId: awsIotConfig.deviceId,
-    sleepMode: false,
-    uvc: true,
-    upperBedChamber: 'Active',
-    lowerBedChamber: 'Standby',
-  },
+  device: null,
 
   aqi: null,
-  connection: awsIotConfig.enabled ? 'connecting' : 'offline',
+  connection: 'offline',
   filterHealth: null,
   remainingLifeDays: null,
   sensors: null,
-  liveMode: awsIotConfig.enabled,
+  liveMode: false,
   errorMessage: null,
   connectedDeviceCount: 0,
 };
@@ -112,7 +94,7 @@ function mergeEsp32Telemetry(
     ...((telemetry as any).lightZones ?? {}),
   };
 
-  const nextSensors = telemetry.sensors.map(sensor => {
+  const nextSensors: DashboardSensor[] = telemetry.sensors.map(sensor => {
     const display = esp32SensorDisplay(sensor.key);
 
     return {
@@ -314,7 +296,7 @@ const dashboardSlice = createSlice({
       state.filterHealth = null;
       state.remainingLifeDays = null;
       state.sensors = null;
-      state.liveMode = awsIotConfig.enabled;
+      state.liveMode = false;
       state.errorMessage = null;
       state.connectedDeviceCount = 0;
     },

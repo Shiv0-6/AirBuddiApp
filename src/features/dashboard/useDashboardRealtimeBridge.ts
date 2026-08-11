@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
-import { awsIotConfig } from '../../config/awsIotConfig';
+import { awsIotConfig, createAwsIotTopics } from '../../config/awsIotConfig';
 import { useAppDispatch } from '../../store/hooks';
 import { AwsIotClient } from '../../services/awsIot/awsIotClient';
 import type { DashboardTelemetryMessage } from '../../services/awsIot/awsIotTypes';
@@ -25,21 +25,31 @@ import {
  * Hook that bridges the React Native Redux state with AWS IoT Core.
  * It combines immediate state fetching via API Gateway and real-time updates via MQTT mTLS.
  */
-export function useDashboardRealtimeBridge() {
+export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
   const dispatch = useAppDispatch();
   const clientRef = useRef<AwsIotClient | null>(null);
+  const deviceId = selectedDeviceId?.trim() ?? '';
+
+  const deviceConfig = useMemo(() => ({
+    ...awsIotConfig,
+    deviceId,
+    clientId: `airbuddi-mobile-${deviceId}`,
+    deviceApiUrl: `${awsIotConfig.deviceApiUrl?.replace(/\/$/, '')}/${encodeURIComponent(deviceId)}`,
+    topics: createAwsIotTopics(deviceId),
+  }), [deviceId]);
 
   useEffect(() => {
     console.log('[AirBuddi] bridge init (mTLS + API Gateway)', {
       endpoint: awsIotConfig.endpoint,
-      deviceId: awsIotConfig.deviceId,
-      apiUrl: awsIotConfig.deviceApiUrl,
+      deviceId,
+      apiUrl: deviceConfig.deviceApiUrl,
     });
 
     const client = new AwsIotClient();
     clientRef.current = client;
 
-    if (!awsIotConfig.enabled) {
+    if (!awsIotConfig.enabled || !deviceId) {
+      dispatch(setConnectionState('offline'));
       return () => {
         client.disconnect();
       };
@@ -50,7 +60,7 @@ export function useDashboardRealtimeBridge() {
     let active = true;
 
     // 1. Fetch initial state from API Gateway (Fast initial load)
-    client.fetchInitialState(awsIotConfig).then(initialData => {
+    client.fetchInitialState(deviceConfig).then(initialData => {
       if (active && initialData) {
         console.log('[AirBuddi] Applied initial state from API Gateway');
         dispatch(applyTelemetry(initialData));
@@ -59,7 +69,7 @@ export function useDashboardRealtimeBridge() {
 
     // 2. Connect via MQTT for real-time updates
     client
-      .connect(awsIotConfig, {
+      .connect(deviceConfig, {
         onConnectionChange: (status: ConnectionState) => {
           if (active) {
             dispatch(setConnectionState(status));
@@ -89,13 +99,13 @@ export function useDashboardRealtimeBridge() {
       active = false;
       client.disconnect();
     };
-  }, [dispatch]);
+  }, [deviceConfig, deviceId, dispatch]);
 
   // Helper to publish commands to the legacy 'esp32/control' topic
   const sendLegacyCommand = async (commandName: string, value: any) => {
     try {
       await clientRef.current?.publishCommand('esp32/control', {
-        deviceId: awsIotConfig.deviceId,
+        deviceId,
         command: commandName,
         value: value,
         ts: new Date().toISOString(),
@@ -224,9 +234,13 @@ export function useDashboardRealtimeBridge() {
     },
 
     refreshData: async () => {
+      if (!deviceId) {
+        dispatch(setErrorMessage('Add a device before refreshing telemetry.'));
+        return;
+      }
       dispatch(setConnectionState('connecting'));
       try {
-        const latest = await fetchLatestTelemetry(awsIotConfig.deviceId);
+        const latest = await fetchLatestTelemetry(deviceId);
         if (latest) {
           dispatch(applyTelemetry(latest));
         }

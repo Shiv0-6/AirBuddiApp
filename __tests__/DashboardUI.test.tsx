@@ -30,7 +30,7 @@ describe('QuickControls UI', () => {
     const textContent = tree!.root.findAllByType(Text).map(node => node.props.children);
     const flattenedText = textContent.flat().join(' ');
 
-    expect(flattenedText).toContain('Focus presets');
+    expect(flattenedText).toContain('Active Presets');
     expect(flattenedText).toContain('Fresh Air');
     expect(flattenedText).toContain('Auto');
     expect(flattenedText).toContain('Manual');
@@ -64,8 +64,8 @@ describe('QuickControls UI', () => {
     expect(flattenedText).toContain('Task');
     expect(flattenedText).toContain('Accent');
     expect(flattenedText).toContain('Zone');
-    expect(flattenedText).toContain('Tap to Start');
-    expect(flattenedText).toContain('Tap to Stop');
+    expect(flattenedText).toContain('Start');
+    expect(flattenedText).toContain('Stop');
   });
 
   it('shows upper and lower bed chambers for root purification', () => {

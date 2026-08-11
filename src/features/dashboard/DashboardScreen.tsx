@@ -29,6 +29,7 @@ import { useAppSelector } from '../../store/hooks';
 import { selectDashboard } from './dashboardSelectors';
 import type { DashboardRuntimeState } from './dashboardSlice';
 import { useDashboardRealtimeBridge } from './useDashboardRealtimeBridge';
+import { fetchLatestTelemetry } from '../../services/awsIot/awsTelemetryApiClient';
 
 // ─── Bottom Tab Config ────────────────────────────────────────────────────────
 
@@ -55,18 +56,6 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
 
 export function DashboardScreen() {
   const dashboard = useAppSelector(selectDashboard) as DashboardRuntimeState;
-  const {
-    setPowerState,
-    setAutoMode,
-    setSleepModeState,
-    setUvcModeState,
-    setFanSpeedState,
-    setLightStateState,
-    setUpperBedChamberStateState,
-    setLowerBedChamberStateState,
-    refreshData,
-  } = useDashboardRealtimeBridge();
-
   const device = dashboard.device;
   const sensors = dashboard.sensors ?? [];
   const pm25Value = sensors.find(s => s.id === 'pm2_5')?.value ?? null;
@@ -78,13 +67,25 @@ export function DashboardScreen() {
   const [profileEmail, setProfileEmail] = useState('member@airbuddi.app');
   const [newDeviceName, setNewDeviceName] = useState('');
   const [newDeviceRoom, setNewDeviceRoom] = useState('');
+  const [newDeviceId, setNewDeviceId] = useState('');
+  const [addDeviceError, setAddDeviceError] = useState('');
+  const [isAddingDevice, setIsAddingDevice] = useState(false);
   const [editingDeviceId, setEditingDeviceId] = useState<string | null>(null);
   const [editingRoom, setEditingRoom] = useState('');
-  const [selectedDeviceId, setSelectedDeviceId] = useState('living-room');
-  const [devices, setDevices] = useState<HomeDevice[]>([
-    { id: 'living-room', name: 'AirBuddi Pro', room: 'Living Room', status: 'Online', aqi: dashboard.aqi, icon: 'sofa-outline' },
-    { id: 'hall', name: 'AirBuddi Mini', room: 'Hall', status: 'Online', aqi: 24, icon: 'door-open' },
-  ]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [devices, setDevices] = useState<HomeDevice[]>([]);
+
+  const {
+    setPowerState,
+    setAutoMode,
+    setSleepModeState,
+    setUvcModeState,
+    setFanSpeedState,
+    setLightStateState,
+    setUpperBedChamberStateState,
+    setLowerBedChamberStateState,
+    refreshData,
+  } = useDashboardRealtimeBridge(selectedDeviceId);
 
   const lightZones = useMemo(
     () => [
@@ -151,18 +152,41 @@ export function DashboardScreen() {
   }, [device?.lightZones, setLightStateState]);
 
   const selectedDevice = devices.find(item => item.id === selectedDeviceId) ?? devices[0];
-  const deviceTitle = selectedDevice?.room ?? 'Your home';
-  const displayDeviceName = selectedDevice?.name ?? device?.name ?? 'AirBuddi Pro';
-  const addDevice = useCallback(() => {
+  const deviceTitle = selectedDevice?.room ?? 'Add a device';
+  const displayDeviceName = selectedDevice?.name ?? 'No device connected';
+  const addDevice = useCallback(async () => {
     const name = newDeviceName.trim() || 'AirBuddi Device';
     const room = newDeviceRoom.trim() || 'New Room';
-    const id = `device-${Date.now()}`;
-    setDevices(current => [...current, { id, name, room, status: 'Offline', aqi: null, icon: 'air-filter' }]);
-    setSelectedDeviceId(id);
-    setNewDeviceName('');
-    setNewDeviceRoom('');
-    setActiveSheet(null);
-  }, [newDeviceName, newDeviceRoom]);
+    const id = newDeviceId.trim().toUpperCase();
+    if (!/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(id)) {
+      setAddDeviceError('Enter the device MAC address, for example F4:65:0B:49:12:60.');
+      return;
+    }
+    if (devices.some(item => item.id.toLowerCase() === id.toLowerCase())) {
+      setAddDeviceError('This device has already been added.');
+      return;
+    }
+    setIsAddingDevice(true);
+    setAddDeviceError('');
+    try {
+      const telemetry = await fetchLatestTelemetry(id);
+      if (telemetry.connection !== 'connected') {
+        setAddDeviceError('This device is not connected yet. Turn it on and try again.');
+        return;
+      }
+
+      setDevices(current => [...current, { id, name, room, status: 'Online', aqi: telemetry.aqi ?? null, icon: 'air-filter' }]);
+      setSelectedDeviceId(id);
+      setNewDeviceName('');
+      setNewDeviceRoom('');
+      setNewDeviceId('');
+      setActiveSheet(null);
+    } catch (error) {
+      setAddDeviceError(error instanceof Error ? error.message : 'Unable to connect to this device.');
+    } finally {
+      setIsAddingDevice(false);
+    }
+  }, [devices, newDeviceId, newDeviceName, newDeviceRoom]);
   const beginEditingSpace = useCallback((item: HomeDevice) => {
     setEditingDeviceId(item.id);
     setEditingRoom(item.room);
@@ -217,14 +241,19 @@ export function DashboardScreen() {
                   <Text style={styles.sectionTitle}>My devices</Text>
                   <Text style={styles.sectionSubtitle}>{devices.length} spaces in your home</Text>
                 </View>
-                <TouchableOpacity accessibilityLabel="Add device" style={styles.addButton} activeOpacity={0.8} onPress={() => setActiveSheet('add-device')}>
-                  <MaterialCommunityIcons name="plus" size={25} color="#FFFFFF" />
-                </TouchableOpacity>
               </View>
               <View style={styles.deviceGrid}>
-                {devices.map(item => {
+                {devices.length === 0 ? (
+                  <TouchableOpacity style={styles.emptyDeviceState} activeOpacity={0.8} onPress={() => setActiveSheet('add-device')}>
+                    <View style={styles.emptyDeviceIcon}>
+                      <MaterialCommunityIcons name="plus" size={34} color={dashboardTheme.colors.primaryDark} />
+                    </View>
+                    <Text style={styles.emptyDeviceTitle}>Add your first device</Text>
+                    <Text style={styles.emptyDeviceCopy}>Enter its MAC address to connect and view live data.</Text>
+                  </TouchableOpacity>
+                ) : devices.map(item => {
                   const isSelected = item.id === selectedDeviceId;
-                  const displayedAqi = item.id === 'living-room' ? pm25Value : item.aqi;
+                  const displayedAqi = item.id === selectedDeviceId ? pm25Value : item.aqi;
                   return (
                     <TouchableOpacity key={item.id} activeOpacity={0.82} style={[styles.homeDeviceCard, isSelected && styles.homeDeviceCardSelected]} onPress={() => setSelectedDeviceId(item.id)}>
                       <View style={[styles.deviceIcon, isSelected && styles.deviceIconSelected]}>
@@ -243,10 +272,10 @@ export function DashboardScreen() {
                   );
                 })}
               </View>
-              <View style={styles.homeSummary}>
+              {devices.length > 0 && <View style={styles.homeSummary}>
                 <MaterialCommunityIcons name="leaf-circle-outline" size={28} color={dashboardTheme.colors.primaryDark} />
                 <View style={styles.summaryText}><Text style={styles.summaryTitle}>Your air, at a glance</Text><Text style={styles.summaryCopy}>Select a space to see its live air quality and controls.</Text></View>
-              </View>
+              </View>}
             </View>
           </Animated.View>
         )}
@@ -348,12 +377,15 @@ export function DashboardScreen() {
             </>}
             {activeSheet === 'add-device' && <>
               <Text style={styles.sheetTitle}>Add a device</Text>
-              <Text style={styles.sheetIntro}>Give your AirBuddi a name and choose the space it belongs in. You can connect it after adding it.</Text>
+              <Text style={styles.sheetIntro}>Enter the device MAC address. AirBuddi will use it to fetch this device's live data.</Text>
+              <Text style={styles.inputLabel}>DEVICE ID (MAC ADDRESS)</Text>
+              <TextInput value={newDeviceId} onChangeText={value => { setNewDeviceId(value); setAddDeviceError(''); }} style={styles.textInput} autoCapitalize="characters" autoCorrect={false} placeholder="e.g. F4:65:0B:49:12:60" placeholderTextColor={dashboardTheme.colors.textMuted} />
               <Text style={styles.inputLabel}>DEVICE NAME</Text>
               <TextInput value={newDeviceName} onChangeText={setNewDeviceName} style={styles.textInput} placeholder="e.g. AirBuddi Mini" placeholderTextColor={dashboardTheme.colors.textMuted} />
               <Text style={styles.inputLabel}>ROOM OR SPACE</Text>
               <TextInput value={newDeviceRoom} onChangeText={setNewDeviceRoom} style={styles.textInput} placeholder="e.g. Bedroom" placeholderTextColor={dashboardTheme.colors.textMuted} />
-              <TouchableOpacity style={styles.primarySheetButton} onPress={addDevice}><Text style={styles.primarySheetButtonText}>Add device</Text></TouchableOpacity>
+              {!!addDeviceError && <Text style={styles.inputError}>{addDeviceError}</Text>}
+              <TouchableOpacity style={[styles.primarySheetButton, isAddingDevice && styles.primarySheetButtonDisabled]} disabled={isAddingDevice} onPress={addDevice}><Text style={styles.primarySheetButtonText}>{isAddingDevice ? 'Connecting…' : 'Add device'}</Text></TouchableOpacity>
             </>}
             {activeSheet === 'edit-space' && <>
               <Text style={styles.sheetTitle}>Edit space</Text>
@@ -485,10 +517,13 @@ const styles = StyleSheet.create({
   homeHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   sectionTitle: { fontSize: 21, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.3 },
   sectionSubtitle: { marginTop: 3, fontSize: 13, color: dashboardTheme.colors.textMuted, fontWeight: '500' },
-  addButton: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: dashboardTheme.colors.primaryDark, borderRadius: 23, ...dashboardTheme.shadows.medium },
   deviceGrid: { gap: 12 },
   homeDeviceCard: { minHeight: 100, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15, borderRadius: dashboardTheme.radii.md, backgroundColor: dashboardTheme.colors.surface, borderWidth: 1, borderColor: dashboardTheme.colors.border, ...dashboardTheme.shadows.soft },
   homeDeviceCardSelected: { borderColor: 'rgba(22, 163, 74, 0.38)', backgroundColor: dashboardTheme.colors.surfaceTint },
+  emptyDeviceState: { width: '100%', alignItems: 'center', justifyContent: 'center', paddingVertical: 24, paddingHorizontal: 18, borderRadius: dashboardTheme.radii.md, borderWidth: 1, borderStyle: 'dashed', borderColor: dashboardTheme.colors.primary, backgroundColor: dashboardTheme.colors.surfaceTint },
+  emptyDeviceIcon: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', backgroundColor: dashboardTheme.colors.surface, marginBottom: 14 },
+  emptyDeviceTitle: { color: dashboardTheme.colors.textPrimary, fontSize: 16, fontWeight: '800', textAlign: 'center' },
+  emptyDeviceCopy: { marginTop: 4, color: dashboardTheme.colors.textSecondary, fontSize: 13, lineHeight: 18, textAlign: 'center', maxWidth: 260 },
   deviceIcon: { width: 50, height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', backgroundColor: dashboardTheme.colors.primarySoft },
   deviceIconSelected: { backgroundColor: dashboardTheme.colors.primary },
   deviceCardContent: { flex: 1, minWidth: 0 },
@@ -583,7 +618,9 @@ const styles = StyleSheet.create({
   sheetIntro: { marginTop: 7, marginBottom: 22, color: dashboardTheme.colors.textSecondary, fontSize: 14, lineHeight: 20 },
   inputLabel: { color: dashboardTheme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 0.8, marginBottom: 7, marginTop: 14 },
   textInput: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: dashboardTheme.colors.border, backgroundColor: dashboardTheme.colors.surfaceTint, paddingHorizontal: 13, color: dashboardTheme.colors.textPrimary, fontSize: 15 },
+  inputError: { marginTop: 8, color: '#DC2626', fontSize: 13, fontWeight: '500' },
   primarySheetButton: { marginTop: 24, height: 50, borderRadius: 14, backgroundColor: dashboardTheme.colors.primaryDark, alignItems: 'center', justifyContent: 'center' },
+  primarySheetButtonDisabled: { opacity: 0.6 },
   primarySheetButtonText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
   profileIdentity: {
     flexDirection: 'row',

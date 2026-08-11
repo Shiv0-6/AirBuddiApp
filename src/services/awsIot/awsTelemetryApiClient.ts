@@ -198,27 +198,22 @@ async function responseBody(response: Response) {
 
 /** Reads the newest persisted device telemetry from API Gateway. */
 export async function fetchLatestTelemetry(deviceId: string): Promise<DashboardTelemetryMessage> {
-  const directUrl = endpoint(`/devices/${encodeURIComponent(deviceId)}/telemetry`);
-  console.debug('[AirBuddi] Fetching latest telemetry for', deviceId, 'from', directUrl);
-
-  try {
-    const response = await fetch(directUrl, {
-      headers: { Accept: 'application/json' },
-    });
-    const body = await responseBody(response);
-    console.debug('[AirBuddi] Telemetry API response for', deviceId, body);
-    return toDashboardTelemetryMessage(body, deviceId);
-  } catch (error) {
-    console.warn('[AirBuddi] Direct telemetry endpoint failed, falling back to /devices list.', error);
+  const normalizedDeviceId = deviceId.trim();
+  if (!normalizedDeviceId) {
+    throw new Error('A device ID is required to fetch telemetry.');
   }
 
-  const listUrl = endpoint('/devices');
-  const response = await fetch(listUrl, {
+  // The API identifies a device by its MAC address at /devices/{deviceId}.
+  // encodeURIComponent keeps colons and any other valid path characters safe.
+  const directUrl = endpoint(`/devices/${encodeURIComponent(normalizedDeviceId)}`);
+  console.debug('[AirBuddi] Fetching latest telemetry for', normalizedDeviceId, 'from', directUrl);
+
+  const response = await fetch(directUrl, {
     headers: { Accept: 'application/json' },
   });
   const body = await responseBody(response);
-  console.debug('[AirBuddi] Device list response for', deviceId, body);
-  return toDashboardTelemetryMessage(body, deviceId);
+  console.debug('[AirBuddi] Telemetry API response for', normalizedDeviceId, body);
+  return toDashboardTelemetryMessage(body, normalizedDeviceId);
 }
 
 /** Sends a dashboard command to the backend; the backend publishes it to IoT Core. */

@@ -3,7 +3,7 @@ import { toDashboardTelemetryMessage } from '../src/services/awsIot/awsTelemetry
 
 describe('dashboard reducer telemetry updates', () => {
   it('keeps sensor readings when telemetry arrives', () => {
-    const initialState = dashboardReducer(undefined, { type: '@@INIT' });
+    const initialState = dashboardReducer(undefined, { type: '@@INIT', payload: undefined });
 
     const nextState = dashboardReducer(initialState, applyTelemetry({
       aqi: 50,
