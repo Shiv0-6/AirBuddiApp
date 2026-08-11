@@ -63,7 +63,7 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
     return (
       <SectionCard tone="default" padding={24}>
         <View style={styles.header}>
-          <Text style={styles.title}>Air </Text>
+          <Text style={styles.title}>AQI</Text>
           <Text style={styles.subtitle}>Air Quality Index</Text>
         </View>
 

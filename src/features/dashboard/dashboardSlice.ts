@@ -28,7 +28,7 @@ export interface DashboardRuntimeState {
 const initialState: DashboardRuntimeState = {
   appTitle: 'AirBuddi',
   device: {
-    name: 'AirBuddi ESP32',
+    name: 'AirBuddi',
     status: 'Offline',
     mode: 'manual',
     power: 'off',
@@ -128,7 +128,8 @@ function mergeEsp32Telemetry(
 
   // Include the device-reported AQI as an environmental sensor entry labeled `IAQ`
   if (typeof telemetry.aqi === 'number') {
-    nextSensors.push({
+    // ensure IAQ appears first in the Environmental Sensors list
+    nextSensors.unshift({
       id: 'iaq',
       name: 'IAQ',
       value: telemetry.aqi,
