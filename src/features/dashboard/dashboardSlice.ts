@@ -126,6 +126,20 @@ function mergeEsp32Telemetry(
     };
   });
 
+  // Include the device-reported AQI as an environmental sensor entry labeled `IAQ`
+  if (typeof telemetry.aqi === 'number') {
+    nextSensors.push({
+      id: 'iaq',
+      name: 'IAQ',
+      value: telemetry.aqi,
+      unit: '',
+      icon: 'chart-bubble',
+      status: 'good',
+      source: 'esp32' as const,
+    });
+  }
+
+
   return {
     ...current,
     device: {

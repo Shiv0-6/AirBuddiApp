@@ -15,7 +15,7 @@ import { clamp, getAqiDescriptor } from '../../features/dashboard/dashboardUtils
 import { SectionCard } from './SectionCard';
 
 type AirQualityCardProps = {
-  aqi: number | null;
+  aqi: number | null; // now contains PM2.5 value (µg/m3)
 };
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -63,8 +63,8 @@ function AirQualityCardComponent({ aqi }: AirQualityCardProps) {
     return (
       <SectionCard tone="default" padding={24}>
         <View style={styles.header}>
-          <Text style={styles.title}>Air Quality Index</Text>
-          <Text style={styles.subtitle}>Real-time Monitoring</Text>
+          <Text style={styles.title}>Air </Text>
+          <Text style={styles.subtitle}>Air Quality Index</Text>
         </View>
 
         <View style={styles.emptyState}>

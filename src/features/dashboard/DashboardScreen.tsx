@@ -69,6 +69,7 @@ export function DashboardScreen() {
 
   const device = dashboard.device;
   const sensors = dashboard.sensors ?? [];
+  const pm25Value = sensors.find(s => s.id === 'pm2_5')?.value ?? null;
 
   const [activeTab, setActiveTab] = useState<TabId>('fan');
   const [refreshing, setRefreshing] = useState(false);
@@ -223,7 +224,7 @@ export function DashboardScreen() {
               <View style={styles.deviceGrid}>
                 {devices.map(item => {
                   const isSelected = item.id === selectedDeviceId;
-                  const displayedAqi = item.id === 'living-room' ? dashboard.aqi : item.aqi;
+                  const displayedAqi = item.id === 'living-room' ? pm25Value : item.aqi;
                   return (
                     <TouchableOpacity key={item.id} activeOpacity={0.82} style={[styles.homeDeviceCard, isSelected && styles.homeDeviceCardSelected]} onPress={() => setSelectedDeviceId(item.id)}>
                       <View style={[styles.deviceIcon, isSelected && styles.deviceIconSelected]}>
@@ -232,7 +233,7 @@ export function DashboardScreen() {
                       <View style={styles.deviceCardContent}>
                         <Text style={styles.deviceRoom}>{item.room}</Text>
                         <Text style={styles.deviceName} numberOfLines={1}>{item.name}</Text>
-                        <View style={styles.deviceMeta}><View style={[styles.deviceStatusDot, item.status === 'Offline' && styles.deviceStatusOffline]} /><Text style={styles.deviceMetaText}>{item.status}{displayedAqi !== null ? ` · AQI ${displayedAqi}` : ''}</Text></View>
+                        <View style={styles.deviceMeta}><View style={[styles.deviceStatusDot, item.status === 'Offline' && styles.deviceStatusOffline]} /><Text style={styles.deviceMetaText}>{item.status}{displayedAqi !== null ? ` · PM2.5 ${displayedAqi}` : ''}</Text></View>
                       </View>
                       <TouchableOpacity accessibilityLabel={`Edit ${item.room} space`} style={styles.editSpaceButton} activeOpacity={0.75} onPress={() => beginEditingSpace(item)}>
                         <MaterialCommunityIcons name="pencil-outline" size={18} color={dashboardTheme.colors.textSecondary} />
@@ -254,7 +255,7 @@ export function DashboardScreen() {
         {activeTab === 'airquality' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
-              <AirQualityCard aqi={dashboard.aqi} />
+              <AirQualityCard aqi={pm25Value} />
               <View style={styles.gap}>
                 <SensorGrid sensors={sensors} />
               </View>
