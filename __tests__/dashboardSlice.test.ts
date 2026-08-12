@@ -29,17 +29,17 @@ describe('dashboard reducer telemetry updates', () => {
     });
   });
 
-  it('prefers the online device entry when the configured device id is not present', () => {
+  it('strictly matches the configured device ID when present', () => {
     const message = toDashboardTelemetryMessage({
       devices: [
         {
           id: 'F4:65:0B:49:12:60',
           NAME: 'MONITOR 3',
           online: false,
-          'Temperature': 0,
-          'Humidity': 0,
-          'PM 2.5': 0,
-          'IAQ': 0,
+          'Temperature': 22.5,
+          'Humidity': 45,
+          'PM 2.5': 12,
+          'IAQ': 40,
         },
         {
           id: '44:1D:64:2A:D7:78',
@@ -51,29 +51,20 @@ describe('dashboard reducer telemetry updates', () => {
           'IAQ': 50,
         },
       ],
-    }, 'AA:BB:CC:DD:EE:FF');
+    }, 'F4:65:0B:49:12:60');
 
-    expect(message.sensors?.[0]).toMatchObject({
-      id: 'temperature',
-      value: 30.06182,
-      unit: 'C',
+    expect(message.deviceId).toBe('F4:65:0B:49:12:60');
+    expect(message.aqi).toBe(40);
+    expect(message.sensors?.find(sensor => sensor.id === 'temperature')).toMatchObject({
+      value: 22.5,
     });
   });
 
-  it('prefers a live online device entry over an exact offline match with empty telemetry', () => {
+  it('falls back to default telemetry format when the requested device ID is not present', () => {
     const message = toDashboardTelemetryMessage({
       devices: [
         {
           id: 'F4:65:0B:49:12:60',
-          NAME: 'MONITOR 3',
-          online: false,
-          'Temperature': 0,
-          'Humidity': 0,
-          'PM 2.5': 0,
-          'IAQ': 0,
-        },
-        {
-          id: '44:1D:64:2A:D7:78',
           NAME: 'MONITOR 3',
           online: true,
           'Temperature': 28.4,
@@ -82,12 +73,9 @@ describe('dashboard reducer telemetry updates', () => {
           'IAQ': 62,
         },
       ],
-    }, 'F4:65:0B:49:12:60');
+    }, 'AA:BB:CC:DD:EE:FF');
 
-    expect(message.aqi).toBe(62);
-    expect(message.sensors?.find(sensor => sensor.id === 'temperature')).toMatchObject({
-      value: 28.4,
-      unit: 'C',
-    });
+    expect(message.deviceId).toBe('AA:BB:CC:DD:EE:FF');
+    expect(message.connection).toBe('offline');
   });
 });

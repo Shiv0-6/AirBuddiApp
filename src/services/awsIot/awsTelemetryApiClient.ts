@@ -28,14 +28,22 @@ function findMatchingDeviceEntry(payload: unknown, fallbackDeviceId: string) {
 
   const normalizedFallback = fallbackDeviceId?.trim().toLowerCase() ?? '';
 
-  const exactMatch = candidates.find((entry: unknown) => {
-    if (!isRecord(entry)) return false;
+  if (normalizedFallback) {
+    const exactMatch = candidates.find((entry: unknown) => {
+      if (!isRecord(entry)) return false;
 
-    const candidateIds = [entry.id, entry.deviceId, entry.device_id, entry.deviceID].map(asString);
-    const name = asString(entry.NAME ?? entry.name ?? entry.deviceName);
+      const candidateIds = [entry.id, entry.deviceId, entry.device_id, entry.deviceID].map(asString);
+      const name = asString(entry.NAME ?? entry.name ?? entry.deviceName);
 
-    return candidateIds.some(id => id.toLowerCase() === normalizedFallback) || name.toLowerCase() === normalizedFallback;
-  }) as Record<string, unknown> | undefined;
+      return candidateIds.some(id => id.toLowerCase() === normalizedFallback) || name.toLowerCase() === normalizedFallback;
+    }) as Record<string, unknown> | undefined;
+
+    if (exactMatch) {
+      return exactMatch;
+    }
+
+    return null;
+  }
 
   const onlineCandidates = candidates.filter((entry: unknown) => {
     if (!isRecord(entry)) return false;
@@ -52,34 +60,8 @@ function findMatchingDeviceEntry(payload: unknown, fallbackDeviceId: string) {
     }, null);
 
     if (latestOnline) {
-      const hasTelemetry = Object.keys(latestOnline).some(key =>
-        key === 'Temperature' || key === 'Humidity' || key === 'IAQ' || key === 'PM 2.5' || key === 'PM 10'
-        || key === 'VOC\'s' || key === 'VOC' || key === 'C02 Equivalent' || key === 'CO2 Equivalent'
-        || key === 'Pressure' || key === 'Gas Resistance'
-        || key === 'upperBedChamber' || key === 'lowerBedChamber'
-        || key === 'upper_bed_chamber' || key === 'lower_bed_chamber'
-        || key === 'Upper Chamber' || key === 'Lower Chamber',
-      );
-      const hasNumericTelemetry = hasTelemetry && (
-        typeof latestOnline.Temperature === 'number' || typeof latestOnline.Humidity === 'number'
-        || typeof latestOnline.IAQ === 'number' || typeof latestOnline['PM 2.5'] === 'number'
-        || typeof latestOnline['PM 10'] === 'number' || typeof latestOnline["VOC's"] === 'number'
-        || typeof latestOnline.VOC === 'number' || typeof latestOnline['C02 Equivalent'] === 'number'
-        || typeof latestOnline['CO2 Equivalent'] === 'number' || typeof latestOnline.Pressure === 'number'
-        || typeof latestOnline['Gas Resistance'] === 'number'
-        || typeof latestOnline.upperBedChamber === 'number' || typeof latestOnline.lowerBedChamber === 'number'
-        || typeof latestOnline.upper_bed_chamber === 'number' || typeof latestOnline.lower_bed_chamber === 'number'
-        || typeof latestOnline['Upper Chamber'] === 'number' || typeof latestOnline['Lower Chamber'] === 'number'
-      );
-
-      if (hasNumericTelemetry) {
-        return latestOnline;
-      }
+      return latestOnline;
     }
-  }
-
-  if (exactMatch) {
-    return exactMatch;
   }
 
   return (candidates[0] as Record<string, unknown> | undefined) ?? null;
@@ -167,7 +149,7 @@ export function toDashboardTelemetryMessage(payload: unknown, fallbackDeviceId: 
     }, fallbackDeviceId);
   }
 
-  return normalizeTelemetryMessage(payload as Record<string, unknown>, fallbackDeviceId);
+  return normalizeTelemetryMessage({ deviceId: fallbackDeviceId, connection: 'offline' }, fallbackDeviceId);
 }
 
 async function responseBody(response: Response) {
@@ -213,6 +195,12 @@ export async function fetchLatestTelemetry(deviceId: string): Promise<DashboardT
   });
   const body = await responseBody(response);
   console.debug('[AirBuddi] Telemetry API response for', normalizedDeviceId, body);
+
+  const deviceEntry = findMatchingDeviceEntry(body, normalizedDeviceId);
+  if (!deviceEntry) {
+    throw new Error(`Device with MAC address "${normalizedDeviceId}" was not found on AWS. Please check the MAC address.`);
+  }
+
   return toDashboardTelemetryMessage(body, normalizedDeviceId);
 }
 

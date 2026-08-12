@@ -81,4 +81,15 @@ describe('postEspCommand', () => {
       }),
     ]));
   });
+
+  it('throws an error if the requested MAC address is not found on AWS', async () => {
+    (globalThis as any).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ devices: [{ id: '11:22:33:44:55:66', online: true }] }),
+    });
+
+    await expect(fetchLatestTelemetry('AA:BB:CC:DD:EE:FF')).rejects.toThrow(
+      'Device with MAC address "AA:BB:CC:DD:EE:FF" was not found on AWS.',
+    );
+  });
 });
