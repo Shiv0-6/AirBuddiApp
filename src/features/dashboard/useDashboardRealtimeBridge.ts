@@ -9,6 +9,7 @@ import type { ConnectionState, DeviceMode, PowerState } from './dashboardTypes';
 import {
   applyTelemetry,
   cycleLocalFanSpeed,
+  resetDashboard,
   setConnectionState,
   setDeviceMode,
   setDevicePower,
@@ -47,6 +48,7 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
 
     const client = new AwsIotClient();
     clientRef.current = client;
+    dispatch(resetDashboard(undefined));
 
     if (!awsIotConfig.enabled || !deviceId) {
       dispatch(setConnectionState('offline'));

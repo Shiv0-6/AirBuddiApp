@@ -35,7 +35,7 @@ import { fetchLatestTelemetry } from '../../services/awsIot/awsTelemetryApiClien
 
 type TabId = 'airquality' | 'fan' | 'light' | 'more';
 
-type SheetId = 'profile' | 'add-device' | 'edit-space' | 'menu' | 'about' | null;
+type SheetId = 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | null;
 type HomeDevice = {
   id: string;
   name: string;
@@ -71,7 +71,9 @@ export function DashboardScreen() {
   const [addDeviceError, setAddDeviceError] = useState('');
   const [isAddingDevice, setIsAddingDevice] = useState(false);
   const [editingDeviceId, setEditingDeviceId] = useState<string | null>(null);
-  const [editingRoom, setEditingRoom] = useState('');
+  const [editingDeviceName, setEditingDeviceName] = useState('');
+  const [editingDeviceRoom, setEditingDeviceRoom] = useState('');
+  const [editDeviceError, setEditDeviceError] = useState('');
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [devices, setDevices] = useState<HomeDevice[]>([]);
 
@@ -123,6 +125,28 @@ export function DashboardScreen() {
     [dashboard.connection],
   );
 
+  useEffect(() => {
+    if (devices.length === 0) {
+      if (selectedDeviceId !== null) {
+        setSelectedDeviceId(null);
+      }
+      return;
+    }
+
+    const hasSelectedDevice = selectedDeviceId ? devices.some(item => item.id === selectedDeviceId) : false;
+    if (!hasSelectedDevice) {
+      setSelectedDeviceId(devices[0].id);
+    }
+  }, [devices, selectedDeviceId]);
+
+  useEffect(() => {
+    if (!selectedDeviceId || pm25Value === null) {
+      return;
+    }
+
+    setDevices(current => current.map(item => item.id === selectedDeviceId ? { ...item, aqi: pm25Value } : item));
+  }, [pm25Value, selectedDeviceId]);
+
   // ── Handlers ────────────────────────────────────────────────────────────────
 
   const handleTogglePower = useCallback(() => {
@@ -151,19 +175,19 @@ export function DashboardScreen() {
     setLightStateState(zoneId, nextState);
   }, [device?.lightZones, setLightStateState]);
 
-  const selectedDevice = devices.find(item => item.id === selectedDeviceId) ?? devices[0];
+  const selectedDevice = devices.find(item => item.id === selectedDeviceId) ?? null;
   const deviceTitle = selectedDevice?.room ?? 'Add a device';
   const displayDeviceName = selectedDevice?.name ?? 'No device connected';
   const addDevice = useCallback(async () => {
     const name = newDeviceName.trim() || 'AirBuddi Device';
     const room = newDeviceRoom.trim() || 'New Room';
     const id = newDeviceId.trim().toUpperCase();
-    if (!/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(id)) {
-      setAddDeviceError('Enter the device MAC address, for example F4:65:0B:49:12:60.');
-      return;
-    }
     if (devices.some(item => item.id.toLowerCase() === id.toLowerCase())) {
       setAddDeviceError('This device has already been added.');
+      return;
+    }
+    if (!/^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(id)) {
+      setAddDeviceError('Enter the device MAC address, for example F4:65:0B:49:12:60.');
       return;
     }
     setIsAddingDevice(true);
@@ -175,8 +199,9 @@ export function DashboardScreen() {
         return;
       }
 
-      setDevices(current => [...current, { id, name, room, status: 'Online', aqi: telemetry.aqi ?? null, icon: 'air-filter' }]);
-      setSelectedDeviceId(id);
+      const nextDevice = { id, name, room, status: 'Online' as const, aqi: telemetry.aqi ?? null, icon: 'air-filter' };
+      setDevices(current => [...current, nextDevice]);
+      setSelectedDeviceId(current => current ?? id);
       setNewDeviceName('');
       setNewDeviceRoom('');
       setNewDeviceId('');
@@ -187,19 +212,34 @@ export function DashboardScreen() {
       setIsAddingDevice(false);
     }
   }, [devices, newDeviceId, newDeviceName, newDeviceRoom]);
-  const beginEditingSpace = useCallback((item: HomeDevice) => {
+  const beginEditingDevice = useCallback((item: HomeDevice) => {
     setEditingDeviceId(item.id);
-    setEditingRoom(item.room);
-    setActiveSheet('edit-space');
+    setEditingDeviceName(item.name);
+    setEditingDeviceRoom(item.room);
+    setEditDeviceError('');
+    setActiveSheet('edit-device');
   }, []);
-  const saveSpaceName = useCallback(() => {
-    const room = editingRoom.trim();
-    if (editingDeviceId && room) {
-      setDevices(current => current.map(item => item.id === editingDeviceId ? { ...item, room } : item));
+  const saveEditedDevice = useCallback(() => {
+    const name = editingDeviceName.trim();
+    const room = editingDeviceRoom.trim();
+
+    if (!editingDeviceId) {
+      setActiveSheet(null);
+      return;
     }
-    setActiveSheet(null);
+
+    if (!name || !room) {
+      setEditDeviceError('Device name and room are required.');
+      return;
+    }
+
+    setDevices(current => current.map(item => item.id === editingDeviceId ? { ...item, name, room } : item));
     setEditingDeviceId(null);
-  }, [editingDeviceId, editingRoom]);
+    setEditingDeviceName('');
+    setEditingDeviceRoom('');
+    setEditDeviceError('');
+    setActiveSheet(null);
+  }, [editingDeviceId, editingDeviceName, editingDeviceRoom]);
 
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -239,8 +279,13 @@ export function DashboardScreen() {
               <View style={styles.homeHeading}>
                 <View>
                   <Text style={styles.sectionTitle}>My devices</Text>
-                  <Text style={styles.sectionSubtitle}>{devices.length} spaces in your home</Text>
+                  <Text style={styles.sectionSubtitle}>{devices.length > 0 ? `${devices.length} device${devices.length === 1 ? '' : 's'} added` : 'No device connected'}</Text>
                 </View>
+                {devices.length > 0 && (
+                  <TouchableOpacity accessibilityLabel="Add another device" style={styles.addDeviceHeaderButton} activeOpacity={0.8} onPress={() => setActiveSheet('add-device')}>
+                    <MaterialCommunityIcons name="plus" size={24} color="#FFFFFF" />
+                  </TouchableOpacity>
+                )}
               </View>
               <View style={styles.deviceGrid}>
                 {devices.length === 0 ? (
@@ -253,18 +298,34 @@ export function DashboardScreen() {
                   </TouchableOpacity>
                 ) : devices.map(item => {
                   const isSelected = item.id === selectedDeviceId;
-                  const displayedAqi = item.id === selectedDeviceId ? pm25Value : item.aqi;
+                  const displayedAqi = isSelected ? pm25Value : item.aqi;
                   return (
-                    <TouchableOpacity key={item.id} activeOpacity={0.82} style={[styles.homeDeviceCard, isSelected && styles.homeDeviceCardSelected]} onPress={() => setSelectedDeviceId(item.id)}>
+                    <TouchableOpacity
+                      key={item.id}
+                      activeOpacity={0.82}
+                      style={[styles.homeDeviceCard, isSelected && styles.homeDeviceCardSelected]}
+                      onPress={() => setSelectedDeviceId(item.id)}
+                    >
                       <View style={[styles.deviceIcon, isSelected && styles.deviceIconSelected]}>
                         <MaterialCommunityIcons name={item.icon} size={24} color={isSelected ? '#FFFFFF' : dashboardTheme.colors.primaryDark} />
                       </View>
                       <View style={styles.deviceCardContent}>
                         <Text style={styles.deviceRoom}>{item.room}</Text>
                         <Text style={styles.deviceName} numberOfLines={1}>{item.name}</Text>
-                        <View style={styles.deviceMeta}><View style={[styles.deviceStatusDot, item.status === 'Offline' && styles.deviceStatusOffline]} /><Text style={styles.deviceMetaText}>{item.status}{displayedAqi !== null ? ` · PM2.5 ${displayedAqi}` : ''}</Text></View>
+                        <View style={styles.deviceMeta}>
+                          <View style={[styles.deviceStatusDot, item.status === 'Offline' && styles.deviceStatusOffline]} />
+                          <Text style={styles.deviceMetaText}>
+                            {item.status}
+                            {displayedAqi !== null ? ` · PM2.5 ${displayedAqi}` : ''}
+                          </Text>
+                        </View>
                       </View>
-                      <TouchableOpacity accessibilityLabel={`Edit ${item.room} space`} style={styles.editSpaceButton} activeOpacity={0.75} onPress={() => beginEditingSpace(item)}>
+                      <TouchableOpacity
+                        accessibilityLabel={`Edit ${item.room} device`}
+                        style={styles.editDeviceButton}
+                        activeOpacity={0.75}
+                        onPress={() => beginEditingDevice(item)}
+                      >
                         <MaterialCommunityIcons name="pencil-outline" size={18} color={dashboardTheme.colors.textSecondary} />
                       </TouchableOpacity>
                       {isSelected && <MaterialCommunityIcons name="check-circle" size={20} color={dashboardTheme.colors.primary} />}
@@ -272,10 +333,12 @@ export function DashboardScreen() {
                   );
                 })}
               </View>
-              {devices.length > 0 && <View style={styles.homeSummary}>
-                <MaterialCommunityIcons name="leaf-circle-outline" size={28} color={dashboardTheme.colors.primaryDark} />
-                <View style={styles.summaryText}><Text style={styles.summaryTitle}>Your air, at a glance</Text><Text style={styles.summaryCopy}>Select a space to see its live air quality and controls.</Text></View>
-              </View>}
+              {devices.length > 0 && <>
+                <View style={styles.homeSummary}>
+                  <MaterialCommunityIcons name="leaf-circle-outline" size={28} color={dashboardTheme.colors.primaryDark} />
+                  <View style={styles.summaryText}><Text style={styles.summaryTitle}>Your air, at a glance</Text><Text style={styles.summaryCopy}>Select a space to see its live air quality and controls.</Text></View>
+                </View>
+              </>}
             </View>
           </Animated.View>
         )}
@@ -338,7 +401,7 @@ export function DashboardScreen() {
               <Text style={styles.sectionSubtitle}>Manage your account and AirBuddi home.</Text>
               <View style={styles.settingsCard}>
                 <SettingsRow icon="account-circle-outline" title="Profile" subtitle={profileName} onPress={() => setActiveSheet('profile')} />
-                <SettingsRow icon="air-filter" title="Devices" subtitle={`${devices.length} devices added`} onPress={() => setActiveTab('fan')} />
+                <SettingsRow icon="air-filter" title="Devices" subtitle={devices.length > 0 ? `${devices.length} device${devices.length === 1 ? '' : 's'} added` : 'No device connected'} onPress={() => setActiveTab('fan')} />
                 <SettingsRow icon="information-outline" title="About AirBuddi" subtitle="App details and support" onPress={() => setActiveSheet('about')} last />
               </View>
               <View style={styles.gap}><DeviceCard device={device} /></View>
@@ -387,12 +450,15 @@ export function DashboardScreen() {
               {!!addDeviceError && <Text style={styles.inputError}>{addDeviceError}</Text>}
               <TouchableOpacity style={[styles.primarySheetButton, isAddingDevice && styles.primarySheetButtonDisabled]} disabled={isAddingDevice} onPress={addDevice}><Text style={styles.primarySheetButtonText}>{isAddingDevice ? 'Connecting…' : 'Add device'}</Text></TouchableOpacity>
             </>}
-            {activeSheet === 'edit-space' && <>
-              <Text style={styles.sheetTitle}>Edit space</Text>
-              <Text style={styles.sheetIntro}>Choose the name you want to see for this room or space.</Text>
-              <Text style={styles.inputLabel}>SPACE NAME</Text>
-              <TextInput value={editingRoom} onChangeText={setEditingRoom} style={styles.textInput} autoFocus placeholder="e.g. Living Room" placeholderTextColor={dashboardTheme.colors.textMuted} />
-              <TouchableOpacity style={styles.primarySheetButton} onPress={saveSpaceName}><Text style={styles.primarySheetButtonText}>Save space</Text></TouchableOpacity>
+            {activeSheet === 'edit-device' && <>
+              <Text style={styles.sheetTitle}>Edit device</Text>
+              <Text style={styles.sheetIntro}>Update the display details for this device. The MAC address stays the same.</Text>
+              <Text style={styles.inputLabel}>DEVICE NAME</Text>
+              <TextInput value={editingDeviceName} onChangeText={value => { setEditingDeviceName(value); setEditDeviceError(''); }} style={styles.textInput} placeholder="e.g. AirBuddi Mini" placeholderTextColor={dashboardTheme.colors.textMuted} />
+              <Text style={styles.inputLabel}>ROOM OR SPACE</Text>
+              <TextInput value={editingDeviceRoom} onChangeText={value => { setEditingDeviceRoom(value); setEditDeviceError(''); }} style={styles.textInput} placeholder="e.g. Bedroom" placeholderTextColor={dashboardTheme.colors.textMuted} />
+              {!!editDeviceError && <Text style={styles.inputError}>{editDeviceError}</Text>}
+              <TouchableOpacity style={styles.primarySheetButton} onPress={saveEditedDevice}><Text style={styles.primarySheetButtonText}>Save device</Text></TouchableOpacity>
             </>}
             {activeSheet === 'menu' && <>
               <Text style={styles.sheetTitle}>More</Text>
@@ -517,6 +583,7 @@ const styles = StyleSheet.create({
   homeHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
   sectionTitle: { fontSize: 21, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.3 },
   sectionSubtitle: { marginTop: 3, fontSize: 13, color: dashboardTheme.colors.textMuted, fontWeight: '500' },
+  addDeviceHeaderButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: dashboardTheme.colors.primaryDark, ...dashboardTheme.shadows.medium },
   deviceGrid: { gap: 12 },
   homeDeviceCard: { minHeight: 100, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15, borderRadius: dashboardTheme.radii.md, backgroundColor: dashboardTheme.colors.surface, borderWidth: 1, borderColor: dashboardTheme.colors.border, ...dashboardTheme.shadows.soft },
   homeDeviceCardSelected: { borderColor: 'rgba(22, 163, 74, 0.38)', backgroundColor: dashboardTheme.colors.surfaceTint },
@@ -533,7 +600,7 @@ const styles = StyleSheet.create({
   deviceStatusDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: dashboardTheme.colors.success },
   deviceStatusOffline: { backgroundColor: dashboardTheme.colors.textMuted },
   deviceMetaText: { color: dashboardTheme.colors.textMuted, fontSize: 12, fontWeight: '600' },
-  editSpaceButton: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: dashboardTheme.colors.surfaceSecondary },
+  editDeviceButton: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: dashboardTheme.colors.surfaceSecondary },
   homeSummary: { marginTop: 16, flexDirection: 'row', gap: 12, padding: 16, borderRadius: dashboardTheme.radii.md, backgroundColor: dashboardTheme.colors.primarySoft },
   summaryText: { flex: 1 },
   summaryTitle: { color: dashboardTheme.colors.textPrimary, fontSize: 14, fontWeight: '800' },
