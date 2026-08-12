@@ -241,6 +241,20 @@ export function DashboardScreen() {
     setActiveSheet(null);
   }, [editingDeviceId, editingDeviceName, editingDeviceRoom]);
 
+  const removeEditedDevice = useCallback(() => {
+    if (!editingDeviceId) {
+      setActiveSheet(null);
+      return;
+    }
+
+    setDevices(current => current.filter(item => item.id !== editingDeviceId));
+    setEditingDeviceId(null);
+    setEditingDeviceName('');
+    setEditingDeviceRoom('');
+    setEditDeviceError('');
+    setActiveSheet(null);
+  }, [editingDeviceId]);
+
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
@@ -459,6 +473,10 @@ export function DashboardScreen() {
               <TextInput value={editingDeviceRoom} onChangeText={value => { setEditingDeviceRoom(value); setEditDeviceError(''); }} style={styles.textInput} placeholder="e.g. Bedroom" placeholderTextColor={dashboardTheme.colors.textMuted} />
               {!!editDeviceError && <Text style={styles.inputError}>{editDeviceError}</Text>}
               <TouchableOpacity style={styles.primarySheetButton} onPress={saveEditedDevice}><Text style={styles.primarySheetButtonText}>Save device</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.dangerSheetButton} onPress={removeEditedDevice}>
+                <MaterialCommunityIcons name="trash-can-outline" size={18} color="#DC2626" />
+                <Text style={styles.dangerSheetButtonText}>Remove device</Text>
+              </TouchableOpacity>
             </>}
             {activeSheet === 'menu' && <>
               <Text style={styles.sheetTitle}>More</Text>
@@ -689,6 +707,8 @@ const styles = StyleSheet.create({
   primarySheetButton: { marginTop: 24, height: 50, borderRadius: 14, backgroundColor: dashboardTheme.colors.primaryDark, alignItems: 'center', justifyContent: 'center' },
   primarySheetButtonDisabled: { opacity: 0.6 },
   primarySheetButtonText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 },
+  dangerSheetButton: { marginTop: 12, height: 50, borderRadius: 14, backgroundColor: '#FEE2E2', borderWidth: 1, borderColor: '#FECACA', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8 },
+  dangerSheetButtonText: { color: '#DC2626', fontWeight: '800', fontSize: 15 },
   profileIdentity: {
     flexDirection: 'row',
     alignItems: 'center',

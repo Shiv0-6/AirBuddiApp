@@ -37,7 +37,7 @@ describe('Telemetry Parser', () => {
           "Humidity": 45,
           "PM 10": 196,
           "NAME": "MONITOR 3",
-          "online": false,
+          "online": false,;
           "seconds_since_last_seen": 1572
         }
       ],
