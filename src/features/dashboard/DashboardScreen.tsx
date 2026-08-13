@@ -571,16 +571,6 @@ function SettingsRow({ icon, title, subtitle, onPress, last = false }: { icon: s
   );
 }
 
-function MenuAction({ icon, label, onPress }: { icon: string; label: string; onPress: () => void }) {
-  return (
-    <TouchableOpacity style={styles.profileAction} activeOpacity={0.75} onPress={onPress}>
-      <MaterialCommunityIcons name={icon} size={20} color={dashboardTheme.colors.primaryDark} />
-      <Text style={styles.profileActionText}>{label}</Text>
-      <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
-    </TouchableOpacity>
-  );
-}
-
 function DropdownMenuItem({ icon, label, onPress, last = false }: { icon: string; label: string; onPress: () => void; last?: boolean }) {
   return (
     <TouchableOpacity
