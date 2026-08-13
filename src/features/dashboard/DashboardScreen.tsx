@@ -147,6 +147,19 @@ export function DashboardScreen() {
     setDevices(current => current.map(item => item.id === selectedDeviceId ? { ...item, aqi: pm25Value } : item));
   }, [pm25Value, selectedDeviceId]);
 
+  // ← ADD THE NEW EFFECT RIGHT HERE
+  useEffect(() => {
+    if (!selectedDeviceId || !device) {
+      return;
+    }
+
+    setDevices(current =>
+      current.map(item =>
+        item.id === selectedDeviceId ? { ...item, status: device.status } : item,
+      ),
+    );
+  }, [device?.status, selectedDeviceId]);
+
   // ── Handlers ────────────────────────────────────────────────────────────────
 
   const handleTogglePower = useCallback(() => {
@@ -335,7 +348,7 @@ export function DashboardScreen() {
                           <View style={[styles.deviceStatusDot, item.status === 'Offline' && styles.deviceStatusOffline]} />
                           <Text style={styles.deviceMetaText}>
                             {item.status}
-                            {displayedAqi !== null ? ` · PM2.5 ${displayedAqi}` : ''}
+                            {displayedAqi !== null ? ` · AQI ${displayedAqi}` : ''}
                           </Text>
                         </View>
                       </View>

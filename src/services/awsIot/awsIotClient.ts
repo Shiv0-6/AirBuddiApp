@@ -109,7 +109,6 @@ export class AwsIotClient {
         if (initial) {
           handlers.onTelemetry(config.topics.telemetry, initial);
         }
-        handlers.onConnectionChange('connected');
       } catch (e) {
         handlers.onConnectionChange('offline');
         handlers.onError(e instanceof Error ? e : new Error(String(e)));
