@@ -450,7 +450,7 @@ export function DashboardScreen() {
       <Modal
         animationType="slide"
         transparent
-        visible={activeSheet !== null}
+        visible={activeSheet !== null && activeSheet !== 'menu'}
         onRequestClose={() => setActiveSheet(null)}
       >
         <View style={styles.profileBackdrop}>
@@ -496,14 +496,7 @@ export function DashboardScreen() {
                 <Text style={styles.dangerSheetButtonText}>Remove device</Text>
               </TouchableOpacity>
             </>}
-            {activeSheet === 'menu' && <>
-              <Text style={styles.sheetTitle}>More</Text>
-              <MenuAction icon="air-filter" label="My devices" onPress={() => { setActiveSheet(null); setActiveTab('fan'); }} />
-              <MenuAction icon="chart-line" label="Air quality monitor" onPress={() => { setActiveSheet(null); setActiveTab('airquality'); }} />
-              <MenuAction icon="account-circle-outline" label="Profile" onPress={() => setActiveSheet('profile')} />
-              <MenuAction icon="cog-outline" label="Settings" onPress={() => { setActiveSheet(null); setActiveTab('more'); }} />
-              <MenuAction icon="information-outline" label="About us" onPress={() => setActiveSheet('about')} />
-            </>}
+
             {activeSheet === 'about' && <>
               <View style={styles.aboutIcon}><MaterialCommunityIcons name="leaf" size={34} color="#FFFFFF" /></View>
               <Text style={styles.sheetTitle}>About AirBuddi</Text>
@@ -513,6 +506,28 @@ export function DashboardScreen() {
             </>}
           </View>
         </View>
+      </Modal>
+
+      {/* ── 3-dot overflow dropdown ─────────────────────────────────── */}
+      <Modal
+        transparent
+        animationType="fade"
+        visible={activeSheet === 'menu'}
+        onRequestClose={() => setActiveSheet(null)}
+      >
+        <TouchableOpacity
+          style={styles.dropdownBackdrop}
+          activeOpacity={1}
+          onPress={() => setActiveSheet(null)}
+        >
+          <View style={styles.dropdownMenu}>
+            <DropdownMenuItem icon="air-filter" label="My devices" onPress={() => { setActiveSheet(null); setActiveTab('fan'); }} />
+            <DropdownMenuItem icon="chart-line" label="Air quality monitor" onPress={() => { setActiveSheet(null); setActiveTab('airquality'); }} />
+            <DropdownMenuItem icon="account-circle-outline" label="Profile" onPress={() => setActiveSheet('profile')} />
+            <DropdownMenuItem icon="cog-outline" label="Settings" onPress={() => { setActiveSheet(null); setActiveTab('more'); }} />
+            <DropdownMenuItem icon="information-outline" label="About us" onPress={() => setActiveSheet('about')} last />
+          </View>
+        </TouchableOpacity>
       </Modal>
 
       {/* ── Bottom Navigation Bar ────────────────────────────────────── */}
@@ -562,6 +577,19 @@ function MenuAction({ icon, label, onPress }: { icon: string; label: string; onP
       <MaterialCommunityIcons name={icon} size={20} color={dashboardTheme.colors.primaryDark} />
       <Text style={styles.profileActionText}>{label}</Text>
       <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
+    </TouchableOpacity>
+  );
+}
+
+function DropdownMenuItem({ icon, label, onPress, last = false }: { icon: string; label: string; onPress: () => void; last?: boolean }) {
+  return (
+    <TouchableOpacity
+      style={[styles.dropdownItem, !last && styles.dropdownItemBorder]}
+      activeOpacity={0.7}
+      onPress={onPress}
+    >
+      <MaterialCommunityIcons name={icon} size={18} color={dashboardTheme.colors.primaryDark} />
+      <Text style={styles.dropdownItemText}>{label}</Text>
     </TouchableOpacity>
   );
 }
@@ -787,4 +815,22 @@ const styles = StyleSheet.create({
   aboutVersion: { marginTop: 18, color: dashboardTheme.colors.textMuted, fontSize: 12, fontWeight: '600' },
   secondarySheetButton: { marginTop: 24, height: 48, borderRadius: 14, backgroundColor: dashboardTheme.colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
   secondarySheetButtonText: { color: dashboardTheme.colors.primaryDark, fontWeight: '800', fontSize: 15 },
+
+  // 3-dot dropdown
+  dropdownBackdrop: { flex: 1 },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 64,
+    right: 20,
+    minWidth: 210,
+    backgroundColor: dashboardTheme.colors.surface,
+    borderRadius: dashboardTheme.radii.md,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    paddingVertical: 6,
+    ...dashboardTheme.shadows.strong,
+  },
+  dropdownItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
+  dropdownItemBorder: { borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
+  dropdownItemText: { color: dashboardTheme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
 });
