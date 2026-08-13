@@ -194,9 +194,17 @@ export function DashboardScreen() {
     setAddDeviceError('');
     try {
       const telemetry = await fetchLatestTelemetry(id);
-      const isOnline = telemetry.connection === 'connected';
+      const nextConnection = telemetry.esp32?.connection ?? telemetry.connection ?? 'offline';
+      const isOnline = nextConnection === 'connected';
 
-      const nextDevice = { id, name: telemetry.esp32?.deviceName || name, room, status: isOnline ? ('Online' as const) : ('Offline' as const), aqi: telemetry.aqi ?? null, icon: 'air-filter' };
+      const nextDevice = {
+        id,
+        name: telemetry.esp32?.deviceName || name,
+        room,
+        status: isOnline ? ('Online' as const) : ('Offline' as const),
+        aqi: isOnline ? (telemetry.esp32?.aqi ?? telemetry.aqi ?? null) : null,
+        icon: 'air-filter',
+      };
       setDevices(current => [...current, nextDevice]);
       setSelectedDeviceId(current => current ?? id);
       setNewDeviceName('');

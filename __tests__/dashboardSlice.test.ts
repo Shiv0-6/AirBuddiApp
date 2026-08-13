@@ -78,4 +78,39 @@ describe('dashboard reducer telemetry updates', () => {
     expect(message.deviceId).toBe('AA:BB:CC:DD:EE:FF');
     expect(message.connection).toBe('offline');
   });
+
+  it('clears monitor data when telemetry switches offline', () => {
+    const initialState = dashboardReducer(undefined, { type: '@@INIT', payload: undefined });
+
+    const connectedState = dashboardReducer(initialState, applyTelemetry({
+      aqi: 42,
+      connection: 'connected',
+      sensors: [
+        {
+          id: 'pm2_5',
+          name: 'PM2.5',
+          value: 12,
+          unit: 'ug/m3',
+          icon: 'blur',
+          status: 'good' as const,
+          source: 'cloud' as const,
+        },
+      ],
+    }));
+
+    const offlineState = dashboardReducer(connectedState, applyTelemetry({
+      connection: 'offline',
+      sensors: [
+        {
+          id: 'pm2_5',
+          value: 99,
+        },
+      ],
+      aqi: 99,
+    }));
+
+    expect(offlineState.connection).toBe('offline');
+    expect(offlineState.aqi).toBeNull();
+    expect(offlineState.sensors).toBeNull();
+  });
 });

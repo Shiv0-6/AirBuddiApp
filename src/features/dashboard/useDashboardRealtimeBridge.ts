@@ -245,8 +245,11 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
         const latest = await fetchLatestTelemetry(deviceId);
         if (latest) {
           dispatch(applyTelemetry(latest));
+          const nextConnection = latest.esp32?.connection ?? latest.connection ?? 'offline';
+          dispatch(setConnectionState(nextConnection));
+        } else {
+          dispatch(setConnectionState('offline'));
         }
-        dispatch(setConnectionState('connected'));
       } catch (error) {
         dispatch(setConnectionState('offline'));
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
