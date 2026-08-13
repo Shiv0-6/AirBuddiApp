@@ -348,7 +348,7 @@ export function DashboardScreen() {
                           <View style={[styles.deviceStatusDot, item.status === 'Offline' && styles.deviceStatusOffline]} />
                           <Text style={styles.deviceMetaText}>
                             {item.status}
-                            {displayedAqi !== null ? ` · AQI ${displayedAqi}` : ''}
+                            {displayedAqi !== null && item.status !== 'Offline' ? ` · AQI ${displayedAqi}` : ''}
                           </Text>
                         </View>
                       </View>
