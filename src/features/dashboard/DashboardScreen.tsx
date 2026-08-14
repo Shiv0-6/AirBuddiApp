@@ -20,7 +20,6 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { dashboardTheme } from './dashboardTheme';
 import { connectionLabels } from './dashboardMockData';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
-import { DeviceCard } from '../../components/dashboard/DeviceCard';
 import { AirQualityCard } from '../../components/dashboard/AirQualityCard';
 import { SensorGrid } from '../../components/dashboard/SensorGrid';
 import { QuickControls } from '../../components/dashboard/QuickControls';
@@ -583,14 +582,55 @@ export function DashboardScreen() {
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
               <Text style={styles.sectionTitle}>Settings</Text>
-              <Text style={styles.sectionSubtitle}>Manage your account and AirBuddi home.</Text>
+              <Text style={styles.sectionSubtitle}>
+                Manage your account and AirBuddi home.
+              </Text>
+              <Text style={styles.settingsSectionLabel}>ACCOUNT</Text>
               <View style={styles.settingsCard}>
-                <SettingsRow icon="account-circle-outline" title="Profile" subtitle={profileName} onPress={() => setActiveSheet('profile')} />
-                <SettingsRow icon="air-filter" title="Devices" subtitle={devices.length > 0 ? `${devices.length} device${devices.length === 1 ? '' : 's'} added` : 'No device connected'} onPress={() => setActiveTab('fan')} />
-                <SettingsRow icon="information-outline" title="About AirBuddi" subtitle="App details and support" onPress={() => setActiveSheet('about')} last />
+                <SettingsRow
+                  icon="account-circle-outline"
+                  title="Profile"
+                  subtitle={profileName}
+                  onPress={() => setActiveSheet('profile')}
+                  last
+                />
               </View>
-              <View style={styles.gap}><DeviceCard device={device} /></View>
-              <View style={styles.gap}><ConnectionPill label={connectionLabel} status={dashboard.connection} /></View>
+              <Text style={styles.settingsSectionLabel}>DEVICES</Text>
+              <View style={styles.settingsCard}>
+                <SettingsRow
+                  icon="air-filter"
+                  title="My devices"
+                  subtitle={
+                    devices.length > 0
+                      ? `${devices.length} device${devices.length === 1 ? '' : 's'} added`
+                      : 'No device connected'
+                  }
+                  onPress={() => setActiveTab('fan')}
+                  last
+                />
+              </View>
+              <Text style={styles.settingsSectionLabel}>APP PREFERENCES</Text>
+              <View style={styles.settingsCard}>
+                <SettingsRow
+                  icon="bell-outline"
+                  title="Notifications"
+                  subtitle="Air quality and device alerts"
+                  onPress={() => {
+                    // We'll add the notification settings next.
+                  }}
+                  last
+                />
+              </View>
+              <Text style={styles.settingsSectionLabel}>SUPPORT</Text>
+              <View style={styles.settingsCard}>
+                <SettingsRow
+                  icon="information-outline"
+                  title="About AirBuddi"
+                  subtitle="App details and support"
+                  onPress={() => setActiveSheet('about')}
+                  last
+                />
+              </View>
             </View>
           </Animated.View>
         )}
@@ -868,17 +908,7 @@ const styles = StyleSheet.create({
     maxWidth: 285,
   },
 
-  emptyDeviceButton: {
-    marginTop: 18,
-    height: 44,
-    paddingHorizontal: 18,
-    borderRadius: 13,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    backgroundColor: dashboardTheme.colors.primaryDark,
-  },
+  emptyDeviceButton: {marginTop: 18,height: 44,paddingHorizontal: 18,borderRadius: 13,flexDirection: 'row',alignItems: 'center',justifyContent: 'center',gap: 7,backgroundColor: dashboardTheme.colors.primaryDark},
 
   emptyDeviceButtonText: {
     color: dashboardTheme.colors.lightText,
@@ -907,13 +937,51 @@ const styles = StyleSheet.create({
   summaryText: { flex: 1 },
   summaryTitle: { color: dashboardTheme.colors.textPrimary, fontSize: 14, fontWeight: '800' },
   summaryCopy: { marginTop: 3, color: dashboardTheme.colors.textSecondary, fontSize: 12, lineHeight: 18 },
-  settingsCard: { marginTop: 18, borderRadius: dashboardTheme.radii.md, backgroundColor: dashboardTheme.colors.surface, borderWidth: 1, borderColor: dashboardTheme.colors.border, overflow: 'hidden', ...dashboardTheme.shadows.soft },
-  settingsRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15, borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
+  settingsCard: {
+  marginTop: 0,
+  marginBottom: 10,
+  borderRadius: 18,
+  backgroundColor: dashboardTheme.colors.surface,
+  borderWidth: 1,
+  borderColor: dashboardTheme.colors.border,
+  overflow: 'hidden',
+  ...dashboardTheme.shadows.soft,},
+  settingsRow: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 12,
+  minHeight: 76,
+  paddingHorizontal: 14,
+  paddingVertical: 10,
+  borderBottomWidth: 1,
+  borderBottomColor: dashboardTheme.colors.border,},
   settingsRowLast: { borderBottomWidth: 0 },
-  settingsIcon: { width: 38, height: 38, borderRadius: 12, backgroundColor: dashboardTheme.colors.primarySoft, justifyContent: 'center', alignItems: 'center' },
+  settingsIcon: {
+  width: 36,
+  height: 36,
+  borderRadius: 11,
+  backgroundColor: dashboardTheme.colors.primarySoft,
+  justifyContent: 'center',
+  alignItems: 'center',},
   settingsCopy: { flex: 1 },
-  settingsTitle: { color: dashboardTheme.colors.textPrimary, fontSize: 15, fontWeight: '700' },
-  settingsSubtitle: { color: dashboardTheme.colors.textMuted, fontSize: 12, marginTop: 2 },
+  settingsTitle: {
+  color: dashboardTheme.colors.textPrimary,
+  letterSpacing: -0.3,
+  fontSize: 15,
+  fontWeight: '800',},
+settingsSubtitle: {
+  color: dashboardTheme.colors.textMuted,
+  fontSize: 13,
+  marginTop: 3,
+  fontWeight: '500',},
+  settingsSectionLabel: {
+  marginTop: 14,
+  marginBottom: 8,
+  paddingHorizontal: 4,
+  color: dashboardTheme.colors.textMuted,
+  fontSize: 10,
+  fontWeight: '800',
+  letterSpacing: 1,},
 
   // Bottom nav
   navBarWrapper: {
