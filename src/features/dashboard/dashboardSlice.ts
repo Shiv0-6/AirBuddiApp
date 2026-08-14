@@ -240,28 +240,38 @@ const dashboardSlice = createSlice({
     },
     applyTelemetry(state, action: PayloadAction<DashboardTelemetryMessage>) {
       const telemetry = action.payload;
+      const isOffline = telemetry.connection === 'offline' || telemetry.esp32?.connection === 'offline';
 
       if (telemetry.esp32) {
         const merged = mergeEsp32Telemetry(state, telemetry.esp32);
 
         state.device = merged.device;
         state.connection = merged.connection;
-        state.aqi = merged.aqi;
-        state.filterHealth = merged.filterHealth;
-        state.remainingLifeDays = merged.remainingLifeDays;
-        state.connectedDeviceCount = merged.connectedDeviceCount;
-        state.sensors = merged.sensors;
+
+        if (isOffline) {
+          state.aqi = null;
+          state.sensors = null;
+          state.filterHealth = null;
+          state.remainingLifeDays = null;
+          state.connectedDeviceCount = 0;
+        } else {
+          state.aqi = merged.aqi;
+          state.filterHealth = merged.filterHealth;
+          state.remainingLifeDays = merged.remainingLifeDays;
+          state.connectedDeviceCount = merged.connectedDeviceCount;
+          state.sensors = merged.sensors;
+        }
       }
 
-      if (typeof telemetry.aqi === 'number') {
+      if (typeof telemetry.aqi === 'number' && !isOffline) {
         state.aqi = telemetry.aqi;
       }
 
-      if (typeof telemetry.filterHealth === 'number') {
+      if (typeof telemetry.filterHealth === 'number' && !isOffline) {
         state.filterHealth = telemetry.filterHealth;
       }
 
-      if (typeof telemetry.remainingLifeDays === 'number') {
+      if (typeof telemetry.remainingLifeDays === 'number' && !isOffline) {
         state.remainingLifeDays = telemetry.remainingLifeDays;
       }
 
@@ -284,8 +294,15 @@ const dashboardSlice = createSlice({
         };
       }
 
-      if (telemetry.sensors) {
+      if (telemetry.sensors && !isOffline) {
         state.sensors = mergeSensors(state.sensors, telemetry.sensors);
+      }
+
+      if (isOffline) {
+        state.aqi = null;
+        state.sensors = null;
+        state.filterHealth = null;
+        state.remainingLifeDays = null;
       }
     },
     resetDashboard(state) {
