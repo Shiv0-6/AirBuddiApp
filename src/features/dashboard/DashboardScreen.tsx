@@ -9,7 +9,11 @@ import {
   Modal,
   RefreshControl,
   TextInput,
+  Image,
 } from 'react-native';
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { launchImageLibrary } from 'react-native-image-picker';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
@@ -20,7 +24,6 @@ import { DeviceCard } from '../../components/dashboard/DeviceCard';
 import { AirQualityCard } from '../../components/dashboard/AirQualityCard';
 import { SensorGrid } from '../../components/dashboard/SensorGrid';
 import { QuickControls } from '../../components/dashboard/QuickControls';
-import { FilterHealthCard } from '../../components/dashboard/FilterHealthCard';
 import { ConnectionPill } from '../../components/dashboard/ConnectionPill';
 import { LightControlPanel } from '../../components/dashboard/LightControlPanel';
 import { RootPurificationCard } from '../../components/dashboard/RootPurificationCard';
@@ -46,11 +49,13 @@ type HomeDevice = {
 };
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'fan',        label: 'Home',     icon: 'home-outline' },
-  { id: 'airquality', label: 'Monitor',  icon: 'chart-line' },
-  { id: 'light',      label: 'Control',  icon: 'lightbulb-outline' },
-  { id: 'more',       label: 'Settings', icon: 'cog-outline' },
+  { id: 'fan', label: 'Home', icon: 'home-outline' },
+  { id: 'airquality', label: 'Monitor', icon: 'chart-line' },
+  { id: 'light', label: 'Control', icon: 'lightbulb-outline' },
+  { id: 'more', label: 'Settings', icon: 'cog-outline' },
 ];
+
+const PROFILE_STORAGE_KEY = '@airbuddi_profile';
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
@@ -63,8 +68,15 @@ export function DashboardScreen() {
   const [activeTab, setActiveTab] = useState<TabId>('fan');
   const [refreshing, setRefreshing] = useState(false);
   const [activeSheet, setActiveSheet] = useState<SheetId>(null);
+
+  // profile
   const [profileName, setProfileName] = useState('AirBuddi Member');
   const [profileEmail, setProfileEmail] = useState('member@airbuddi.app');
+  const [profileAvatarUri, setProfileAvatarUri] = useState<string | null>(null);
+  const [profileNameError, setProfileNameError] = useState('');
+  const [profileEmailError, setProfileEmailError] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
   const [newDeviceName, setNewDeviceName] = useState('');
   const [newDeviceRoom, setNewDeviceRoom] = useState('');
   const [newDeviceId, setNewDeviceId] = useState('');
@@ -90,11 +102,11 @@ export function DashboardScreen() {
   } = useDashboardRealtimeBridge(selectedDeviceId);
 
   const lightZones = useMemo(
-    () => [
-      { id: 'zone-1', label: 'Ambient', icon: 'lamp',      isOn: device?.lightZones?.['zone-1'] ?? false },
-      { id: 'zone-2', label: 'Task',    icon: 'desk-lamp', isOn: device?.lightZones?.['zone-2'] ?? false },
-      { id: 'zone-3', label: 'Accent',  icon: 'spotlight', isOn: device?.lightZones?.['zone-3'] ?? false },
-    ],
+  () => [
+  { id: 'zone-1', label: 'Ambient', icon: 'lamp', isOn: device?.lightZones?.['zone-1'] ?? false },
+  { id: 'zone-2', label: 'Task', icon: 'desk-lamp', isOn: device?.lightZones?.['zone-2'] ?? false },
+  { id: 'zone-3', label: 'Accent', icon: 'spotlight', isOn: device?.lightZones?.['zone-3'] ?? false },
+  ],
     [device?.lightZones],
   );
 
@@ -147,7 +159,6 @@ export function DashboardScreen() {
     setDevices(current => current.map(item => item.id === selectedDeviceId ? { ...item, aqi: pm25Value } : item));
   }, [pm25Value, selectedDeviceId]);
 
-  // ← ADD THE NEW EFFECT RIGHT HERE
   useEffect(() => {
     if (!selectedDeviceId || !device) {
       return;
@@ -160,7 +171,117 @@ export function DashboardScreen() {
     );
   }, [device?.status, selectedDeviceId]);
 
+  // Load saved profile once on mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(PROFILE_STORAGE_KEY);
+
+        if (!stored) {
+          return;
+        }
+
+        const parsed = JSON.parse(stored);
+
+        if (parsed.name) {
+          setProfileName(parsed.name);
+        }
+
+        if (parsed.email) {
+          setProfileEmail(parsed.email);
+        }
+
+        if (parsed.avatarUri) {
+          setProfileAvatarUri(parsed.avatarUri);
+        }
+      } catch (error) {
+        console.error('[AirBuddi] Failed to load profile:', error);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
   // ── Handlers ────────────────────────────────────────────────────────────────
+
+  const pickProfileImage = useCallback(() => {
+    launchImageLibrary(
+      { mediaType: 'photo', quality: 0.7, selectionLimit: 1 },
+      response => {
+        if (response.didCancel) {
+          return;
+        }
+        if (response.errorCode) {
+          console.error('[AirBuddi] Image picker error:', response.errorMessage);
+          return;
+        }
+        const uri = response.assets?.[0]?.uri;
+        if (uri) {
+          setProfileAvatarUri(uri);
+        }
+      },
+    );
+  }, []);
+
+  const saveProfile = useCallback(async () => {
+    const name = profileName.trim();
+    const email = profileEmail.trim();
+
+    let hasError = false;
+
+    if (!name) {
+      setProfileNameError('Please enter your name.');
+      hasError = true;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!email) {
+      setProfileEmailError('Please enter your email.');
+      hasError = true;
+    } else if (!emailRegex.test(email)) {
+      setProfileEmailError('Please enter a valid email address.');
+      hasError = true;
+    }
+
+    if (hasError) {
+      return;
+    }
+
+    setIsSavingProfile(true);
+
+    try {
+      await AsyncStorage.setItem(
+        PROFILE_STORAGE_KEY,
+        JSON.stringify({
+          name,
+          email,
+          avatarUri: profileAvatarUri,
+        }),
+      );
+
+      setProfileName(name);
+      setProfileEmail(email);
+      setActiveSheet(null);
+    } catch (error) {
+      console.error('[AirBuddi] Failed to save profile:', error);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }, [profileName, profileEmail, profileAvatarUri]);
+
+  const clearProfileData = useCallback(async () => {
+    try {
+      await AsyncStorage.removeItem(PROFILE_STORAGE_KEY);
+    } catch (error) {
+      console.error('[AirBuddi] Failed to clear profile:', error);
+    }
+    setProfileName('AirBuddi Member');
+    setProfileEmail('member@airbuddi.app');
+    setProfileAvatarUri(null);
+    setProfileNameError('');
+    setProfileEmailError('');
+  }, []);
 
   const handleTogglePower = useCallback(() => {
     if (!device) { return; }
@@ -286,11 +407,11 @@ export function DashboardScreen() {
       <DashboardHeader
         title={deviceTitle}
         subtitle={`${displayDeviceName} · ${selectedDevice?.status ?? 'Offline'}`}
+        showDeviceInfo={activeTab !== 'more'}
         onProfilePress={() => setActiveSheet('profile')}
         onRefreshPress={handleRefresh}
         onMenuPress={() => setActiveSheet('menu')}
-      />
-
+/>
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.contentContainer}
@@ -321,14 +442,46 @@ export function DashboardScreen() {
               </View>
               <View style={styles.deviceGrid}>
                 {devices.length === 0 ? (
-                  <TouchableOpacity style={styles.emptyDeviceState} activeOpacity={0.8} onPress={() => setActiveSheet('add-device')}>
+                  <TouchableOpacity
+                    style={styles.emptyDeviceState}
+                    activeOpacity={0.85}
+                    onPress={() => setActiveSheet('add-device')}
+                  >
                     <View style={styles.emptyDeviceIcon}>
-                      <MaterialCommunityIcons name="plus" size={34} color={dashboardTheme.colors.primaryDark} />
+                      <MaterialCommunityIcons
+                        name="leaf-outline"
+                        size={30}
+                        color={dashboardTheme.colors.primaryDark}
+                      />
                     </View>
-                    <Text style={styles.emptyDeviceTitle}>Add your first device</Text>
-                    <Text style={styles.emptyDeviceCopy}>Enter its MAC address to connect and view live data.</Text>
+
+                    <Text style={styles.emptyDeviceTitle}>
+                      Connect your AirBuddi
+                    </Text>
+
+                    <Text style={styles.emptyDeviceCopy}>
+                      Add a device to monitor your air quality and control your space.
+                    </Text>
+
+                    <View style={styles.emptyDeviceButton}>
+                      <MaterialCommunityIcons
+                        name="plus"
+                        size={18}
+                        color={dashboardTheme.colors.lightText}
+                      />
+                      <Text style={styles.emptyDeviceButtonText}>
+                        Add a device
+                      </Text>
+                    </View>
+
+                    <Text style={styles.emptyDeviceHint}>
+                      You'll need your device's MAC address
+                    </Text>
                   </TouchableOpacity>
                 ) : devices.map(item => {
+
+
+
                   const isSelected = item.id === selectedDeviceId;
                   const displayedAqi = isSelected ? pm25Value : item.aqi;
                   return (
@@ -437,7 +590,6 @@ export function DashboardScreen() {
                 <SettingsRow icon="information-outline" title="About AirBuddi" subtitle="App details and support" onPress={() => setActiveSheet('about')} last />
               </View>
               <View style={styles.gap}><DeviceCard device={device} /></View>
-              <View style={styles.gap}><FilterHealthCard health={dashboard.filterHealth} remainingLifeDays={dashboard.remainingLifeDays} /></View>
               <View style={styles.gap}><ConnectionPill label={connectionLabel} status={dashboard.connection} /></View>
             </View>
           </Animated.View>
@@ -464,12 +616,39 @@ export function DashboardScreen() {
             {activeSheet === 'profile' && <>
               <Text style={styles.sheetTitle}>Your profile</Text>
               <Text style={styles.sheetIntro}>Keep your account details up to date.</Text>
+
+              <TouchableOpacity style={styles.profileIdentity} activeOpacity={0.8} onPress={pickProfileImage}>
+                <View style={styles.profileAvatar}>
+                  {profileAvatarUri ? (
+                    <Image source={{ uri: profileAvatarUri }} style={styles.profileAvatarPhoto} />
+                  ) : (
+                    <Text style={styles.profileAvatarText}>{getInitials(profileName)}</Text>
+                  )}
+                </View>
+                <View>
+                  <Text style={styles.profileName}>{profileName || 'Add your name'}</Text>
+                  <Text style={styles.profileEmail}>Tap to change photo</Text>
+                </View>
+              </TouchableOpacity>
+
               <Text style={styles.inputLabel}>DISPLAY NAME</Text>
-              <TextInput value={profileName} onChangeText={setProfileName} style={styles.textInput} placeholder="Your name" placeholderTextColor={dashboardTheme.colors.textMuted} />
+              <TextInput value={profileName} onChangeText={value => { setProfileName(value); setProfileNameError(''); }} style={styles.textInput} placeholder="Your name" placeholderTextColor={dashboardTheme.colors.textMuted} />
+              {!!profileNameError && <Text style={styles.inputError}>{profileNameError}</Text>}
+
               <Text style={styles.inputLabel}>EMAIL</Text>
-              <TextInput value={profileEmail} onChangeText={setProfileEmail} style={styles.textInput} keyboardType="email-address" autoCapitalize="none" placeholder="you@example.com" placeholderTextColor={dashboardTheme.colors.textMuted} />
-              <TouchableOpacity style={styles.primarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.primarySheetButtonText}>Save profile</Text></TouchableOpacity>
+              <TextInput value={profileEmail} onChangeText={value => { setProfileEmail(value); setProfileEmailError(''); }} style={styles.textInput} keyboardType="email-address" autoCapitalize="none" placeholder="you@example.com" placeholderTextColor={dashboardTheme.colors.textMuted} />
+              {!!profileEmailError && <Text style={styles.inputError}>{profileEmailError}</Text>}
+
+              <TouchableOpacity style={[styles.primarySheetButton, isSavingProfile && styles.primarySheetButtonDisabled]} disabled={isSavingProfile} onPress={saveProfile}>
+                <Text style={styles.primarySheetButtonText}>{isSavingProfile ? 'Saving…' : 'Save profile'}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.dangerSheetButton} onPress={clearProfileData}>
+                <MaterialCommunityIcons name="restore" size={18} color="#DC2626" />
+                <Text style={styles.dangerSheetButtonText}>Reset profile to default</Text>
+              </TouchableOpacity>
             </>}
+
             {activeSheet === 'add-device' && <>
               <Text style={styles.sheetTitle}>Add a device</Text>
               <Text style={styles.sheetIntro}>Enter the device MAC address. AirBuddi will use it to fetch this device's live data.</Text>
@@ -571,6 +750,14 @@ function SettingsRow({ icon, title, subtitle, onPress, last = false }: { icon: s
   );
 }
 
+function getInitials(name: string) {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    return '?';
+  }
+  return trimmed.split(/\s+/).slice(0, 2).map(part => part[0]?.toUpperCase() ?? '').join('') || '?';
+}
+
 function DropdownMenuItem({ icon, label, onPress, last = false }: { icon: string; label: string; onPress: () => void; last?: boolean }) {
   return (
     <TouchableOpacity
@@ -641,10 +828,71 @@ const styles = StyleSheet.create({
   deviceGrid: { gap: 12 },
   homeDeviceCard: { minHeight: 100, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15, borderRadius: dashboardTheme.radii.md, backgroundColor: dashboardTheme.colors.surface, borderWidth: 1, borderColor: dashboardTheme.colors.border, ...dashboardTheme.shadows.soft },
   homeDeviceCardSelected: { borderColor: 'rgba(22, 163, 74, 0.38)', backgroundColor: dashboardTheme.colors.surfaceTint },
-  emptyDeviceState: { width: '100%', alignItems: 'center', justifyContent: 'center', paddingVertical: 24, paddingHorizontal: 18, borderRadius: dashboardTheme.radii.md, borderWidth: 1, borderStyle: 'dashed', borderColor: dashboardTheme.colors.primary, backgroundColor: dashboardTheme.colors.surfaceTint },
-  emptyDeviceIcon: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', backgroundColor: dashboardTheme.colors.surface, marginBottom: 14 },
-  emptyDeviceTitle: { color: dashboardTheme.colors.textPrimary, fontSize: 16, fontWeight: '800', textAlign: 'center' },
-  emptyDeviceCopy: { marginTop: 4, color: dashboardTheme.colors.textSecondary, fontSize: 13, lineHeight: 18, textAlign: 'center', maxWidth: 260 },
+  
+  emptyDeviceState: {
+  width: '100%',
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingVertical: 24,
+  paddingHorizontal: 24,
+  borderRadius: dashboardTheme.radii.lg,
+  backgroundColor: dashboardTheme.colors.surface,
+  borderWidth: 1,
+  borderColor: dashboardTheme.colors.border,
+  ...dashboardTheme.shadows.soft,
+  },
+
+  emptyDeviceIcon: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    marginBottom: 14,
+  },
+
+  emptyDeviceTitle: {
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 19,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+
+  emptyDeviceCopy: {
+    marginTop: 7,
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+    maxWidth: 285,
+  },
+
+  emptyDeviceButton: {
+    marginTop: 18,
+    height: 44,
+    paddingHorizontal: 18,
+    borderRadius: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    backgroundColor: dashboardTheme.colors.primaryDark,
+  },
+
+  emptyDeviceButtonText: {
+    color: dashboardTheme.colors.lightText,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+
+  emptyDeviceHint: {
+    marginTop: 12,
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   deviceIcon: { width: 50, height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', backgroundColor: dashboardTheme.colors.primarySoft },
   deviceIconSelected: { backgroundColor: dashboardTheme.colors.primary },
   deviceCardContent: { flex: 1, minWidth: 0 },
@@ -763,6 +1011,11 @@ const styles = StyleSheet.create({
   profileAvatarImage: {
     width: 36,
     height: 36,
+  },
+  profileAvatarPhoto: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
   },
   profileAvatarText: {
     color: '#FFFFFF',

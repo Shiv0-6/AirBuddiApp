@@ -7,12 +7,13 @@ import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
 type DashboardHeaderProps = {
   title: string;
   subtitle: string;
+  showDeviceInfo?: boolean;
   onProfilePress: () => void;
   onRefreshPress: () => void;
   onMenuPress: () => void;
 };
 
-function DashboardHeaderComponent({ title, subtitle, onProfilePress, onRefreshPress, onMenuPress }: DashboardHeaderProps) {
+function DashboardHeaderComponent({title, subtitle, showDeviceInfo = true, onProfilePress, onRefreshPress, onMenuPress,}: DashboardHeaderProps) {
   return (
     <View style={styles.wrapper}>
       <View style={styles.topActionRow}>
@@ -24,23 +25,27 @@ function DashboardHeaderComponent({ title, subtitle, onProfilePress, onRefreshPr
         </View>
 
         <View style={styles.actionsContainer}>
-          <TouchableOpacity accessibilityLabel="Refresh data" onPress={onRefreshPress} activeOpacity={0.75} style={styles.iconBtn}>
+          {/* <TouchableOpacity accessibilityLabel="Refresh data" onPress={onRefreshPress} activeOpacity={0.75} style={styles.iconBtn}>
             <MaterialCommunityIcons name="refresh" size={20} color={dashboardTheme.colors.textSecondary} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity accessibilityLabel="More options" onPress={onMenuPress} activeOpacity={0.75} style={styles.iconBtn}>
             <MaterialCommunityIcons name="dots-vertical" size={23} color={dashboardTheme.colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </View>
-
+      {showDeviceInfo && (
       <View style={styles.heroSection}>
         <Text style={styles.welcomeText}>Your Space</Text>
         <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          <Text style={styles.title} numberOfLines={1}>
+            {title}
+          </Text>
           <View style={styles.statusDot} />
         </View>
-        <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
-      </View>
+        <Text style={styles.subtitle} numberOfLines={1}>
+          {subtitle}
+        </Text>
+      </View> )}
     </View>
   );
 }
