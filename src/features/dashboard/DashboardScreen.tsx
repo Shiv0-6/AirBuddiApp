@@ -428,55 +428,225 @@ export function DashboardScreen() {
         {activeTab === 'fan' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
-              <View style={styles.homeHeading}>
-                <View>
-                  <Text style={styles.sectionTitle}>My devices</Text>
-                  <Text style={styles.sectionSubtitle}>{devices.length > 0 ? `${devices.length} device${devices.length === 1 ? '' : 's'} added` : 'No device connected'}</Text>
+            {/* Space Hero */}
+            <View style={styles.spaceHero}>
+              <View style={styles.spaceHeroContent}>
+
+                <View style={styles.spaceHeroIcon}>
+                  <MaterialCommunityIcons
+                    name="leaf"
+                    size={22}
+                    color={dashboardTheme.colors.primaryDark}
+                  />
                 </View>
-                {devices.length > 0 && (
-                  <TouchableOpacity accessibilityLabel="Add another device" style={styles.addDeviceHeaderButton} activeOpacity={0.8} onPress={() => setActiveSheet('add-device')}>
-                    <MaterialCommunityIcons name="plus" size={24} color="#FFFFFF" />
-                  </TouchableOpacity>
-                )}
+
+                <Text style={styles.spaceHeroLabel}>
+                  Your Space
+                </Text>
+
+                <View style={styles.spaceHeroTitleRow}>
+                  <Text style={styles.spaceHeroTitle}>
+                    Air Quality Monitor
+                  </Text>
+
+                  <View
+                    style={[
+                      styles.spaceHeroStatus,
+                      selectedDevice?.status === 'Online'
+                        ? styles.spaceHeroStatusOnline
+                        : styles.spaceHeroStatusOffline,
+                    ]}
+                  />
+                </View>
+
+                <Text style={styles.spaceHeroSubtitle}>
+                  {selectedDevice
+                    ? `${selectedDevice.name} · ${selectedDevice.status}`
+                    : 'No device connected · Offline'}
+                </Text>
+
               </View>
+
+              <View style={styles.spaceHeroDecoration}>
+
+                <MaterialCommunityIcons
+                  name="wifi"
+                  size={38}
+                  color={dashboardTheme.colors.primary}
+                />
+
+                <View style={styles.airDeviceIllustration}>
+                  <MaterialCommunityIcons
+                    name="air-filter"
+                    size={48}
+                    color={dashboardTheme.colors.primaryDark}
+                  />
+                </View>
+
+                <MaterialCommunityIcons
+                  name="leaf"
+                  size={48}
+                  color={dashboardTheme.colors.primary}
+                  style={styles.decorLeaf}
+                />
+
+              </View>
+            </View>
+
+            <View style={styles.homeHeading}>
+              <View style={styles.homeHeadingText}>
+                <Text style={styles.sectionTitle}>
+                  My devices
+                </Text>
+
+                <Text style={styles.sectionSubtitle}>
+                  {devices.length > 0
+                    ? `${devices.length} device${devices.length === 1 ? '' : 's'} added`
+                    : 'No device connected'}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                accessibilityLabel="Refresh devices"
+                style={styles.refreshButton}
+                activeOpacity={0.8}
+                onPress={handleRefresh}
+              >
+                <MaterialCommunityIcons
+                  name="refresh"
+                  size={19}
+                  color={dashboardTheme.colors.primaryDark}
+                />
+
+                <Text style={styles.refreshButtonText}>
+                  Refresh
+                </Text>
+              </TouchableOpacity>
+            </View>
               <View style={styles.deviceGrid}>
                 {devices.length === 0 ? (
                   <TouchableOpacity
-                    style={styles.emptyDeviceState}
-                    activeOpacity={0.85}
-                    onPress={() => setActiveSheet('add-device')}
-                  >
-                    <View style={styles.emptyDeviceIcon}>
+                  style={styles.emptyDeviceState}
+                  activeOpacity={0.9}
+                  onPress={() => setActiveSheet('add-device')}
+                >
+                  {/* Connection icon */}
+                  <View style={styles.connectionIconWrapper}>
+                    <View style={styles.connectionIconRingOuter} />
+
+                    <View style={styles.connectionIconRingInner}>
                       <MaterialCommunityIcons
-                        name="leaf-outline"
+                        name="help"
                         size={30}
                         color={dashboardTheme.colors.primaryDark}
                       />
                     </View>
+                  </View>
 
-                    <Text style={styles.emptyDeviceTitle}>
-                      Connect your AirBuddi
+                  {/* Title */}
+                  <Text style={styles.emptyDeviceTitle}>
+                    Connect your AirBuddi
+                  </Text>
+
+                  {/* Description */}
+                  <Text style={styles.emptyDeviceCopy}>
+                    Add a device to monitor your air quality and
+                    control your space.
+                  </Text>
+
+                  {/* Add device button */}
+                  <View style={styles.emptyDeviceButton}>
+                    <MaterialCommunityIcons
+                      name="plus"
+                      size={22}
+                      color="#FFFFFF"
+                    />
+
+                    <Text style={styles.emptyDeviceButtonText}>
+                      Add a device
+                    </Text>
+                  </View>
+
+                  {/* MAC address information */}
+                  <View style={styles.macHintCard}>
+                    <MaterialCommunityIcons
+                      name="shield-check-outline"
+                      size={20}
+                      color={dashboardTheme.colors.primary}
+                    />
+
+                    <Text style={styles.macHintText}>
+                      You'll need your device's MAC address
+                    </Text>
+                  </View>
+
+                  {/* How it works */}
+                  <View style={styles.howItWorks}>
+                    <Text style={styles.howItWorksTitle}>
+                      How it works
                     </Text>
 
-                    <Text style={styles.emptyDeviceCopy}>
-                      Add a device to monitor your air quality and control your space.
-                    </Text>
+                    <View style={styles.stepsRow}>
 
-                    <View style={styles.emptyDeviceButton}>
-                      <MaterialCommunityIcons
-                        name="plus"
-                        size={18}
-                        color={dashboardTheme.colors.lightText}
+                      <SetupStep
+                        number="1"
+                        icon="qrcode-scan"
+                        title="Add Device"
+                        description="Enter your device MAC address"
                       />
-                      <Text style={styles.emptyDeviceButtonText}>
-                        Add a device
+
+                      <View style={styles.stepConnector} />
+
+                      <SetupStep
+                        number="2"
+                        icon="wifi"
+                        title="Connect"
+                        description="Your device connects via Wi-Fi"
+                      />
+
+                      <View style={styles.stepConnector} />
+
+                      <SetupStep
+                        number="3"
+                        icon="chart-bar"
+                        title="Monitor"
+                        description="View real-time air quality"
+                      />
+
+                    </View>
+                  </View>
+
+                  {/* Help */}
+                  <TouchableOpacity
+                    style={styles.connectionHelp}
+                    activeOpacity={0.8}
+                    onPress={() => setActiveSheet('about')}
+                  >
+                    <View style={styles.connectionHelpIcon}>
+                      <MaterialCommunityIcons
+                        name="leaf"
+                        size={22}
+                        color={dashboardTheme.colors.primaryDark}
+                      />
+                    </View>
+
+                    <View style={styles.connectionHelpText}>
+                      <Text style={styles.connectionHelpTitle}>
+                        Need help connecting?
+                      </Text>
+
+                      <Text style={styles.connectionHelpSubtitle}>
+                        View our quick guide
                       </Text>
                     </View>
 
-                    <Text style={styles.emptyDeviceHint}>
-                      You'll need your device's MAC address
-                    </Text>
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={26}
+                      color={dashboardTheme.colors.textSecondary}
+                    />
                   </TouchableOpacity>
+                </TouchableOpacity>
                 ) : devices.map(item => {
 
 
@@ -780,6 +950,44 @@ export function DashboardScreen() {
   );
 }
 
+function SetupStep({
+  number,
+  icon,
+  title,
+  description,
+}: {
+  number: string;
+  icon: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <View style={styles.setupStep}>
+      <View style={styles.setupIconWrapper}>
+        <MaterialCommunityIcons
+          name={icon}
+          size={25}
+          color={dashboardTheme.colors.primaryDark}
+        />
+
+        <View style={styles.setupNumber}>
+          <Text style={styles.setupNumberText}>
+            {number}
+          </Text>
+        </View>
+      </View>
+
+      <Text style={styles.setupTitle}>
+        {title}
+      </Text>
+
+      <Text style={styles.setupDescription}>
+        {description}
+      </Text>
+    </View>
+  );
+}
+
 function SettingsRow({ icon, title, subtitle, onPress, last = false }: { icon: string; title: string; subtitle: string; onPress: () => void; last?: boolean }) {
   return (
     <TouchableOpacity style={[styles.settingsRow, last && styles.settingsRowLast]} activeOpacity={0.75} onPress={onPress}>
@@ -810,6 +1018,8 @@ function DropdownMenuItem({ icon, label, onPress, last = false }: { icon: string
     </TouchableOpacity>
   );
 }
+
+
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -846,8 +1056,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   contentContainer: {
-    paddingTop: 8,
-    paddingBottom: 110,
+    paddingTop: 12,
+    paddingBottom: 150
   },
   tabContent: {
     width: '100%',
@@ -861,67 +1071,364 @@ const styles = StyleSheet.create({
   bottomSpace: {
     height: 32,
   },
-  homeHeading: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
-  sectionTitle: { fontSize: 21, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.3 },
-  sectionSubtitle: { marginTop: 3, fontSize: 13, color: dashboardTheme.colors.textMuted, fontWeight: '500' },
-  addDeviceHeaderButton: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: dashboardTheme.colors.primaryDark, ...dashboardTheme.shadows.medium },
-  deviceGrid: { gap: 12 },
-  homeDeviceCard: { minHeight: 100, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15, borderRadius: dashboardTheme.radii.md, backgroundColor: dashboardTheme.colors.surface, borderWidth: 1, borderColor: dashboardTheme.colors.border, ...dashboardTheme.shadows.soft },
-  homeDeviceCardSelected: { borderColor: 'rgba(22, 163, 74, 0.38)', backgroundColor: dashboardTheme.colors.surfaceTint },
-  
-  emptyDeviceState: {
-  width: '100%',
-  alignItems: 'center',
-  justifyContent: 'center',
-  paddingVertical: 24,
-  paddingHorizontal: 24,
-  borderRadius: dashboardTheme.radii.lg,
-  backgroundColor: dashboardTheme.colors.surface,
-  borderWidth: 1,
-  borderColor: dashboardTheme.colors.border,
-  ...dashboardTheme.shadows.soft,
+  homeHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    marginBottom: 18,
   },
 
-  emptyDeviceIcon: {
+  homeHeadingText: {
+    flex: 1,
+  },
+
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: dashboardTheme.colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+
+  sectionSubtitle: {
+    marginTop: 5,
+    fontSize: 14,
+    color: dashboardTheme.colors.textSecondary,
+    fontWeight: '500',
+  },
+
+  refreshButton: {
+    height: 46,
+    paddingHorizontal: 14,
+    borderRadius: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    backgroundColor: '#F7FBF7',
+    borderWidth: 1,
+    borderColor: 'rgba(22, 163, 74, 0.20)',
+  },
+
+  refreshButtonText: {
+    color: dashboardTheme.colors.primaryDark,
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  spaceHero: {
+    minHeight: 145,
+    marginBottom: 30,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(22, 163, 74, 0.18)',
+    backgroundColor: '#F4FBF5',
+    overflow: 'hidden',
+    flexDirection: 'row',
+  },
+
+  spaceHeroContent: {
+    flex: 1,
+    padding: 20,
+    zIndex: 2,
+  },
+
+  spaceHeroIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#E5F5E8',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+
+  spaceHeroLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: dashboardTheme.colors.textSecondary,
+  },
+
+  spaceHeroTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 3,
+  },
+
+  spaceHeroTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: dashboardTheme.colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+
+  spaceHeroStatus: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginLeft: 8,
+  },
+
+  spaceHeroStatusOnline: {
+    backgroundColor: dashboardTheme.colors.success,
+  },
+
+  spaceHeroStatusOffline: {
+    backgroundColor: dashboardTheme.colors.textMuted,
+  },
+
+  spaceHeroSubtitle: {
+    marginTop: 8,
+    fontSize: 13,
+    color: dashboardTheme.colors.textSecondary,
+  },
+
+  spaceHeroDecoration: {
+    width: 125,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+
+  airDeviceIllustration: {
+    width: 78,
+    height: 94,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+  },
+
+  decorLeaf: {
+    position: 'absolute',
+    right: 0,
+    bottom: 2,
+    opacity: 0.45,
+  },
+
+  sectionTitle: { fontSize: 21, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.3 },
+  sectionSubtitle: { marginTop: 3, fontSize: 13, color: dashboardTheme.colors.textMuted, fontWeight: '500' },
+  deviceGrid: { gap: 14 },
+  homeDeviceCard: { minHeight: 100, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 15, borderRadius: dashboardTheme.radii.md, backgroundColor: dashboardTheme.colors.surface, borderWidth: 1, borderColor: dashboardTheme.colors.border, ...dashboardTheme.shadows.soft },
+  homeDeviceCardSelected: { borderColor: 'rgba(22, 163, 74, 0.38)', backgroundColor: dashboardTheme.colors.surfaceTint },
+
+  emptyDeviceState: {
+    width: '100%',
+    alignItems: 'center',
+    paddingTop: 34,
+    paddingBottom: 18,
+    paddingHorizontal: 20,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E5EDE7',
+    ...dashboardTheme.shadows.soft,
+  },
+
+  connectionIconWrapper: {
+    width: 78,
+    height: 78,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+
+  connectionIconRingOuter: {
+    position: 'absolute',
+    width: 78,
+    height: 78,
+    borderRadius: 39,
+    borderWidth: 1,
+    borderColor: 'rgba(22, 163, 74, 0.10)',
+  },
+
+  connectionIconRingInner: {
     width: 58,
     height: 58,
     borderRadius: 29,
+    backgroundColor: '#EAF8ED',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: dashboardTheme.colors.primarySoft,
-    marginBottom: 14,
   },
 
   emptyDeviceTitle: {
     color: dashboardTheme.colors.textPrimary,
-    fontSize: 19,
+    fontSize: 22,
+    fontWeight: '800',
+    textAlign: 'center',
+    letterSpacing: -0.4,
+  },
+
+  emptyDeviceCopy: {
+    marginTop: 9,
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 15,
+    lineHeight: 23,
+    textAlign: 'center',
+    maxWidth: 330,
+  },
+
+  emptyDeviceButton: {
+    marginTop: 22,
+    width: 250,
+    height: 58,
+    borderRadius: 17,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: dashboardTheme.colors.primaryDark,
+    ...dashboardTheme.shadows.medium,
+  },
+
+  emptyDeviceButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+
+  macHintCard: {
+    marginTop: 18,
+    width: '100%',
+    minHeight: 54,
+    paddingHorizontal: 14,
+    borderRadius: 15,
+    backgroundColor: '#F5F9F5',
+    borderWidth: 1,
+    borderColor: '#E5EDE7',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+  },
+
+  macHintText: {
+    flex: 1,
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
+  howItWorks: {
+    width: '100%',
+    marginTop: 28,
+  },
+
+  howItWorksTitle: {
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 17,
+    fontWeight: '800',
+    marginBottom: 20,
+  },
+
+  stepsRow: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+
+  setupStep: {
+    flex: 1,
+    alignItems: 'center',
+  },
+
+  setupIconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#EAF8ED',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+
+  setupNumber: {
+    position: 'absolute',
+    right: -2,
+    bottom: -2,
+    width: 23,
+    height: 23,
+    borderRadius: 12,
+    backgroundColor: dashboardTheme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  setupNumberText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+  },
+
+  setupTitle: {
+    marginTop: 12,
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 14,
     fontWeight: '800',
     textAlign: 'center',
   },
 
-  emptyDeviceCopy: {
-    marginTop: 7,
+  setupDescription: {
+    marginTop: 5,
     color: dashboardTheme.colors.textSecondary,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 11,
+    lineHeight: 16,
     textAlign: 'center',
-    maxWidth: 285,
+    paddingHorizontal: 3,
   },
 
-  emptyDeviceButton: {marginTop: 18,height: 44,paddingHorizontal: 18,borderRadius: 13,flexDirection: 'row',alignItems: 'center',justifyContent: 'center',gap: 7,backgroundColor: dashboardTheme.colors.primaryDark},
+  stepConnector: {
+    width: 28,
+    borderTopWidth: 2,
+    borderTopColor: '#D8E7DA',
+    borderStyle: 'dotted',
+    marginTop: 31,
+  },
 
-  emptyDeviceButtonText: {
-    color: dashboardTheme.colors.lightText,
+  connectionHelp: {
+    width: '100%',
+    marginTop: 25,
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#DDE9DF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+
+  connectionHelpIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#EAF8ED',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  connectionHelpText: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  connectionHelpTitle: {
+    color: dashboardTheme.colors.textPrimary,
     fontSize: 14,
     fontWeight: '800',
   },
 
-  emptyDeviceHint: {
-    marginTop: 12,
-    color: dashboardTheme.colors.textMuted,
-    fontSize: 11,
-    fontWeight: '600',
-    textAlign: 'center',
+  connectionHelpSubtitle: {
+    marginTop: 4,
+    color: dashboardTheme.colors.primaryDark,
+    fontSize: 13,
+    fontWeight: '700',
   },
   deviceIcon: { width: 50, height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', backgroundColor: dashboardTheme.colors.primarySoft },
   deviceIconSelected: { backgroundColor: dashboardTheme.colors.primary },
