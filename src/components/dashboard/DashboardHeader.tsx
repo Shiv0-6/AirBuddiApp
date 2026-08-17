@@ -268,24 +268,16 @@ const styles = StyleSheet.create({
   -------------------------------------------------------------- */
 
   heroSection: {
-    minHeight: 190,
-
-    borderRadius: 26,
-
-    backgroundColor: '#F3FAF4',
-
-    borderWidth: 1,
-    borderColor: 'rgba(22, 163, 74, 0.18)',
-
-    overflow: 'hidden',
-
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 16,
-
-    position: 'relative',
-  },
-
+  height: 180,
+  borderRadius: 26,
+  backgroundColor: '#F3FAF4',
+  borderWidth: 1,
+  borderColor: 'rgba(22, 163, 74, 0.18)',
+  overflow: 'hidden',
+  position: 'relative',
+  paddingHorizontal: 20,
+  paddingTop: 18,
+  paddingBottom: 16,},
 
   /* --------------------------------------------------------------
      YOUR SPACE
@@ -328,6 +320,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  heroTextContent: {
+  width: '65%',
+  zIndex: 2,
+},
 
   /* --------------------------------------------------------------
      HERO TEXT
@@ -396,72 +392,35 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   heroPurifier: {
-    width: 150,
-    height: 150,
-    position: 'absolute',
-    right: -18,
-    bottom: -4,
-  },
+  position: 'absolute',
+  width: 175,
+  height: 175,
+  right: -18,
+  bottom: -8,
+  zIndex: 1,
+},
 
+  // heroGlow: {
+  //   position: 'absolute',
 
-  heroGlow: {
-    position: 'absolute',
+  //   width: 110,
+  //   height: 110,
 
-    width: 110,
-    height: 110,
+  //   borderRadius: 55,
 
-    borderRadius: 55,
+  //   right: -20,
+  //   bottom: -10,
 
-    right: -20,
-    bottom: -10,
+  //   backgroundColor: '#E1F3E5',
 
-    backgroundColor: '#E1F3E5',
-
-    opacity: 0.9,
-  },
+  //   opacity: 0.9,
+  // },
 
   heroWifi: {
     position: 'absolute',
 
     top: 8,
     right: 12,
-  },
-
-  airDevice: {
-    width: 68,
-    height: 86,
-
-    borderRadius: 19,
-
-    backgroundColor: '#FFFFFF',
-
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    elevation: 4,
-
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-  },
-
-  heroLeaf: {
-    position: 'absolute',
-
-    right: -1,
-    bottom: 5,
-
-    opacity: 0.38,
-
-    transform: [
-      {
-        rotate: '-12deg',
-      },
-    ],
   },
 
 });
