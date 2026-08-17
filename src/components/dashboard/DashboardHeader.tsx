@@ -143,30 +143,9 @@ function DashboardHeaderComponent({
 
             <View style={styles.heroDecoration}>
 
-              {/* soft green glow */}
-
-              <View style={styles.heroGlow} />
-
-
-              {/* WiFi */}
-
-              <MaterialCommunityIcons
-                name="wifi"
-                size={30}
-                color={dashboardTheme.colors.primary}
-                style={styles.heroWifi}
-              />
-
 
               {/* AirBuddi device */}
-
               <View style={styles.airDevice}>
-
-                <MaterialCommunityIcons
-                  name="air-filter"
-                  size={38}
-                  color={dashboardTheme.colors.primaryDark}
-                />
                 <Image
                   source={require('../../../assets/buddi.png')}
                   style={styles.heroPurifier}
@@ -382,45 +361,13 @@ const styles = StyleSheet.create({
      AIRBUDDI VISUAL
   -------------------------------------------------------------- */
 
-  heroDecoration: {
-    width: 120,
-    height: 145,
 
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    position: 'relative',
-  },
   heroPurifier: {
   position: 'absolute',
   width: 175,
   height: 175,
-  right: -18,
-  bottom: -8,
+  right: -30,
+  bottom: -70,
   zIndex: 1,
 },
-
-  // heroGlow: {
-  //   position: 'absolute',
-
-  //   width: 110,
-  //   height: 110,
-
-  //   borderRadius: 55,
-
-  //   right: -20,
-  //   bottom: -10,
-
-  //   backgroundColor: '#E1F3E5',
-
-  //   opacity: 0.9,
-  // },
-
-  heroWifi: {
-    position: 'absolute',
-
-    top: 8,
-    right: 12,
-  },
-
 });

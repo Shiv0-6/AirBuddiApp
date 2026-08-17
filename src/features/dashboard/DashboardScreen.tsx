@@ -1050,7 +1050,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
-  // sectionTitle: { fontSize: 21, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.3 },
+  sectionTitle: { fontSize: 21, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.3 },
   // sectionSubtitle: { marginTop: 3, fontSize: 13, color: dashboardTheme.colors.textMuted, fontWeight: '500' },
   deviceGrid: { gap: 14 },
   homeDeviceCard: {
