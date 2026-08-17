@@ -1,5 +1,12 @@
 import React, { memo } from 'react';
-import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
@@ -13,58 +20,448 @@ type DashboardHeaderProps = {
   onMenuPress: () => void;
 };
 
-function DashboardHeaderComponent({title, subtitle, showDeviceInfo = true, onProfilePress, onRefreshPress, onMenuPress,}: DashboardHeaderProps) {
+function DashboardHeaderComponent({
+  title,
+  subtitle,
+  showDeviceInfo = true,
+  onProfilePress,
+  onRefreshPress,
+  onMenuPress,
+}: DashboardHeaderProps) {
   return (
     <View style={styles.wrapper}>
+
+      {/* ============================================================
+          TOP BRAND ROW
+      ============================================================ */}
+
       <View style={styles.topActionRow}>
+
         <View style={styles.brandRow}>
-          <TouchableOpacity accessibilityLabel="Open profile" onPress={onProfilePress} activeOpacity={0.75} style={styles.brandMark}>
-            <Image source={require('../../../assets/airbuddi-favicon.png')} style={styles.logoImage} resizeMode="contain" />
+
+          <TouchableOpacity
+            accessibilityLabel="Open profile"
+            onPress={onProfilePress}
+            activeOpacity={0.75}
+            style={styles.brandMark}
+          >
+            <Image
+              source={require('../../../assets/airbuddi-favicon.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
-          <Text style={styles.brandText}>GREENVERSE</Text>
+
+          <Text style={styles.brandText}>
+            GREENVERSE
+          </Text>
+
         </View>
 
         <View style={styles.actionsContainer}>
-          {/* <TouchableOpacity accessibilityLabel="Refresh data" onPress={onRefreshPress} activeOpacity={0.75} style={styles.iconBtn}>
-            <MaterialCommunityIcons name="refresh" size={20} color={dashboardTheme.colors.textSecondary} />
-          </TouchableOpacity> */}
-          <TouchableOpacity accessibilityLabel="More options" onPress={onMenuPress} activeOpacity={0.75} style={styles.iconBtn}>
-            <MaterialCommunityIcons name="dots-vertical" size={23} color={dashboardTheme.colors.textSecondary} />
+
+          <TouchableOpacity
+            accessibilityLabel="More options"
+            onPress={onMenuPress}
+            activeOpacity={0.75}
+            style={styles.iconBtn}
+          >
+            <MaterialCommunityIcons
+              name="dots-vertical"
+              size={23}
+              color={dashboardTheme.colors.textSecondary}
+            />
           </TouchableOpacity>
+
         </View>
+
       </View>
+
+
+      {/* ============================================================
+          COMBINED HEADER + HERO
+      ============================================================ */}
+
       {showDeviceInfo && (
-      <View style={styles.heroSection}>
-        <Text style={styles.welcomeText}>Your Space</Text>
-        <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
-          <View style={styles.statusDot} />
+        <View style={styles.heroSection}>
+
+          {/* -------------------------
+              Your Space
+          ------------------------- */}
+
+          <View style={styles.heroTopRow}>
+
+            <View style={styles.spaceIcon}>
+              <MaterialCommunityIcons
+                name="leaf"
+                size={20}
+                color={dashboardTheme.colors.primaryDark}
+              />
+            </View>
+
+            <Text style={styles.welcomeText}>
+              Your Space
+            </Text>
+
+          </View>
+
+
+          {/* -------------------------
+              Main Hero Content
+          ------------------------- */}
+
+          <View style={styles.heroMain}>
+
+            {/* LEFT: Text */}
+
+            <View style={styles.heroTextContent}>
+
+              <View style={styles.titleRow}>
+
+                <Text
+                  style={styles.title}
+                  numberOfLines={2}
+                >
+                  {title}
+                </Text>
+
+                <View style={styles.statusDot} />
+
+              </View>
+
+              <Text
+                style={styles.subtitle}
+                numberOfLines={2}
+              >
+                {subtitle}
+              </Text>
+
+            </View>
+
+
+            {/* RIGHT: AirBuddi visual */}
+
+            <View style={styles.heroDecoration}>
+
+              {/* soft green glow */}
+
+              <View style={styles.heroGlow} />
+
+
+              {/* WiFi */}
+
+              <MaterialCommunityIcons
+                name="wifi"
+                size={30}
+                color={dashboardTheme.colors.primary}
+                style={styles.heroWifi}
+              />
+
+
+              {/* AirBuddi device */}
+
+              <View style={styles.airDevice}>
+
+                <MaterialCommunityIcons
+                  name="air-filter"
+                  size={38}
+                  color={dashboardTheme.colors.primaryDark}
+                />
+                <Image
+                  source={require('../../../assets/buddi.png')}
+                  style={styles.heroPurifier}
+                  resizeMode="contain"
+                />
+
+              </View>
+            </View>
+
+          </View>
+
         </View>
-        <Text style={styles.subtitle} numberOfLines={1}>
-          {subtitle}
-        </Text>
-      </View> )}
+      )}
+
     </View>
   );
 }
 
 export const DashboardHeader = memo(DashboardHeaderComponent);
 
+
+/* ================================================================
+   STYLES
+================================================================ */
+
 const styles = StyleSheet.create({
-  wrapper: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 4 },
-  topActionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  brandMark: { width: 38, height: 38, borderRadius: 12, backgroundColor: dashboardTheme.colors.primarySoft, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  logoImage: { width: 27, height: 27 },
-  brandText: { color: dashboardTheme.colors.textPrimary, fontSize: 14, fontWeight: '900', letterSpacing: 1.7 },
-  actionsContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  iconBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: dashboardTheme.colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: dashboardTheme.colors.border, ...dashboardTheme.shadows.soft },
-  heroSection: { gap: 5, paddingHorizontal: 2, paddingBottom: 10 },
-  welcomeText: { fontSize: 14, fontWeight: '700', color: dashboardTheme.colors.textMuted, letterSpacing: 0.2 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  statusDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: dashboardTheme.colors.primary, marginTop: 5 },
-  title: { flexShrink: 1, fontSize: 28, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.8 },
-  subtitle: { fontSize: 14, fontWeight: '500', color: dashboardTheme.colors.textMuted , marginTop:1, },
+
+  /* --------------------------------------------------------------
+     HEADER WRAPPER
+  -------------------------------------------------------------- */
+
+  wrapper: {
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 14,
+  },
+
+
+  /* --------------------------------------------------------------
+     TOP BRAND
+  -------------------------------------------------------------- */
+
+  topActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 14,
+  },
+
+  brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  brandMark: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+
+  logoImage: {
+    width: 27,
+    height: 27,
+  },
+
+  brandText: {
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 1.7,
+  },
+
+  actionsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  iconBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: dashboardTheme.colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    ...dashboardTheme.shadows.soft,
+  },
+
+
+  /* --------------------------------------------------------------
+     COMBINED HEADER / HERO
+  -------------------------------------------------------------- */
+
+  heroSection: {
+    minHeight: 190,
+
+    borderRadius: 26,
+
+    backgroundColor: '#F3FAF4',
+
+    borderWidth: 1,
+    borderColor: 'rgba(22, 163, 74, 0.18)',
+
+    overflow: 'hidden',
+
+    paddingHorizontal: 20,
+    paddingTop: 18,
+    paddingBottom: 16,
+
+    position: 'relative',
+  },
+
+
+  /* --------------------------------------------------------------
+     YOUR SPACE
+  -------------------------------------------------------------- */
+
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
+  },
+
+  spaceIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+
+    backgroundColor: '#E4F5E7',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  welcomeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#47735A',
+    letterSpacing: 0.2,
+  },
+
+
+  /* --------------------------------------------------------------
+     HERO MAIN
+  -------------------------------------------------------------- */
+
+  heroMain: {
+    flex: 1,
+
+    flexDirection: 'row',
+
+    alignItems: 'center',
+  },
+
+
+  /* --------------------------------------------------------------
+     HERO TEXT
+  -------------------------------------------------------------- */
+
+  heroTextContent: {
+    flex: 1,
+    paddingRight: 8,
+  },
+
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+
+    marginTop: 8,
+  },
+
+  title: {
+    flexShrink: 1,
+
+    fontSize: 24,
+    lineHeight: 29,
+
+    fontWeight: '800',
+
+    color: dashboardTheme.colors.textPrimary,
+
+    letterSpacing: -0.6,
+  },
+
+  statusDot: {
+    width: 9,
+    height: 9,
+
+    borderRadius: 5,
+
+    backgroundColor: dashboardTheme.colors.textMuted,
+
+    marginLeft: 8,
+    marginTop: 5,
+  },
+
+  subtitle: {
+    marginTop: 7,
+
+    fontSize: 13,
+    lineHeight: 19,
+
+    fontWeight: '500',
+
+    color: dashboardTheme.colors.textSecondary,
+  },
+
+
+  /* --------------------------------------------------------------
+     AIRBUDDI VISUAL
+  -------------------------------------------------------------- */
+
+  heroDecoration: {
+    width: 120,
+    height: 145,
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    position: 'relative',
+  },
+  heroPurifier: {
+    width: 150,
+    height: 150,
+    position: 'absolute',
+    right: -18,
+    bottom: -4,
+  },
+
+
+  heroGlow: {
+    position: 'absolute',
+
+    width: 110,
+    height: 110,
+
+    borderRadius: 55,
+
+    right: -20,
+    bottom: -10,
+
+    backgroundColor: '#E1F3E5',
+
+    opacity: 0.9,
+  },
+
+  heroWifi: {
+    position: 'absolute',
+
+    top: 8,
+    right: 12,
+  },
+
+  airDevice: {
+    width: 68,
+    height: 86,
+
+    borderRadius: 19,
+
+    backgroundColor: '#FFFFFF',
+
+    alignItems: 'center',
+    justifyContent: 'center',
+
+    elevation: 4,
+
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+  },
+
+  heroLeaf: {
+    position: 'absolute',
+
+    right: -1,
+    bottom: 5,
+
+    opacity: 0.38,
+
+    transform: [
+      {
+        rotate: '-12deg',
+      },
+    ],
+  },
+
 });
