@@ -120,7 +120,7 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
   const sendEspCommand = async (message: string) => {
     try {
       // Single-message helper for a button that should send one ESP command.
-      await postEspCommand(message);
+      await postEspCommand(deviceId,message);
       console.log('[AirBuddi] ESP command sent:', message);
     } catch (error) {
       console.error('[AirBuddi] ESP command failed:', error);
@@ -132,7 +132,7 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
   const sendEspCommands = async (messages: string[]) => {
     try {
       // Use this when one button should send multiple commands to the ESP endpoint.
-      await postEspCommands(messages);
+      await postEspCommands(deviceId,messages);
       console.log('[AirBuddi] ESP commands sent:', messages);
     } catch (error) {
       console.error('[AirBuddi] ESP commands failed:', error);
