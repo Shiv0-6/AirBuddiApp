@@ -204,27 +204,11 @@ export async function fetchLatestTelemetry(deviceId: string): Promise<DashboardT
   return toDashboardTelemetryMessage(body, normalizedDeviceId);
 }
 
-/** Sends a dashboard command to the backend; the backend publishes it to IoT Core. */
-export async function postDeviceCommand(
-  deviceId: string,
-  command: string,
-  value: unknown,
-) {
-  const response = await fetch(endpoint(`/devices/${encodeURIComponent(deviceId)}/commands`), {
-    method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ command, value, ts: new Date().toISOString() }),
-  });
-  await responseBody(response);
-}
-
-/**
- * Sends a generic ESP command to the backend via API Gateway.
- * The payload is intentionally minimal so each control can reuse the same path
- * by changing only the message string passed in.
- */
-export async function postEspCommand(command: string) {
-  const response = await fetch(endpoint('/devices'), {
+export async function postEspCommand(deviceId: string, command: string) {
+  // This builds exactly what you tested in Postman
+  const url = `${telemetryApiConfig.baseUrl}/devices/${encodeURIComponent(deviceId)}`;
+  
+  const response = await fetch(url, {
     method: 'POST',
     headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body: JSON.stringify({ command }),
@@ -236,21 +220,9 @@ export async function postEspCommand(command: string) {
   }
 }
 
-/**
- * Sends one or more ESP command messages to the backend.
- * Use this when a single button should trigger multiple messages.
- */
-export async function postEspCommands(commands: string[]) {
+export async function postEspCommands(deviceId: string, commands: string[]) {
   for (const command of commands) {
-    await postEspCommand(command);
+    await postEspCommand(deviceId, command);
   }
 }
 
-/**
- * Sends a light control command to the ESP32 via API Gateway.
- * Matches the tested Postman format:
- *   POST /devices  →  { "command": "start" | "stop" }
- */
-export async function postLightCommand(command: 'start' | 'stop') {
-  await postEspCommand(command);
-}

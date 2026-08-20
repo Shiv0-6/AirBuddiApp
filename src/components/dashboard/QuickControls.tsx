@@ -217,9 +217,9 @@ function QuickControlsComponent({
         </View>
       </View>
 
-      {/* ── Fan Modes ─────────────────────────────────────────── */}
+      {/* ── Operating Modes & Feature Controls ───────────────── */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Mode</Text>
+        <Text style={styles.sectionTitle}>Mode & Controls</Text>
         <View style={styles.modesRow}>
           <ModeCard
             iconName="auto-fix"
@@ -231,16 +231,26 @@ function QuickControlsComponent({
           <ModeCard
             iconName="gesture-tap-button"
             label="Manual"
-            value={!isAutoMode && isPoweredOn}
+            value={!isAutoMode && !isSleepMode && isPoweredOn}
             disabled={!isPoweredOn}
-            onToggle={() => onToggleAutoMode(false)}
+            onToggle={() => {
+              onToggleAutoMode(false);
+              if (isSleepMode) onToggleSleepMode(false);
+            }}
           />
           <ModeCard
-            iconName="power"
-            label="Off"
-            value={!isPoweredOn}
+            iconName="fan-off"
+            label="Fan Off"
+            value={isSleepMode && isPoweredOn}
             disabled={!isPoweredOn}
-            onToggle={onTogglePower}
+            onToggle={() => onToggleSleepMode(!isSleepMode)}
+          />
+          <ModeCard
+            iconName="shield-sun-outline"
+            label="UV-C"
+            value={isUvc && isPoweredOn}
+            disabled={!isPoweredOn}
+            onToggle={() => onToggleUvc(!isUvc)}
           />
         </View>
       </View>

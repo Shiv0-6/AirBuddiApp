@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -520,7 +519,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   // ─────────────────────────────────────────────────────────────────────────────
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       {/* Subtle background decor */}
       <View pointerEvents="none" style={styles.bgContainer}>
         <View style={styles.bgCirclePrimary} />
@@ -565,22 +564,36 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 </Text>
               </View>
 
-              <TouchableOpacity
-                accessibilityLabel="Refresh devices"
-                style={styles.refreshButton}
-                activeOpacity={0.8}
-                onPress={handleRefresh}
-              >
-                <MaterialCommunityIcons
-                  name="refresh"
-                  size={19}
-                  color={dashboardTheme.colors.primaryDark}
-                />
+              <View style={styles.homeHeadingActions}>
+                <TouchableOpacity
+                  accessibilityLabel="Refresh devices"
+                  style={styles.refreshButton}
+                  activeOpacity={0.8}
+                  onPress={handleRefresh}
+                >
+                  <MaterialCommunityIcons
+                    name="refresh"
+                    size={19}
+                    color={dashboardTheme.colors.primaryDark}
+                  />
+                </TouchableOpacity>
 
-                <Text style={styles.refreshButtonText}>
-                  Refresh
-                </Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityLabel="Add device"
+                  style={styles.addDeviceHeaderButton}
+                  activeOpacity={0.8}
+                  onPress={() => setActiveSheet('add-device')}
+                >
+                  <MaterialCommunityIcons
+                    name="plus"
+                    size={18}
+                    color="#FFFFFF"
+                  />
+                  <Text style={styles.addDeviceHeaderButtonText}>
+                    Add device
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
               <View style={styles.deviceGrid}>
                 {devices.length === 0 ? (
@@ -706,45 +719,46 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                     />
                   </TouchableOpacity>
                 </TouchableOpacity>
-                ) : devices.map(item => {
-
-
-
-                  const isSelected = item.id === selectedDeviceId;
-                  const displayedAqi = isSelected ? pm25Value : item.aqi;
-                  return (
-                    <TouchableOpacity
-                      key={item.id}
-                      activeOpacity={0.82}
-                      style={[styles.homeDeviceCard, isSelected && styles.homeDeviceCardSelected]}
-                      onPress={() => setSelectedDeviceId(item.id)}
-                    >
-                      <View style={[styles.deviceIcon, isSelected && styles.deviceIconSelected]}>
-                        <MaterialCommunityIcons name={item.icon} size={24} color={isSelected ? '#FFFFFF' : dashboardTheme.colors.primaryDark} />
-                      </View>
-                      <View style={styles.deviceCardContent}>
-                        <Text style={styles.deviceRoom}>{item.room}</Text>
-                        <Text style={styles.deviceName} numberOfLines={1}>{item.name}</Text>
-                        <View style={styles.deviceMeta}>
-                          <View style={[styles.deviceStatusDot, item.status === 'Offline' && styles.deviceStatusOffline]} />
-                          <Text style={styles.deviceMetaText}>
-                            {item.status}
-                            {displayedAqi !== null && item.status !== 'Offline' ? ` · AQI ${displayedAqi}` : ''}
-                          </Text>
-                        </View>
-                      </View>
-                      <TouchableOpacity
-                        accessibilityLabel={`Edit ${item.room} device`}
-                        style={styles.editDeviceButton}
-                        activeOpacity={0.75}
-                        onPress={() => beginEditingDevice(item)}
-                      >
-                        <MaterialCommunityIcons name="pencil-outline" size={18} color={dashboardTheme.colors.textSecondary} />
-                      </TouchableOpacity>
-                      {isSelected && <MaterialCommunityIcons name="check-circle" size={20} color={dashboardTheme.colors.primary} />}
-                    </TouchableOpacity>
-                  );
-                })}
+                ) : (
+                  <>
+                    {devices.map(item => {
+                      const isSelected = item.id === selectedDeviceId;
+                      const displayedAqi = isSelected ? pm25Value : item.aqi;
+                      return (
+                        <TouchableOpacity
+                          key={item.id}
+                          activeOpacity={0.82}
+                          style={[styles.homeDeviceCard, isSelected && styles.homeDeviceCardSelected]}
+                          onPress={() => setSelectedDeviceId(item.id)}
+                        >
+                          <View style={[styles.deviceIcon, isSelected && styles.deviceIconSelected]}>
+                            <MaterialCommunityIcons name={item.icon} size={24} color={isSelected ? '#FFFFFF' : dashboardTheme.colors.primaryDark} />
+                          </View>
+                          <View style={styles.deviceCardContent}>
+                            <Text style={styles.deviceRoom}>{item.room}</Text>
+                            <Text style={styles.deviceName} numberOfLines={1}>{item.name}</Text>
+                            <View style={styles.deviceMeta}>
+                              <View style={[styles.deviceStatusDot, item.status === 'Offline' && styles.deviceStatusOffline]} />
+                              <Text style={styles.deviceMetaText}>
+                                {item.status}
+                                {displayedAqi !== null && item.status !== 'Offline' ? ` · AQI ${displayedAqi}` : ''}
+                              </Text>
+                            </View>
+                          </View>
+                          <TouchableOpacity
+                            accessibilityLabel={`Edit ${item.room} device`}
+                            style={styles.editDeviceButton}
+                            activeOpacity={0.75}
+                            onPress={() => beginEditingDevice(item)}
+                          >
+                            <MaterialCommunityIcons name="pencil-outline" size={18} color={dashboardTheme.colors.textSecondary} />
+                          </TouchableOpacity>
+                          {isSelected && <MaterialCommunityIcons name="check-circle" size={20} color={dashboardTheme.colors.primary} />}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </>
+                )}
               </View>
               {devices.length > 0 && <>
                 <View style={styles.homeSummary}>
@@ -784,11 +798,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               onSelectFanSpeed={handleSelectFanSpeed}
             />
             <View style={styles.tabPad}>
-              <LightControlPanel
-                lights={lightZones}
-                onToggleLight={handleToggleLightZone}
-                disabled={device?.power !== 'on'}
-              />
               <RootPurificationCard
                 upperBedChamber={device?.upperBedChamber ?? 'Active'}
                 lowerBedChamber={device?.lowerBedChamber ?? 'Standby'}
@@ -800,6 +809,11 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   const currentVal = device?.lowerBedChamber ?? 'Standby';
                   setLowerBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
                 }}
+                disabled={device?.power !== 'on'}
+              />
+              <LightControlPanel
+                lights={lightZones}
+                onToggleLight={handleToggleLightZone}
                 disabled={device?.power !== 'on'}
               />
             </View>
@@ -1175,7 +1189,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           })}
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -1326,14 +1340,40 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  refreshButton: {
-    height: 46,
+  homeHeadingActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  addDeviceHeaderButton: {
+    height: 44,
     paddingHorizontal: 14,
-    borderRadius: 15,
+    borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 7,
+    gap: 5,
+    backgroundColor: '#16A34A',
+    elevation: 2,
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+
+  addDeviceHeaderButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+
+  refreshButton: {
+    height: 44,
+    width: 44,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#F7FBF7',
     borderWidth: 1,
     borderColor: 'rgba(22, 163, 74, 0.20)',
@@ -1344,8 +1384,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
-  sectionTitle: { fontSize: 21, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.3 },
-  // sectionSubtitle: { marginTop: 3, fontSize: 13, color: dashboardTheme.colors.textMuted, fontWeight: '500' },
+
+  addDeviceCardInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(22, 163, 74, 0.35)',
+    backgroundColor: 'rgba(34, 197, 94, 0.04)',
+    marginTop: 4,
+  },
+
+  addDeviceCardIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  addDeviceCardText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: dashboardTheme.colors.primaryDark,
+  },
+
   deviceGrid: { gap: 14 },
   homeDeviceCard: {
     minHeight: 104,

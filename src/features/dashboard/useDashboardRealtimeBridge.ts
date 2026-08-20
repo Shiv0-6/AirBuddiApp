@@ -165,8 +165,8 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
     setSleepModeState: async (nextSleepMode: boolean) => {
       dispatch(setSleepMode(nextSleepMode));
       await sendLegacyCommand('autoMode', nextSleepMode ? 'sleep' : 'off');
-      // EDIT THIS ARRAY for the sleep button.
-      await sendEspCommands([nextSleepMode ? 'sleep_on' : 'sleep_off']);
+      // Sends speed_on / speed_off for fan power control
+      await sendEspCommands([nextSleepMode ? 'speed_on' : 'speed_off']);
     },
 
     setUvcModeState: async (nextUvc: boolean) => {
