@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -10,6 +10,9 @@ import {
   RefreshControl,
   TextInput,
   Image,
+  Switch,
+  Linking,
+  Alert,
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -37,7 +40,7 @@ import { fetchLatestTelemetry } from '../../services/awsIot/awsTelemetryApiClien
 
 type TabId = 'airquality' | 'fan' | 'light' | 'more';
 
-type SheetId = 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | null;
+type SheetId = 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | 'explore-products' | null;
 type HomeDevice = {
   id: string;
   name: string;
@@ -55,10 +58,13 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
 ];
 
 const PROFILE_STORAGE_KEY = '@airbuddi_profile';
+const DEVICES_STORAGE_KEY = '@airbuddi_devices';
+const NOTIFICATIONS_STORAGE_KEY = '@airbuddi_notifications';
+const PREFERENCES_STORAGE_KEY = '@airbuddi_preferences';
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
-export function DashboardScreen() {
+export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const dashboard = useAppSelector(selectDashboard) as DashboardRuntimeState;
   const device = dashboard.device;
   const sensors = dashboard.sensors ?? [];
@@ -87,6 +93,26 @@ export function DashboardScreen() {
   const [editDeviceError, setEditDeviceError] = useState('');
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [devices, setDevices] = useState<HomeDevice[]>([]);
+  const devicesLoadedRef = useRef(false);
+  const prefsLoadedRef = useRef(false);
+
+  // Notification preferences
+  const [notifPush, setNotifPush] = useState(true);
+  const [notifAqiAlerts, setNotifAqiAlerts] = useState(true);
+  const [notifDeviceOffline, setNotifDeviceOffline] = useState(true);
+  const [notifFilterReminder, setNotifFilterReminder] = useState(true);
+
+  // App preferences
+  const [themePreference, setThemePreference] = useState<'light' | 'dark' | 'system'>('system');
+  const [tempUnit, setTempUnit] = useState<'celsius' | 'fahrenheit'>('celsius');
+  const [aqiStandard, setAqiStandard] = useState<'us' | 'india'>('us');
+
+  // Alert thresholds
+  const [aqiWarningThreshold, setAqiWarningThreshold] = useState('100');
+  const [aqiDangerThreshold, setAqiDangerThreshold] = useState('200');
+
+  // FAQ expansion
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   const {
     setPowerState,
@@ -201,6 +227,89 @@ export function DashboardScreen() {
     loadProfile();
   }, []);
 
+  // Load saved devices on mount
+  useEffect(() => {
+    const loadDevices = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(DEVICES_STORAGE_KEY);
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setDevices(parsed);
+          }
+        }
+      } catch (error) {
+        console.error('[AirBuddi] Failed to load devices:', error);
+      } finally {
+        devicesLoadedRef.current = true;
+      }
+    };
+    loadDevices();
+  }, []);
+
+  // Persist devices whenever they change
+  useEffect(() => {
+    if (!devicesLoadedRef.current) { return; }
+    AsyncStorage.setItem(DEVICES_STORAGE_KEY, JSON.stringify(devices)).catch(error =>
+      console.error('[AirBuddi] Failed to save devices:', error),
+    );
+  }, [devices]);
+
+  // Load all preferences on mount
+  useEffect(() => {
+    const loadPrefs = async () => {
+      try {
+        const [notifStored, prefStored] = await Promise.all([
+          AsyncStorage.getItem(NOTIFICATIONS_STORAGE_KEY),
+          AsyncStorage.getItem(PREFERENCES_STORAGE_KEY),
+        ]);
+        if (notifStored) {
+          const parsed = JSON.parse(notifStored);
+          if (parsed.push !== undefined) { setNotifPush(parsed.push); }
+          if (parsed.aqiAlerts !== undefined) { setNotifAqiAlerts(parsed.aqiAlerts); }
+          if (parsed.deviceOffline !== undefined) { setNotifDeviceOffline(parsed.deviceOffline); }
+          if (parsed.filterReminder !== undefined) { setNotifFilterReminder(parsed.filterReminder); }
+        }
+        if (prefStored) {
+          const parsed = JSON.parse(prefStored);
+          if (parsed.theme) { setThemePreference(parsed.theme); }
+          if (parsed.tempUnit) { setTempUnit(parsed.tempUnit); }
+          if (parsed.aqiStandard) { setAqiStandard(parsed.aqiStandard); }
+          if (parsed.aqiWarning) { setAqiWarningThreshold(parsed.aqiWarning); }
+          if (parsed.aqiDanger) { setAqiDangerThreshold(parsed.aqiDanger); }
+        }
+      } catch (error) {
+        console.error('[AirBuddi] Failed to load preferences:', error);
+      } finally {
+        prefsLoadedRef.current = true;
+      }
+    };
+    loadPrefs();
+  }, []);
+
+  // Auto-save notification preferences
+  useEffect(() => {
+    if (!prefsLoadedRef.current) { return; }
+    AsyncStorage.setItem(NOTIFICATIONS_STORAGE_KEY, JSON.stringify({
+      push: notifPush,
+      aqiAlerts: notifAqiAlerts,
+      deviceOffline: notifDeviceOffline,
+      filterReminder: notifFilterReminder,
+    })).catch(e => console.error('[AirBuddi] Failed to save notification prefs:', e));
+  }, [notifPush, notifAqiAlerts, notifDeviceOffline, notifFilterReminder]);
+
+  // Auto-save app preferences
+  useEffect(() => {
+    if (!prefsLoadedRef.current) { return; }
+    AsyncStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify({
+      theme: themePreference,
+      tempUnit,
+      aqiStandard,
+      aqiWarning: aqiWarningThreshold,
+      aqiDanger: aqiDangerThreshold,
+    })).catch(e => console.error('[AirBuddi] Failed to save preferences:', e));
+  }, [themePreference, tempUnit, aqiStandard, aqiWarningThreshold, aqiDangerThreshold]);
+
   // ── Handlers ────────────────────────────────────────────────────────────────
 
   const pickProfileImage = useCallback(() => {
@@ -281,6 +390,21 @@ export function DashboardScreen() {
     setProfileNameError('');
     setProfileEmailError('');
   }, []);
+
+  const handleSignOut = useCallback(() => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out? All local data will be cleared.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: () => onSignOut(),
+        },
+      ],
+    );
+  }, [onSignOut]);
 
   const handleTogglePower = useCallback(() => {
     if (!device) { return; }
@@ -690,51 +814,43 @@ export function DashboardScreen() {
               <Text style={styles.sectionSubtitle}>
                 Manage your account and AirBuddi home.
               </Text>
+
               <Text style={styles.settingsSectionLabel}>ACCOUNT</Text>
               <View style={styles.settingsCard}>
-                <SettingsRow
-                  icon="account-circle-outline"
-                  title="Profile"
-                  subtitle={profileName}
-                  onPress={() => setActiveSheet('profile')}
-                  last
-                />
+                <SettingsRow icon="account-circle-outline" title="Profile" subtitle={profileName} onPress={() => setActiveSheet('profile')} />
+                <SettingsRow icon="link-variant" title="Linked Accounts" subtitle="Google, Apple" onPress={() => setActiveSheet('linked-accounts')} last />
               </View>
+
               <Text style={styles.settingsSectionLabel}>DEVICES</Text>
               <View style={styles.settingsCard}>
-                <SettingsRow
-                  icon="air-filter"
-                  title="My devices"
-                  subtitle={
-                    devices.length > 0
-                      ? `${devices.length} device${devices.length === 1 ? '' : 's'} added`
-                      : 'No device connected'
-                  }
-                  onPress={() => setActiveTab('fan')}
-                  last
-                />
+                <SettingsRow icon="air-filter" title="My Devices" subtitle={devices.length > 0 ? `${devices.length} device${devices.length === 1 ? '' : 's'} added` : 'No device connected'} onPress={() => setActiveTab('fan')} />
+                <SettingsRow icon="plus-circle-outline" title="Add New Device" subtitle="Pair a new AirBuddi" onPress={() => setActiveSheet('add-device')} last />
               </View>
-              <Text style={styles.settingsSectionLabel}>APP PREFERENCES</Text>
+
+              <Text style={styles.settingsSectionLabel}>NOTIFICATIONS</Text>
               <View style={styles.settingsCard}>
-                <SettingsRow
-                  icon="bell-outline"
-                  title="Notifications"
-                  subtitle="Air quality and device alerts"
-                  onPress={() => {
-                    // We'll add the notification settings next.
-                  }}
-                  last
-                />
+                <SettingsRow icon="bell-outline" title="Push Notifications" subtitle="AQI alerts & reminders" onPress={() => setActiveSheet('notifications')} />
+                <SettingsRow icon="alert-circle-outline" title="Alert Thresholds" subtitle="Set AQI warning levels" onPress={() => setActiveSheet('alert-thresholds')} last />
               </View>
+
+              <Text style={styles.settingsSectionLabel}>PREFERENCES</Text>
+              <View style={styles.settingsCard}>
+                <SettingsRow icon="palette-outline" title="Appearance" subtitle={`Theme: ${themePreference.charAt(0).toUpperCase() + themePreference.slice(1)}`} onPress={() => setActiveSheet('appearance')} />
+                <SettingsRow icon="earth" title="Units & Region" subtitle={`${tempUnit === 'celsius' ? '°C' : '°F'} · ${aqiStandard === 'us' ? 'US EPA' : 'India NAQI'}`} onPress={() => setActiveSheet('units')} />
+                <SettingsRow icon="shield-lock-outline" title="Data & Privacy" subtitle="Manage your data" onPress={() => setActiveSheet('data-privacy')} last />
+              </View>
+
               <Text style={styles.settingsSectionLabel}>SUPPORT</Text>
               <View style={styles.settingsCard}>
-                <SettingsRow
-                  icon="information-outline"
-                  title="About AirBuddi"
-                  subtitle="App details and support"
-                  onPress={() => setActiveSheet('about')}
-                  last
-                />
+                <SettingsRow icon="help-circle-outline" title="Help & Troubleshooting" subtitle="FAQs & guides" onPress={() => setActiveSheet('help')} />
+                <SettingsRow icon="headphones" title="Contact Support" subtitle="Email, phone, or chat" onPress={() => setActiveSheet('contact-support')} />
+                <SettingsRow icon="information-outline" title="About AirBuddi" subtitle="App version & legal" onPress={() => setActiveSheet('about')} last />
+              </View>
+
+              <Text style={styles.settingsSectionLabel}>MORE</Text>
+              <View style={styles.settingsCard}>
+                <SettingsRow icon="leaf-circle-outline" title="Explore Other Products" subtitle="Discover GreenVerse devices" onPress={() => setActiveSheet('explore-products')} />
+                <SettingsRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
               </View>
             </View>
           </Animated.View>
@@ -828,6 +944,183 @@ export function DashboardScreen() {
               <Text style={styles.aboutVersion}>AirBuddi app · Version 1.0</Text>
               <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
             </>}
+
+            {/* ── Linked Accounts ─────────────────────────────────── */}
+            {activeSheet === 'linked-accounts' && <>
+              <Text style={styles.sheetTitle}>Linked Accounts</Text>
+              <Text style={styles.sheetIntro}>Connect third-party accounts for faster sign-in.</Text>
+              <View style={styles.contactOption}>
+                <View style={styles.contactIconWrap}><MaterialCommunityIcons name="google" size={22} color={dashboardTheme.colors.primaryDark} /></View>
+                <View style={styles.contactInfo}><Text style={styles.contactLabel}>Google</Text><Text style={styles.contactSub}>Coming soon</Text></View>
+              </View>
+              <View style={[styles.contactOption, styles.contactOptionLast]}>
+                <View style={styles.contactIconWrap}><MaterialCommunityIcons name="apple" size={22} color={dashboardTheme.colors.primaryDark} /></View>
+                <View style={styles.contactInfo}><Text style={styles.contactLabel}>Apple</Text><Text style={styles.contactSub}>Coming soon</Text></View>
+              </View>
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
+
+            {/* ── Notifications ───────────────────────────────────── */}
+            {activeSheet === 'notifications' && <>
+              <Text style={styles.sheetTitle}>Notifications</Text>
+              <Text style={styles.sheetIntro}>Choose which alerts you'd like to receive.</Text>
+              <View style={styles.settingsToggleRow}>
+                <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>Push Notifications</Text><Text style={styles.settingsToggleSublabel}>Enable all notifications</Text></View>
+                <Switch value={notifPush} onValueChange={setNotifPush} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifPush ? '#22C55E' : '#F4F4F4'} />
+              </View>
+              <View style={styles.settingsToggleRow}>
+                <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>AQI Alerts</Text><Text style={styles.settingsToggleSublabel}>Warn when air quality drops</Text></View>
+                <Switch value={notifAqiAlerts} onValueChange={setNotifAqiAlerts} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifAqiAlerts ? '#22C55E' : '#F4F4F4'} />
+              </View>
+              <View style={styles.settingsToggleRow}>
+                <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>Device Offline</Text><Text style={styles.settingsToggleSublabel}>Alert when device goes offline</Text></View>
+                <Switch value={notifDeviceOffline} onValueChange={setNotifDeviceOffline} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifDeviceOffline ? '#22C55E' : '#F4F4F4'} />
+              </View>
+              <View style={[styles.settingsToggleRow, styles.settingsToggleRowLast]}>
+                <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>Filter Replacement</Text><Text style={styles.settingsToggleSublabel}>Remind when filter needs replacing</Text></View>
+                <Switch value={notifFilterReminder} onValueChange={setNotifFilterReminder} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifFilterReminder ? '#22C55E' : '#F4F4F4'} />
+              </View>
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
+
+            {/* ── Alert Thresholds ────────────────────────────────── */}
+            {activeSheet === 'alert-thresholds' && <>
+              <Text style={styles.sheetTitle}>Alert Thresholds</Text>
+              <Text style={styles.sheetIntro}>Set the AQI levels at which you want to be alerted.</Text>
+              <Text style={styles.inputLabel}>WARNING LEVEL (AQI)</Text>
+              <TextInput value={aqiWarningThreshold} onChangeText={setAqiWarningThreshold} style={styles.textInput} keyboardType="numeric" placeholder="100" placeholderTextColor={dashboardTheme.colors.textMuted} />
+              <Text style={styles.inputLabel}>DANGER LEVEL (AQI)</Text>
+              <TextInput value={aqiDangerThreshold} onChangeText={setAqiDangerThreshold} style={styles.textInput} keyboardType="numeric" placeholder="200" placeholderTextColor={dashboardTheme.colors.textMuted} />
+              <TouchableOpacity style={styles.primarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.primarySheetButtonText}>Save</Text></TouchableOpacity>
+            </>}
+
+            {/* ── Appearance ──────────────────────────────────────── */}
+            {activeSheet === 'appearance' && <>
+              <Text style={styles.sheetTitle}>Appearance</Text>
+              <Text style={styles.sheetIntro}>Customize how AirBuddi looks.</Text>
+              <Text style={styles.inputLabel}>THEME</Text>
+              <View style={styles.optionRow}>
+                {(['light', 'dark', 'system'] as const).map(opt => (
+                  <TouchableOpacity key={opt} style={[styles.optionChip, themePreference === opt && styles.optionChipActive]} onPress={() => setThemePreference(opt)}>
+                    <Text style={[styles.optionChipText, themePreference === opt && styles.optionChipTextActive]}>{opt.charAt(0).toUpperCase() + opt.slice(1)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
+
+            {/* ── Units & Region ──────────────────────────────────── */}
+            {activeSheet === 'units' && <>
+              <Text style={styles.sheetTitle}>Units & Region</Text>
+              <Text style={styles.sheetIntro}>Choose your preferred measurement units.</Text>
+              <Text style={styles.inputLabel}>TEMPERATURE</Text>
+              <View style={styles.optionRow}>
+                <TouchableOpacity style={[styles.optionChip, tempUnit === 'celsius' && styles.optionChipActive]} onPress={() => setTempUnit('celsius')}><Text style={[styles.optionChipText, tempUnit === 'celsius' && styles.optionChipTextActive]}>°C Celsius</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.optionChip, tempUnit === 'fahrenheit' && styles.optionChipActive]} onPress={() => setTempUnit('fahrenheit')}><Text style={[styles.optionChipText, tempUnit === 'fahrenheit' && styles.optionChipTextActive]}>°F Fahrenheit</Text></TouchableOpacity>
+              </View>
+              <Text style={styles.inputLabel}>AQI STANDARD</Text>
+              <View style={styles.optionRow}>
+                <TouchableOpacity style={[styles.optionChip, aqiStandard === 'us' && styles.optionChipActive]} onPress={() => setAqiStandard('us')}><Text style={[styles.optionChipText, aqiStandard === 'us' && styles.optionChipTextActive]}>US EPA</Text></TouchableOpacity>
+                <TouchableOpacity style={[styles.optionChip, aqiStandard === 'india' && styles.optionChipActive]} onPress={() => setAqiStandard('india')}><Text style={[styles.optionChipText, aqiStandard === 'india' && styles.optionChipTextActive]}>India NAQI</Text></TouchableOpacity>
+              </View>
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
+
+            {/* ── Data & Privacy ──────────────────────────────────── */}
+            {activeSheet === 'data-privacy' && <>
+              <Text style={styles.sheetTitle}>Data & Privacy</Text>
+              <Text style={styles.sheetIntro}>Your data stays on your device. AirBuddi connects to your purifier locally and doesn't share personal information with third parties.</Text>
+              <TouchableOpacity style={styles.primarySheetButton} onPress={async () => {
+                try {
+                  await AsyncStorage.removeItem(DEVICES_STORAGE_KEY);
+                  await AsyncStorage.removeItem(NOTIFICATIONS_STORAGE_KEY);
+                  await AsyncStorage.removeItem(PREFERENCES_STORAGE_KEY);
+                  setDevices([]);
+                  setNotifPush(true);
+                  setNotifAqiAlerts(true);
+                  setNotifDeviceOffline(true);
+                  setNotifFilterReminder(true);
+                  setThemePreference('system');
+                  setTempUnit('celsius');
+                  setAqiStandard('us');
+                  setAqiWarningThreshold('100');
+                  setAqiDangerThreshold('200');
+                  Alert.alert('Cache Cleared', 'Local app cache has been cleared successfully.');
+                } catch (e) {
+                  console.error('[AirBuddi] Failed to clear cache:', e);
+                }
+              }}><Text style={styles.primarySheetButtonText}>Clear App Cache</Text></TouchableOpacity>
+              <TouchableOpacity style={styles.dangerSheetButton} onPress={() => Alert.alert('Delete Account', 'This feature is not available in demo mode.', [{ text: 'OK' }])}>
+                <MaterialCommunityIcons name="trash-can-outline" size={18} color="#DC2626" />
+                <Text style={styles.dangerSheetButtonText}>Delete Account</Text>
+              </TouchableOpacity>
+            </>}
+
+            {/* ── Help & Troubleshooting ──────────────────────────── */}
+            {activeSheet === 'help' && <>
+              <Text style={styles.sheetTitle}>Help & Troubleshooting</Text>
+              <Text style={styles.sheetIntro}>Find answers to common questions.</Text>
+              {[
+                { q: 'How do I add a device?', a: 'Go to the Home tab and tap "Add a device." Enter your AirBuddi\'s MAC address found on the device label.' },
+                { q: 'My device shows as offline', a: 'Make sure your AirBuddi is powered on and connected to Wi-Fi. Try pulling down to refresh the device list.' },
+                { q: 'How do I reset my device?', a: 'Press and hold the reset button on the back of your AirBuddi for 10 seconds until the LED flashes rapidly.' },
+                { q: 'Can I control multiple devices?', a: 'Yes! Add multiple devices from the Home tab. Tap any device card to select and control it.' },
+                { q: 'How accurate are the sensors?', a: 'AirBuddi uses industrial-grade PM2.5, temperature, and humidity sensors with ±5% accuracy.' },
+              ].map((faq, index, arr) => (
+                <TouchableOpacity key={index} style={[styles.faqItem, index === arr.length - 1 && styles.faqItemLast]} activeOpacity={0.7} onPress={() => setExpandedFaq(expandedFaq === index ? null : index)}>
+                  <View style={styles.faqQuestion}>
+                    <Text style={styles.faqQuestionText}>{faq.q}</Text>
+                    <MaterialCommunityIcons name={expandedFaq === index ? 'chevron-up' : 'chevron-down'} size={22} color={dashboardTheme.colors.textMuted} />
+                  </View>
+                  {expandedFaq === index && <Text style={styles.faqAnswer}>{faq.a}</Text>}
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
+
+            {/* ── Contact Support ─────────────────────────────────── */}
+            {activeSheet === 'contact-support' && <>
+              <Text style={styles.sheetTitle}>Contact Support</Text>
+              <Text style={styles.sheetIntro}>We're here to help. Reach us through any channel.</Text>
+              <TouchableOpacity style={styles.contactOption} activeOpacity={0.7} onPress={() => Linking.openURL('mailto:support@greenverse.in')}>
+                <View style={styles.contactIconWrap}><MaterialCommunityIcons name="email-outline" size={22} color={dashboardTheme.colors.primaryDark} /></View>
+                <View style={styles.contactInfo}><Text style={styles.contactLabel}>Email</Text><Text style={styles.contactSub}>support@greenverse.in</Text></View>
+                <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.contactOption} activeOpacity={0.7} onPress={() => Linking.openURL('tel:+911234567890')}>
+                <View style={styles.contactIconWrap}><MaterialCommunityIcons name="phone-outline" size={22} color={dashboardTheme.colors.primaryDark} /></View>
+                <View style={styles.contactInfo}><Text style={styles.contactLabel}>Phone</Text><Text style={styles.contactSub}>+91 12345 67890</Text></View>
+                <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.contactOption, styles.contactOptionLast]} activeOpacity={0.7} onPress={() => Alert.alert('Live Chat', 'Live chat is not available in demo mode.')}>
+                <View style={styles.contactIconWrap}><MaterialCommunityIcons name="chat-outline" size={22} color={dashboardTheme.colors.primaryDark} /></View>
+                <View style={styles.contactInfo}><Text style={styles.contactLabel}>Live Chat</Text><Text style={styles.contactSub}>Available 9 AM – 6 PM IST</Text></View>
+                <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
+
+            {/* ── Explore Other Products ──────────────────────────── */}
+            {activeSheet === 'explore-products' && <>
+              <Text style={styles.sheetTitle}>Explore GreenVerse</Text>
+              <Text style={styles.sheetIntro}>Discover our family of smart environmental products.</Text>
+              <View style={styles.productCard}>
+                <View style={styles.productIconWrap}><MaterialCommunityIcons name="air-purifier" size={26} color={dashboardTheme.colors.primaryDark} /></View>
+                <View style={styles.productInfo}><Text style={styles.productName}>AirBuddi Pro</Text><Text style={styles.productDesc}>Advanced air purification with HEPA H13 filter and UV-C sterilization.</Text></View>
+                <View style={styles.productBadge}><Text style={styles.productBadgeText}>New</Text></View>
+              </View>
+              <View style={styles.productCard}>
+                <View style={styles.productIconWrap}><MaterialCommunityIcons name="water-outline" size={26} color={dashboardTheme.colors.primaryDark} /></View>
+                <View style={styles.productInfo}><Text style={styles.productName}>WaterBuddi</Text><Text style={styles.productDesc}>Smart water quality monitoring for your home.</Text></View>
+                <View style={styles.productBadge}><Text style={styles.productBadgeText}>Soon</Text></View>
+              </View>
+              <View style={styles.productCard}>
+                <View style={styles.productIconWrap}><MaterialCommunityIcons name="flower-outline" size={26} color={dashboardTheme.colors.primaryDark} /></View>
+                <View style={styles.productInfo}><Text style={styles.productName}>SoilBuddi</Text><Text style={styles.productDesc}>Intelligent soil monitoring for healthier plants.</Text></View>
+                <View style={styles.productBadge}><Text style={styles.productBadgeText}>Soon</Text></View>
+              </View>
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
           </View>
         </View>
       </Modal>
@@ -849,7 +1142,8 @@ export function DashboardScreen() {
             <DropdownMenuItem icon="chart-line" label="Air quality monitor" onPress={() => { setActiveSheet(null); setActiveTab('airquality'); }} />
             <DropdownMenuItem icon="account-circle-outline" label="Profile" onPress={() => setActiveSheet('profile')} />
             <DropdownMenuItem icon="cog-outline" label="Settings" onPress={() => { setActiveSheet(null); setActiveTab('more'); }} />
-            <DropdownMenuItem icon="information-outline" label="About us" onPress={() => setActiveSheet('about')} last />
+            <DropdownMenuItem icon="information-outline" label="About us" onPress={() => setActiveSheet('about')} />
+            <DropdownMenuItem icon="logout" label="Sign out" onPress={() => { setActiveSheet(null); handleSignOut(); }} last />
           </View>
         </TouchableOpacity>
       </Modal>
@@ -1505,4 +1799,156 @@ settingsSubtitle: {
   dropdownItem: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, paddingHorizontal: 14 },
   dropdownItemBorder: { borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
   dropdownItemText: { color: dashboardTheme.colors.textPrimary, fontSize: 14, fontWeight: '600' },
+
+  // ── Toggle Row Styles ─────────────────────────────────────────────────────
+  settingsToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: dashboardTheme.colors.border,
+  },
+  settingsToggleRowLast: { borderBottomWidth: 0 },
+  toggleTextWrap: { flex: 1, marginRight: 12 },
+  settingsToggleLabel: {
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  settingsToggleSublabel: {
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 12,
+    marginTop: 2,
+  },
+
+  // ── Option Chip Styles ────────────────────────────────────────────────────
+  optionRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 10,
+    flexWrap: 'wrap',
+  },
+  optionChip: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: dashboardTheme.colors.border,
+    backgroundColor: dashboardTheme.colors.surface,
+  },
+  optionChipActive: {
+    borderColor: dashboardTheme.colors.primary,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+  },
+  optionChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: dashboardTheme.colors.textSecondary,
+  },
+  optionChipTextActive: {
+    color: dashboardTheme.colors.primaryDark,
+    fontWeight: '700',
+  },
+
+  // ── FAQ Styles ────────────────────────────────────────────────────────────
+  faqItem: {
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: dashboardTheme.colors.border,
+  },
+  faqItemLast: { borderBottomWidth: 0 },
+  faqQuestion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  faqQuestionText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
+    color: dashboardTheme.colors.textPrimary,
+    marginRight: 8,
+  },
+  faqAnswer: {
+    marginTop: 10,
+    fontSize: 14,
+    lineHeight: 21,
+    color: dashboardTheme.colors.textSecondary,
+  },
+
+  // ── Contact Support Styles ────────────────────────────────────────────────
+  contactOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: dashboardTheme.colors.border,
+  },
+  contactOptionLast: { borderBottomWidth: 0 },
+  contactIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  contactInfo: { flex: 1 },
+  contactLabel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: dashboardTheme.colors.textPrimary,
+  },
+  contactSub: {
+    fontSize: 12,
+    color: dashboardTheme.colors.textMuted,
+    marginTop: 2,
+  },
+
+  // ── Product Card Styles ───────────────────────────────────────────────────
+  productCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: dashboardTheme.colors.surfaceTint,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    marginBottom: 12,
+  },
+  productIconWrap: {
+    width: 50,
+    height: 50,
+    borderRadius: 16,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  productInfo: { flex: 1 },
+  productName: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: dashboardTheme.colors.textPrimary,
+  },
+  productDesc: {
+    fontSize: 13,
+    color: dashboardTheme.colors.textSecondary,
+    marginTop: 3,
+    lineHeight: 18,
+  },
+  productBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+  },
+  productBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: dashboardTheme.colors.primaryDark,
+  },
 });
