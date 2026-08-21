@@ -427,7 +427,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     setUvcModeState(value);
   }, [setUvcModeState]);
 
-  const handleSelectFanSpeed = useCallback((speed: 'off' | '1' | '2' | '3' | 'turbo') => {
+  const handleSelectFanSpeed = useCallback((speed: 'off' | '1' | '2' | '3') => {
     setFanSpeedState(speed);
   }, [setFanSpeedState]);
 
@@ -777,7 +777,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   <TouchableOpacity
                     style={styles.connectionHelp}
                     activeOpacity={0.8}
-                    onPress={() => setActiveSheet('about')}
+                    onPress={() => setActiveSheet('help')}
                   >
                     <View style={styles.connectionHelpIcon}>
                       <MaterialCommunityIcons
@@ -1284,17 +1284,17 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               <Text style={styles.sheetIntro}>Discover our family of smart environmental products.</Text>
               <View style={styles.productCard}>
                 <View style={styles.productIconWrap}><MaterialCommunityIcons name="air-purifier" size={26} color={dashboardTheme.colors.primaryDark} /></View>
-                <View style={styles.productInfo}><Text style={styles.productName}>AirBuddi Pro</Text><Text style={styles.productDesc}>Advanced air purification with HEPA H13 filter and UV-C sterilization.</Text></View>
+                <View style={styles.productInfo}><Text style={styles.productName}>AirBuddi Max</Text><Text style={styles.productDesc}>Advanced air purification with HEPA H13 filter and UV-C sterilization.</Text></View>
                 <View style={styles.productBadge}><Text style={styles.productBadgeText}>New</Text></View>
               </View>
               <View style={styles.productCard}>
                 <View style={styles.productIconWrap}><MaterialCommunityIcons name="water-outline" size={26} color={dashboardTheme.colors.primaryDark} /></View>
-                <View style={styles.productInfo}><Text style={styles.productName}>WaterBuddi</Text><Text style={styles.productDesc}>Smart water quality monitoring for your home.</Text></View>
+                <View style={styles.productInfo}><Text style={styles.productName}>AirBuddi Mini</Text><Text style={styles.productDesc}>Smart Air quality monitoring  and filtration for your home.</Text></View>
                 <View style={styles.productBadge}><Text style={styles.productBadgeText}>Soon</Text></View>
               </View>
               <View style={styles.productCard}>
                 <View style={styles.productIconWrap}><MaterialCommunityIcons name="flower-outline" size={26} color={dashboardTheme.colors.primaryDark} /></View>
-                <View style={styles.productInfo}><Text style={styles.productName}>SoilBuddi</Text><Text style={styles.productDesc}>Intelligent soil monitoring for healthier plants.</Text></View>
+                <View style={styles.productInfo}><Text style={styles.productName}>AirBuddi</Text><Text style={styles.productDesc}>Intelligent Air monitoring for your home.</Text></View>
                 <View style={styles.productBadge}><Text style={styles.productBadgeText}>Soon</Text></View>
               </View>
               <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>

@@ -23,44 +23,42 @@ type QuickControlsProps = {
   isAutoMode: boolean;
   isSleepMode: boolean;
   isUvc: boolean;
-  fanSpeed?: 'off' | '1' | '2' | '3' | 'turbo';
+  fanSpeed?: 'off' | '1' | '2' | '3';
   onTogglePower: () => void;
   onToggleAutoMode: (value: boolean) => void;
   onToggleSleepMode: (value: boolean) => void;
   onToggleUvc: (value: boolean) => void;
-  onSelectFanSpeed: (speed: 'off' | '1' | '2' | '3' | 'turbo') => void;
+  onSelectFanSpeed: (speed: 'off' | '1' | '2' | '3') => void;
 };
 
-const SPEED_LABELS = ['Off', 'Low', 'Medium', 'High', 'Turbo'] as const;
-const SPEED_MAP: Record<string, 'off' | '1' | '2' | '3' | 'turbo'> = {
+const SPEED_LABELS = ['Off', 'Low', 'Medium', 'High'] as const;
+const SPEED_MAP: Record<string, 'off' | '1' | '2' | '3'> = {
   Off: 'off',
   Low: '1',
   Medium: '2',
-  High: '3',
-  Turbo: 'turbo',
+  High: '3'
 };
 const SPEED_REVERSE_MAP: Record<string, string> = {
   off: 'Off',
   '1': 'Low',
   '2': 'Medium',
-  '3': 'High',
-  turbo: 'Turbo',
+  '3': 'High'
 };
 
 const PRESETS = [
   {
     id: 'fresh',
     label: 'Fresh Air',
-    hint: 'Auto · Turbo speed',
+    hint: 'Auto · High speed',
     icon: 'weather-partly-cloudy',
     auto: true,
     sleep: false,
     uvc: true,
-    speed: 'turbo' as const,
+    speed: '3' as const,
   },
   {
     id: 'sleep',
-    label: 'Quiet Sleep',
+    label: 'Sleep',
     hint: 'Silent · Low noise',
     icon: 'weather-night',
     auto: false,
@@ -85,8 +83,7 @@ const PRESETS = [
 const FAN_DURATIONS: Record<string, number> = {
   '1': 2400,
   '2': 1400,
-  '3': 800,
-  turbo: 380,
+  '3': 800
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -149,12 +146,12 @@ function QuickControlsComponent({
     onToggleAutoMode(preset.auto);
     onToggleSleepMode(preset.sleep);
     onToggleUvc(preset.uvc);
-    onSelectFanSpeed(preset.speed);
+    // onSelectFanSpeed(preset.speed);
   }, [onSelectFanSpeed, onToggleAutoMode, onToggleSleepMode, onToggleUvc]);
 
   const activePresetId = isSleepMode
     ? 'sleep'
-    : isAutoMode && fanSpeed === 'turbo'
+    : isAutoMode && fanSpeed === '3'
     ? 'fresh'
     : isAutoMode && fanSpeed === '3'
     ? 'deep'
@@ -164,8 +161,7 @@ function QuickControlsComponent({
     ? 'Off'
     : isAutoMode
     ? 'Auto'
-    : fanSpeed === 'turbo'
-    ? 'Turbo'
+
     : fanSpeed === '3'
     ? 'High'
     : fanSpeed === '2'
@@ -248,13 +244,13 @@ function QuickControlsComponent({
               if (isSleepMode) onToggleSleepMode(false);
             }}
           />
-          <ModeCard
+          {/* <ModeCard
             iconName="weather-night"
             label="Sleep"
             value={isSleepMode && isPoweredOn}
             disabled={!isPoweredOn}
             onToggle={() => onToggleSleepMode(!isSleepMode)}
-          />
+          /> */}
           <ModeCard
             iconName="shield-sun-outline"
             label="UV-C"
