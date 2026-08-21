@@ -13,7 +13,7 @@ type RootPurificationCardProps = {
 };
 
 export function RootPurificationCard({
-  upperBedChamber = 'Active',
+  upperBedChamber = 'Standby',
   lowerBedChamber = 'Standby',
   onUpperPress,
   onLowerPress,
