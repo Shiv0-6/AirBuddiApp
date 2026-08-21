@@ -23,25 +23,28 @@ type QuickControlsProps = {
   isAutoMode: boolean;
   isSleepMode: boolean;
   isUvc: boolean;
-  fanSpeed?: '1' | '2' | '3' | 'turbo';
+  fanSpeed?: 'off' | '1' | '2' | '3' | 'turbo';
   onTogglePower: () => void;
   onToggleAutoMode: (value: boolean) => void;
   onToggleSleepMode: (value: boolean) => void;
   onToggleUvc: (value: boolean) => void;
-  onSelectFanSpeed: (speed: '1' | '2' | '3' | 'turbo') => void;
+  onSelectFanSpeed: (speed: 'off' | '1' | '2' | '3' | 'turbo') => void;
 };
 
-const SPEED_LABELS = ['Low', 'Medium', 'High'] as const;
-const SPEED_MAP: Record<string, '1' | '2' | '3' | 'turbo'> = {
+const SPEED_LABELS = ['Off', 'Low', 'Medium', 'High', 'Turbo'] as const;
+const SPEED_MAP: Record<string, 'off' | '1' | '2' | '3' | 'turbo'> = {
+  Off: 'off',
   Low: '1',
   Medium: '2',
   High: '3',
+  Turbo: 'turbo',
 };
 const SPEED_REVERSE_MAP: Record<string, string> = {
+  off: 'Off',
   '1': 'Low',
   '2': 'Medium',
   '3': 'High',
-  turbo: 'High',
+  turbo: 'Turbo',
 };
 
 const PRESETS = [
@@ -104,11 +107,13 @@ function QuickControlsComponent({
   const ringOpacity = useSharedValue(0.15);
   const rotation = useSharedValue(0);
 
+  const effectiveFanSpeed = isSleepMode ? 'off' : fanSpeed;
+
   useEffect(() => {
-    if (isPoweredOn) {
+    if (isPoweredOn && effectiveFanSpeed !== 'off') {
       ringScale.value = withRepeat(withTiming(1.15, { duration: 2000 }), -1, true);
       ringOpacity.value = withRepeat(withTiming(0.4, { duration: 2000 }), -1, true);
-      const duration = FAN_DURATIONS[fanSpeed] ?? 1400;
+      const duration = FAN_DURATIONS[effectiveFanSpeed] ?? 1400;
       rotation.value = withRepeat(
         withTiming(360, { duration, easing: Easing.linear }),
         -1,
@@ -119,7 +124,7 @@ function QuickControlsComponent({
       ringOpacity.value = withTiming(0.15, { duration: 500 });
       rotation.value = withTiming(0, { duration: 1000 });
     }
-  }, [isPoweredOn, fanSpeed, ringScale, ringOpacity, rotation]);
+  }, [isPoweredOn, effectiveFanSpeed, ringScale, ringOpacity, rotation]);
 
   const outerRingStyle = useAnimatedStyle(() => ({
     transform: [{ scale: ringScale.value }],
@@ -130,12 +135,15 @@ function QuickControlsComponent({
     transform: [{ rotate: `${rotation.value}deg` }],
   }));
 
-  const activeSpeedLabel = SPEED_REVERSE_MAP[fanSpeed] ?? 'Medium';
+  const activeSpeedLabel = SPEED_REVERSE_MAP[effectiveFanSpeed] ?? 'Medium';
 
   const handleSpeedPress = useCallback((label: string) => {
     const mapped = SPEED_MAP[label];
-    if (mapped) { onSelectFanSpeed(mapped); }
-  }, [onSelectFanSpeed]);
+    if (mapped) {
+      onToggleAutoMode(false);
+      onSelectFanSpeed(mapped);
+    }
+  }, [onSelectFanSpeed, onToggleAutoMode]);
 
   const handlePresetPress = useCallback((preset: (typeof PRESETS)[number]) => {
     onToggleAutoMode(preset.auto);
@@ -152,11 +160,13 @@ function QuickControlsComponent({
     ? 'deep'
     : null;
 
-  const fanSpeedText = !isPoweredOn
+  const fanSpeedText = !isPoweredOn || effectiveFanSpeed === 'off'
     ? 'Off'
     : isAutoMode
     ? 'Auto'
-    : fanSpeed === 'turbo' || fanSpeed === '3'
+    : fanSpeed === 'turbo'
+    ? 'Turbo'
+    : fanSpeed === '3'
     ? 'High'
     : fanSpeed === '2'
     ? 'Medium'
@@ -239,8 +249,8 @@ function QuickControlsComponent({
             }}
           />
           <ModeCard
-            iconName="fan-off"
-            label="Fan Off"
+            iconName="weather-night"
+            label="Sleep"
             value={isSleepMode && isPoweredOn}
             disabled={!isPoweredOn}
             onToggle={() => onToggleSleepMode(!isSleepMode)}
@@ -255,7 +265,7 @@ function QuickControlsComponent({
         </View>
       </View>
 
-      {/* ── Fan Speed ─────────────────────────────────────────── */}
+      {/* ── Fan Speed & Power Section ───────────────────────────── */}
       <View style={styles.section}>
         <View style={styles.fanHeader}>
           <View style={styles.fanIconWrapper}>
@@ -263,12 +273,12 @@ function QuickControlsComponent({
               <MaterialCommunityIcons
                 name="fan"
                 size={22}
-                color={isPoweredOn ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted}
+                color={isPoweredOn && effectiveFanSpeed !== 'off' ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted}
               />
             </Animated.View>
           </View>
           <View>
-            <Text style={styles.fanTitle}>Fan Speed</Text>
+            <Text style={styles.fanTitle}>Fan Section</Text>
             <Text style={styles.fanLabel}>{fanSpeedText}</Text>
           </View>
         </View>

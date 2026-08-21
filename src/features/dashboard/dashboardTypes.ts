@@ -12,7 +12,7 @@ export interface DashboardDevice {
   /** Optional zone-based light state for controlled testing of device commands. */
   lightZones?: Record<string, boolean>;
   lastUpdated: string;
-  fanSpeed?: '1' | '2' | '3' | 'turbo';
+  fanSpeed?: 'off' | '1' | '2' | '3' | 'turbo';
   deviceId?: string;
   lastSeenAt?: string;
   sleepMode?: boolean;

@@ -73,12 +73,13 @@ function AppContent() {
 
   const handleSignOut = useCallback(async () => {
     try {
-      const keys = await AsyncStorage.getAllKeys();
-      await AsyncStorage.multiRemove(keys);
+      await AsyncStorage.clear();
+      await AsyncStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch (error) {
+      console.error('[AirBuddi] Storage clear on sign out failed:', error);
+    } finally {
       store.dispatch(resetDashboard(undefined));
       setIsSignedIn(false);
-    } catch (error) {
-      console.error('[AirBuddi] Sign out failed:', error);
     }
   }, []);
 

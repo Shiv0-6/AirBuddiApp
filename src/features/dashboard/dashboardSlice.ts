@@ -138,7 +138,7 @@ function mergeEsp32Telemetry(
       uvc: (telemetry as any).uvc ?? currentDevice?.uvc ?? true,
       lightOn: (telemetry as any).lightOn ?? (telemetry as any).light ?? Object.values(nextLightZones).some(Boolean) ?? currentDevice?.lightOn ?? false,
       lightZones: nextLightZones,
-      upperBedChamber: (telemetry as any).upperBedChamber ?? currentDevice?.upperBedChamber ?? 'Active',
+      upperBedChamber: (telemetry as any).upperBedChamber ?? currentDevice?.upperBedChamber ?? 'Standby',
       lowerBedChamber: (telemetry as any).lowerBedChamber ?? currentDevice?.lowerBedChamber ?? 'Standby',
     },
 
@@ -187,9 +187,15 @@ const dashboardSlice = createSlice({
         state.device.lastUpdated = 'Just now';
       }
     },
-    setFanSpeed(state, action: PayloadAction<'1' | '2' | '3' | 'turbo'>) {
+    setFanSpeed(state, action: PayloadAction<'off' | '1' | '2' | '3' | 'turbo'>) {
       if (state.device) {
         state.device.fanSpeed = action.payload;
+        state.device.mode = 'manual';
+        if (action.payload === 'off') {
+          state.device.sleepMode = true;
+        } else {
+          state.device.sleepMode = false;
+        }
         state.device.lastUpdated = 'Just now';
       }
     },
@@ -227,7 +233,7 @@ const dashboardSlice = createSlice({
     },
 
     cycleLocalFanSpeed(state) {
-      const speeds: ('1' | '2' | '3' | 'turbo')[] = ['1', '2', '3', 'turbo'];
+      const speeds: ('off' | '1' | '2' | '3' | 'turbo')[] = ['off', '1', '2', '3', 'turbo'];
       if (!state.device) {
         return;
       }
@@ -236,6 +242,7 @@ const dashboardSlice = createSlice({
       const currentIndex = speeds.indexOf(currentSpeed);
       const nextIndex = (currentIndex + 1) % speeds.length;
       state.device.fanSpeed = speeds[nextIndex];
+      state.device.mode = 'manual';
       state.device.lastUpdated = 'Just now';
     },
     applyTelemetry(state, action: PayloadAction<DashboardTelemetryMessage>) {

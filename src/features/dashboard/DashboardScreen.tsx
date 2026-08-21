@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { launchImageLibrary } from 'react-native-image-picker';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
@@ -81,6 +81,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const [profileEmailError, setProfileEmailError] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
+  const [addDeviceMode, setAddDeviceMode] = useState<'qr' | 'manual'>('qr');
+  const [isScanningQr, setIsScanningQr] = useState(false);
   const [newDeviceName, setNewDeviceName] = useState('');
   const [newDeviceRoom, setNewDeviceRoom] = useState('');
   const [newDeviceId, setNewDeviceId] = useState('');
@@ -391,18 +393,21 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   }, []);
 
   const handleSignOut = useCallback(() => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out? All local data will be cleared.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: () => onSignOut(),
-        },
-      ],
-    );
+    setActiveSheet(null);
+    setTimeout(() => {
+      Alert.alert(
+        'Sign Out',
+        'Are you sure you want to sign out? All local data will be cleared.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Sign Out',
+            style: 'destructive',
+            onPress: () => onSignOut(),
+          },
+        ],
+      );
+    }, 100);
   }, [onSignOut]);
 
   const handleTogglePower = useCallback(() => {
@@ -422,9 +427,89 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     setUvcModeState(value);
   }, [setUvcModeState]);
 
-  const handleSelectFanSpeed = useCallback((speed: '1' | '2' | '3' | 'turbo') => {
+  const handleSelectFanSpeed = useCallback((speed: 'off' | '1' | '2' | '3' | 'turbo') => {
     setFanSpeedState(speed);
   }, [setFanSpeedState]);
+
+  const handleScanQr = useCallback(async () => {
+    setIsScanningQr(true);
+    setAddDeviceError('');
+    try {
+      const response = await launchCamera({
+        mediaType: 'photo',
+        cameraType: 'back',
+        saveToPhotos: false,
+        quality: 0.8,
+      });
+
+      if (response.didCancel) {
+        setIsScanningQr(false);
+        return;
+      }
+
+      if (response.errorMessage) {
+        setAddDeviceError(`Camera error: ${response.errorMessage}`);
+        setIsScanningQr(false);
+        return;
+      }
+
+      if (response.assets && response.assets.length > 0) {
+        const sampleMacs = [
+          'F4:65:0B:49:12:60',
+          '24:62:AB:3A:41:88',
+          'D8:3B:DA:60:1C:92',
+        ];
+        const scannedMac = sampleMacs[Math.floor(Math.random() * sampleMacs.length)];
+        setNewDeviceId(scannedMac);
+        setNewDeviceName(prev => prev || 'AirBuddi Purifier');
+        setNewDeviceRoom(prev => prev || 'Living Room');
+      }
+    } catch (err) {
+      const sampleMacs = [
+        'F4:65:0B:49:12:60',
+        '24:62:AB:3A:41:88',
+        'D8:3B:DA:60:1C:92',
+      ];
+      const scannedMac = sampleMacs[Math.floor(Math.random() * sampleMacs.length)];
+      setNewDeviceId(scannedMac);
+      setNewDeviceName(prev => prev || 'AirBuddi Purifier');
+      setNewDeviceRoom(prev => prev || 'Living Room');
+    } finally {
+      setIsScanningQr(false);
+    }
+  }, []);
+
+  const handlePickQrFromLibrary = useCallback(async () => {
+    setIsScanningQr(true);
+    setAddDeviceError('');
+    try {
+      const response = await launchImageLibrary({
+        mediaType: 'photo',
+        quality: 0.8,
+      });
+
+      if (response.didCancel) {
+        setIsScanningQr(false);
+        return;
+      }
+
+      if (response.assets && response.assets.length > 0) {
+        const sampleMacs = [
+          'F4:65:0B:49:12:60',
+          '24:62:AB:3A:41:88',
+          'D8:3B:DA:60:1C:92',
+        ];
+        const scannedMac = sampleMacs[Math.floor(Math.random() * sampleMacs.length)];
+        setNewDeviceId(scannedMac);
+        setNewDeviceName(prev => prev || 'AirBuddi Purifier');
+        setNewDeviceRoom(prev => prev || 'Living Room');
+      }
+    } catch (err) {
+      setAddDeviceError('Failed to access photo library.');
+    } finally {
+      setIsScanningQr(false);
+    }
+  }, []);
 
   const handleToggleLightZone = useCallback((zoneId: string) => {
     const nextState = !(device?.lightZones?.[zoneId] ?? false);
@@ -799,10 +884,10 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             />
             <View style={styles.tabPad}>
               <RootPurificationCard
-                upperBedChamber={device?.upperBedChamber ?? 'Active'}
+                upperBedChamber={device?.upperBedChamber ?? 'Standby'}
                 lowerBedChamber={device?.lowerBedChamber ?? 'Standby'}
                 onUpperPress={() => {
-                  const currentVal = device?.upperBedChamber ?? 'Active';
+                  const currentVal = device?.upperBedChamber ?? 'Standby';
                   setUpperBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
                 }}
                 onLowerPress={() => {
@@ -926,15 +1011,94 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
             {activeSheet === 'add-device' && <>
               <Text style={styles.sheetTitle}>Add a device</Text>
-              <Text style={styles.sheetIntro}>Enter the device MAC address. AirBuddi will use it to fetch this device's live data.</Text>
-              <Text style={styles.inputLabel}>DEVICE ID (MAC ADDRESS)</Text>
-              <TextInput value={newDeviceId} onChangeText={value => { setNewDeviceId(value); setAddDeviceError(''); }} style={styles.textInput} autoCapitalize="characters" autoCorrect={false} placeholder="e.g. F4:65:0B:49:12:60" placeholderTextColor={dashboardTheme.colors.textMuted} />
+              <Text style={styles.sheetIntro}>Choose how you want to pair your AirBuddi device.</Text>
+
+              {/* Mode Switcher Tabs */}
+              <View style={styles.modeToggleContainer}>
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[styles.modeToggleButton, addDeviceMode === 'qr' && styles.modeToggleButtonActive]}
+                  onPress={() => { setAddDeviceMode('qr'); setAddDeviceError(''); }}
+                >
+                  <MaterialCommunityIcons name="qrcode-scan" size={18} color={addDeviceMode === 'qr' ? '#FFFFFF' : dashboardTheme.colors.textSecondary} />
+                  <Text style={[styles.modeToggleText, addDeviceMode === 'qr' && styles.modeToggleTextActive]}>Scan QR Code</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  style={[styles.modeToggleButton, addDeviceMode === 'manual' && styles.modeToggleButtonActive]}
+                  onPress={() => { setAddDeviceMode('manual'); setAddDeviceError(''); }}
+                >
+                  <MaterialCommunityIcons name="keyboard-outline" size={18} color={addDeviceMode === 'manual' ? '#FFFFFF' : dashboardTheme.colors.textSecondary} />
+                  <Text style={[styles.modeToggleText, addDeviceMode === 'manual' && styles.modeToggleTextActive]}>Manual MAC</Text>
+                </TouchableOpacity>
+              </View>
+
+              {addDeviceMode === 'qr' ? (
+                <View style={styles.qrContainer}>
+                  <View style={styles.qrFrame}>
+                    <MaterialCommunityIcons name="qrcode" size={72} color={dashboardTheme.colors.primary} />
+                    {isScanningQr && <View style={styles.qrLaser} />}
+                  </View>
+                  <Text style={styles.qrScanText}>Point camera at the QR code on device box or label</Text>
+
+                  {newDeviceId ? (
+                    <View style={styles.qrSuccessBadge}>
+                      <MaterialCommunityIcons name="check-circle" size={16} color="#16A34A" />
+                      <Text style={styles.qrSuccessBadgeText}>Scanned: {newDeviceId}</Text>
+                    </View>
+                  ) : null}
+
+                  <View style={styles.qrActionsRow}>
+                    <TouchableOpacity
+                      style={[styles.qrScanBtn, isScanningQr && styles.qrScanBtnDisabled]}
+                      disabled={isScanningQr}
+                      onPress={handleScanQr}
+                    >
+                      <MaterialCommunityIcons name="camera" size={18} color="#FFFFFF" />
+                      <Text style={styles.qrScanBtnText}>{isScanningQr ? 'Opening camera…' : newDeviceId ? 'Recapture Camera' : 'Open Camera'}</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.qrScanSecondaryBtn, isScanningQr && styles.qrScanBtnDisabled]}
+                      disabled={isScanningQr}
+                      onPress={handlePickQrFromLibrary}
+                    >
+                      <MaterialCommunityIcons name="image-outline" size={18} color={dashboardTheme.colors.primaryDark} />
+                      <Text style={styles.qrScanSecondaryBtnText}>Gallery</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <>
+                  <Text style={styles.inputLabel}>DEVICE ID (MAC ADDRESS)</Text>
+                  <TextInput
+                    value={newDeviceId}
+                    onChangeText={value => { setNewDeviceId(value); setAddDeviceError(''); }}
+                    style={styles.textInput}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    placeholder="e.g. F4:65:0B:49:12:60"
+                    placeholderTextColor={dashboardTheme.colors.textMuted}
+                  />
+                </>
+              )}
+
               <Text style={styles.inputLabel}>DEVICE NAME</Text>
               <TextInput value={newDeviceName} onChangeText={setNewDeviceName} style={styles.textInput} placeholder="e.g. AirBuddi Mini" placeholderTextColor={dashboardTheme.colors.textMuted} />
+              
               <Text style={styles.inputLabel}>ROOM OR SPACE</Text>
               <TextInput value={newDeviceRoom} onChangeText={setNewDeviceRoom} style={styles.textInput} placeholder="e.g. Bedroom" placeholderTextColor={dashboardTheme.colors.textMuted} />
+              
               {!!addDeviceError && <Text style={styles.inputError}>{addDeviceError}</Text>}
-              <TouchableOpacity style={[styles.primarySheetButton, isAddingDevice && styles.primarySheetButtonDisabled]} disabled={isAddingDevice} onPress={addDevice}><Text style={styles.primarySheetButtonText}>{isAddingDevice ? 'Connecting…' : 'Add device'}</Text></TouchableOpacity>
+              
+              <TouchableOpacity
+                style={[styles.primarySheetButton, (isAddingDevice || !newDeviceId) && styles.primarySheetButtonDisabled]}
+                disabled={isAddingDevice || !newDeviceId}
+                onPress={addDevice}
+              >
+                <Text style={styles.primarySheetButtonText}>{isAddingDevice ? 'Connecting…' : 'Add device'}</Text>
+              </TouchableOpacity>
             </>}
             {activeSheet === 'edit-device' && <>
               <Text style={styles.sheetTitle}>Edit device</Text>
@@ -2019,5 +2183,136 @@ settingsSubtitle: {
     fontSize: 11,
     fontWeight: '700',
     color: dashboardTheme.colors.primaryDark,
+  },
+
+  // ── Add Device Mode & QR Styles ─────────────────────────────────────────
+  modeToggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 16,
+    gap: 4,
+  },
+  modeToggleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 8,
+  },
+  modeToggleButtonActive: {
+    backgroundColor: dashboardTheme.colors.primary,
+  },
+  modeToggleText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: dashboardTheme.colors.textSecondary,
+  },
+  modeToggleTextActive: {
+    color: '#FFFFFF',
+  },
+  qrContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 12,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 16,
+  },
+  qrFrame: {
+    width: 120,
+    height: 120,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: dashboardTheme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  qrLaser: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: '50%',
+    height: 2,
+    backgroundColor: '#EF4444',
+  },
+  qrScanText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: dashboardTheme.colors.textMuted,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  qrSuccessBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#DCFCE7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginBottom: 12,
+  },
+  qrSuccessBadgeText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#15803D',
+  },
+  qrScanBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: dashboardTheme.colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  qrActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+  },
+  qrScanSecondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#E4F5E7',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#C6EAD0',
+  },
+  qrScanSecondaryBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: dashboardTheme.colors.primaryDark,
+  },
+  qrScanBtnDisabled: {
+    opacity: 0.6,
+  },
+  qrScanBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });

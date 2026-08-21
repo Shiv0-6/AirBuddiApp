@@ -176,11 +176,11 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
       await sendEspCommands([nextUvc ? 'uvc_on' : 'uvc_off']);
     },
 
-    setFanSpeedState: async (speed: '1' | '2' | '3' | 'turbo') => {
+    setFanSpeedState: async (speed: 'off' | '1' | '2' | '3' | 'turbo') => {
       dispatch(setFanSpeed(speed));
       await sendLegacyCommand('fanSpeed', speed);
       // EDIT THIS ARRAY for the fan speed button.
-      // Example: ['fan_1'], ['fan_2'], ['fan_3'], ['fan_turbo'], or multiple messages.
+      // Example: ['fan_off'], ['fan_1'], ['fan_2'], ['fan_3'], ['fan_turbo'], or multiple messages.
       await sendEspCommands([`fan_${speed}`]);
     },
 
