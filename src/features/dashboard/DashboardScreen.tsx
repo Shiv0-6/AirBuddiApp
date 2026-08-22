@@ -900,12 +900,12 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   const currentVal = device?.lowerBedChamber ?? 'Standby';
                   setLowerBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
                 }}
-                disabled={device?.power !== 'on'}
+                disabled={device?.power !== 'on' || device?.mode === 'auto'}
               />
               <LightControlPanel
                 lights={lightZones}
                 onToggleLight={handleToggleLightZone}
-                disabled={device?.power !== 'on'}
+                disabled={device?.power !== 'on' || device?.mode === 'auto'}
               />
             </View>
           </Animated.View>

@@ -1,4 +1,4 @@
-import { applyTelemetry, dashboardReducer } from '../src/features/dashboard/dashboardSlice';
+import { applyTelemetry, dashboardReducer, setFanSpeed } from '../src/features/dashboard/dashboardSlice';
 import { toDashboardTelemetryMessage } from '../src/services/awsIot/awsTelemetryApiClient';
 
 describe('dashboard reducer telemetry updates', () => {
@@ -112,5 +112,25 @@ describe('dashboard reducer telemetry updates', () => {
     expect(offlineState.connection).toBe('offline');
     expect(offlineState.aqi).toBeNull();
     expect(offlineState.sensors).toBeNull();
+  });
+
+  it('turns the fan off without enabling sleep mode', () => {
+    const initialState = dashboardReducer(undefined, { type: '@@INIT', payload: undefined });
+    const connectedState = dashboardReducer(initialState, applyTelemetry({
+      connection: 'connected',
+      esp32: {
+        deviceId: 'test-device',
+        power: 'on',
+        mode: 'manual',
+        fanSpeed: '2',
+        sleepMode: false,
+        sensors: [],
+      },
+    }));
+
+    const nextState = dashboardReducer(connectedState, setFanSpeed('off'));
+
+    expect(nextState.device?.fanSpeed).toBe('off');
+    expect(nextState.device?.sleepMode).toBe(false);
   });
 });

@@ -133,6 +133,7 @@ function QuickControlsComponent({
   }));
 
   const activeSpeedLabel = SPEED_REVERSE_MAP[effectiveFanSpeed] ?? 'Medium';
+  const manualControlsDisabled = !isPoweredOn || isAutoMode;
 
   const handleSpeedPress = useCallback((label: string) => {
     const mapped = SPEED_MAP[label];
@@ -202,9 +203,9 @@ function QuickControlsComponent({
               <TouchableOpacity
                 key={preset.id}
                 activeOpacity={0.8}
-                disabled={!isPoweredOn}
+                disabled={manualControlsDisabled}
                 onPress={() => handlePresetPress(preset)}
-                style={[styles.presetCard, !isPoweredOn && styles.controlDisabled, isActive && styles.presetCardActive]}
+                style={[styles.presetCard, manualControlsDisabled && styles.controlDisabled, isActive && styles.presetCardActive]}
               >
                 <MaterialCommunityIcons
                   name={preset.icon}
@@ -243,19 +244,12 @@ function QuickControlsComponent({
               onToggleAutoMode(false);
               if (isSleepMode) onToggleSleepMode(false);
             }}
-          />
-          {/* <ModeCard
-            iconName="weather-night"
-            label="Sleep"
-            value={isSleepMode && isPoweredOn}
-            disabled={!isPoweredOn}
-            onToggle={() => onToggleSleepMode(!isSleepMode)}
-          /> */}
+          />  
           <ModeCard
             iconName="shield-sun-outline"
             label="UV-C"
             value={isUvc && isPoweredOn}
-            disabled={!isPoweredOn}
+            disabled={manualControlsDisabled}
             onToggle={() => onToggleUvc(!isUvc)}
           />
         </View>
@@ -286,11 +280,11 @@ function QuickControlsComponent({
               <TouchableOpacity
                 key={label}
                 activeOpacity={0.75}
-                disabled={!isPoweredOn}
+                disabled={manualControlsDisabled}
                 onPress={() => handleSpeedPress(label)}
                 style={[
                   styles.speedBtn,
-                  !isPoweredOn && styles.speedBtnDisabled,
+                  manualControlsDisabled && styles.speedBtnDisabled,
                   isActive && styles.speedBtnActive,
                 ]}
               >

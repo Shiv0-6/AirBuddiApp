@@ -191,11 +191,6 @@ const dashboardSlice = createSlice({
       if (state.device) {
         state.device.fanSpeed = action.payload;
         state.device.mode = 'manual';
-        if (action.payload === 'off') {
-          state.device.sleepMode = true;
-        } else {
-          state.device.sleepMode = false;
-        }
         state.device.lastUpdated = 'Just now';
       }
     },
