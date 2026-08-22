@@ -46,7 +46,7 @@ export function RootPurificationCard({
       <View style={styles.gridContainer}>
         {/* Upper Bed Chamber Tile */}
         <ChamberGridTile
-          label="Upper Bed Chamber"
+          label="Upper Chamber"
           subtitle="Top soil bio-bed"
           icon="flower-tulip-outline"
           isActive={isUpperActive}
@@ -56,7 +56,7 @@ export function RootPurificationCard({
 
         {/* Lower Bed Chamber Tile */}
         <ChamberGridTile
-          label="Lower Bed Chamber"
+          label="Lower Chamber"
           subtitle="Sub-root bio-bed"
           icon="layers-triple-outline"
           isActive={isLowerActive}

@@ -95,7 +95,7 @@ function ZoneTile({
         style={[styles.tile, disabled && styles.tileDisabled, light.isOn && styles.tileOn]}
         accessibilityLabel={`Toggle ${light.label} light zone ${index + 1}`}
       >
-        {/* Top row: icon + ON/OFF badge */}
+        {/* Top row: light icon */}
         <View style={styles.tileTopRow}>
           <View style={[styles.iconCircle, light.isOn && styles.iconCircleOn]}>
             <MaterialCommunityIcons
@@ -103,12 +103,6 @@ function ZoneTile({
               size={22}
               color={light.isOn ? '#fff' : dashboardTheme.colors.textMuted}
             />
-          </View>
-          <View style={[styles.badge, light.isOn ? styles.badgeOn : styles.badgeOff]}>
-            <View style={[styles.badgeDot, light.isOn ? styles.badgeDotOn : styles.badgeDotOff]} />
-            <Text style={[styles.badgeText, light.isOn ? styles.badgeTextOn : styles.badgeTextOff]}>
-              {light.isOn ? 'ON' : 'OFF'}
-            </Text>
           </View>
         </View>
 
@@ -125,9 +119,6 @@ function ZoneTile({
             size={18}
             color={light.isOn ? '#fff' : dashboardTheme.colors.textMuted}
           />
-          <Text style={[styles.powerBtnText, light.isOn && styles.powerBtnTextOn]}>
-            {light.isOn ? 'Stop' : 'Start'}
-          </Text>
         </View>
       </TouchableOpacity>
     </Animated.View>
@@ -320,39 +311,6 @@ const styles = StyleSheet.create({
     borderColor: dashboardTheme.colors.primary,
   },
 
-  // ON/OFF badge
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 1,
-  },
-  badgeOn: {
-    backgroundColor: dashboardTheme.colors.primarySoft,
-    borderColor: dashboardTheme.colors.primary,
-  },
-  badgeOff: {
-    backgroundColor: dashboardTheme.colors.surface,
-    borderColor: dashboardTheme.colors.border,
-  },
-  badgeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  badgeDotOn: { backgroundColor: dashboardTheme.colors.primary },
-  badgeDotOff: { backgroundColor: dashboardTheme.colors.textMuted },
-  badgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-  },
-  badgeTextOn: { color: dashboardTheme.colors.primary },
-  badgeTextOff: { color: dashboardTheme.colors.textMuted },
-
   // Labels
   tileLabel: {
     color: dashboardTheme.colors.textSecondary,
@@ -384,14 +342,6 @@ const styles = StyleSheet.create({
   powerBtnOn: {
     backgroundColor: dashboardTheme.colors.primary,
     borderColor: dashboardTheme.colors.primary,
-  },
-  powerBtnText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: dashboardTheme.colors.textMuted,
-  },
-  powerBtnTextOn: {
-    color: '#fff',
   },
 
 });

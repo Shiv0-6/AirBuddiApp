@@ -52,19 +52,8 @@ const PRESETS = [
     hint: 'Auto · High speed',
     icon: 'weather-partly-cloudy',
     auto: true,
-    sleep: false,
     uvc: true,
     speed: '3' as const,
-  },
-  {
-    id: 'sleep',
-    label: 'Sleep',
-    hint: 'Silent · Low noise',
-    icon: 'weather-night',
-    auto: false,
-    sleep: true,
-    uvc: false,
-    speed: '1' as const,
   },
   {
     id: 'deep',
@@ -72,7 +61,6 @@ const PRESETS = [
     hint: 'Max filtration',
     icon: 'shield-check',
     auto: true,
-    sleep: false,
     uvc: true,
     speed: '3' as const,
   },
@@ -145,14 +133,11 @@ function QuickControlsComponent({
 
   const handlePresetPress = useCallback((preset: (typeof PRESETS)[number]) => {
     onToggleAutoMode(preset.auto);
-    onToggleSleepMode(preset.sleep);
     onToggleUvc(preset.uvc);
     // onSelectFanSpeed(preset.speed);
-  }, [onSelectFanSpeed, onToggleAutoMode, onToggleSleepMode, onToggleUvc]);
+  }, [onToggleAutoMode, onToggleUvc]);
 
-  const activePresetId = isSleepMode
-    ? 'sleep'
-    : isAutoMode && fanSpeed === '3'
+  const activePresetId = isAutoMode && fanSpeed === '3'
     ? 'fresh'
     : isAutoMode && fanSpeed === '3'
     ? 'deep'
@@ -193,7 +178,41 @@ function QuickControlsComponent({
         </Text>
       </View>
 
-      {/* ── Focus Presets ─────────────────────────────────────── */}
+      {/* ── Operating Modes ──────────────────────────────────── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Mode</Text>
+        <View style={styles.modesRow}>
+          <ModeCard
+            iconName="auto-fix"
+            label="Auto"
+            value={isAutoMode && isPoweredOn}
+            disabled={!isPoweredOn}
+            onToggle={() => onToggleAutoMode(true)}
+          />
+          <ModeCard
+            iconName="gesture-tap-button"
+            label="Manual"
+            value={!isAutoMode && !isSleepMode && isPoweredOn}
+            disabled={!isPoweredOn}
+            onToggle={() => {
+              onToggleAutoMode(false);
+              if (isSleepMode) onToggleSleepMode(false);
+            }}
+          />
+          <ModeCard
+            iconName="weather-night"
+            label="Sleep"
+            value={isSleepMode && isPoweredOn}
+            disabled={!isPoweredOn}
+            onToggle={() => {
+              onToggleAutoMode(false);
+              onToggleSleepMode(!isSleepMode);
+            }}
+          />
+        </View>
+      </View>
+
+      {/* ── Focus Presets & UV-C ───────────────────────────────── */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Presets</Text>
         <View style={styles.presetGrid}>
@@ -221,37 +240,28 @@ function QuickControlsComponent({
               </TouchableOpacity>
             );
           })}
-        </View>
-      </View>
-
-      {/* ── Operating Modes & Feature Controls ───────────────── */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Mode & Controls</Text>
-        <View style={styles.modesRow}>
-          <ModeCard
-            iconName="auto-fix"
-            label="Auto"
-            value={isAutoMode && isPoweredOn}
-            disabled={!isPoweredOn}
-            onToggle={() => onToggleAutoMode(true)}
-          />
-          <ModeCard
-            iconName="gesture-tap-button"
-            label="Manual"
-            value={!isAutoMode && !isSleepMode && isPoweredOn}
-            disabled={!isPoweredOn}
-            onToggle={() => {
-              onToggleAutoMode(false);
-              if (isSleepMode) onToggleSleepMode(false);
-            }}
-          />  
-          <ModeCard
-            iconName="shield-sun-outline"
-            label="UV-C"
-            value={isUvc && isPoweredOn}
+          <TouchableOpacity
+            activeOpacity={0.8}
             disabled={manualControlsDisabled}
-            onToggle={() => onToggleUvc(!isUvc)}
-          />
+            onPress={() => onToggleUvc(!isUvc)}
+            style={[
+              styles.presetCard,
+              manualControlsDisabled && styles.controlDisabled,
+              isUvc && isPoweredOn && styles.presetCardActive,
+            ]}
+          >
+            <MaterialCommunityIcons
+              name="shield-sun-outline"
+              size={24}
+              color={isUvc && isPoweredOn ? '#FFFFFF' : dashboardTheme.colors.primary}
+            />
+            <Text style={[styles.presetLabel, isUvc && isPoweredOn && styles.presetLabelActive]} numberOfLines={1}>
+              UV-C
+            </Text>
+            <Text style={[styles.presetHintText, isUvc && isPoweredOn && styles.presetHintTextActive]} numberOfLines={1}>
+              {isUvc && isPoweredOn ? 'Active' : 'Off'}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -281,6 +291,8 @@ function QuickControlsComponent({
                 key={label}
                 activeOpacity={0.75}
                 disabled={manualControlsDisabled}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: manualControlsDisabled, selected: isActive }}
                 onPress={() => handleSpeedPress(label)}
                 style={[
                   styles.speedBtn,
@@ -315,6 +327,8 @@ function ModeCard({ iconName, label, value, disabled = false, onToggle }: ModeCa
     <TouchableOpacity
       activeOpacity={0.75}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled, selected: value }}
       onPress={onToggle}
       style={[modeStyles.card, disabled && modeStyles.cardDisabled, value && modeStyles.cardActive]}
     >
@@ -505,8 +519,8 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   speedBtnActive: {
-    borderColor: dashboardTheme.colors.primary,
-    backgroundColor: dashboardTheme.colors.primarySoft,
+    borderColor: dashboardTheme.colors.primaryDark,
+    backgroundColor: dashboardTheme.colors.primaryDark,
   },
   speedBtnText: {
     fontSize: 14,
@@ -514,7 +528,7 @@ const styles = StyleSheet.create({
     color: dashboardTheme.colors.textSecondary,
   },
   speedBtnTextActive: {
-    color: dashboardTheme.colors.primaryDark,
+    color: '#FFFFFF',
   },
 });
 
@@ -531,8 +545,8 @@ const modeStyles = StyleSheet.create({
     ...dashboardTheme.shadows.soft,
   },
   cardActive: {
-    borderColor: dashboardTheme.colors.primary,
-    backgroundColor: dashboardTheme.colors.primarySoft,
+    borderColor: dashboardTheme.colors.primaryDark,
+    backgroundColor: dashboardTheme.colors.primaryDark,
   },
   cardDisabled: { opacity: 0.45 },
   iconWrap: {
@@ -552,7 +566,7 @@ const modeStyles = StyleSheet.create({
     color: dashboardTheme.colors.textSecondary,
   },
   labelActive: {
-    color: dashboardTheme.colors.primaryDark,
+    color: '#FFFFFF',
   },
   indicator: {
     width: 4,
@@ -561,6 +575,6 @@ const modeStyles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   indicatorActive: {
-    backgroundColor: dashboardTheme.colors.primary,
+    backgroundColor: '#FFFFFF',
   },
 });

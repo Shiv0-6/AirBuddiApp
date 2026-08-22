@@ -30,7 +30,7 @@ describe('QuickControls UI', () => {
     const textContent = tree!.root.findAllByType(Text).map(node => node.props.children);
     const flattenedText = textContent.flat().join(' ');
 
-    expect(flattenedText).toContain('Active Presets');
+    expect(flattenedText).toContain('Presets');
     expect(flattenedText).toContain('Fresh Air');
     expect(flattenedText).toContain('Auto');
     expect(flattenedText).toContain('Manual');
