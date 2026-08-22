@@ -63,9 +63,9 @@ describe('QuickControls UI', () => {
     expect(flattenedText).toContain('Ambient');
     expect(flattenedText).toContain('Task');
     expect(flattenedText).toContain('Accent');
-    expect(flattenedText).toContain('Zone');
-    expect(flattenedText).toContain('Start');
-    expect(flattenedText).toContain('Stop');
+    expect(flattenedText).not.toContain('Zone');
+    expect(flattenedText).not.toContain('Start');
+    expect(flattenedText).not.toContain('Stop');
   });
 
   it('shows upper and lower bed chambers for root purification', () => {

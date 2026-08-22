@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import {
   Animated,
   StyleSheet,
@@ -36,35 +36,7 @@ function ZoneTile({
   onToggleLight: (id: string) => void;
   disabled: boolean;
 }) {
-  // Glow pulse animation when ON
-  const glowAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    if (light.isOn) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(glowAnim, {
-            toValue: 1,
-            duration: 900,
-            useNativeDriver: true,
-          }),
-          Animated.timing(glowAnim, {
-            toValue: 0.4,
-            duration: 900,
-            useNativeDriver: true,
-          }),
-        ]),
-      ).start();
-    } else {
-      glowAnim.stopAnimation();
-      Animated.timing(glowAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [light.isOn, glowAnim]);
 
   const handlePress = () => {
     if (disabled) { return; }
@@ -78,16 +50,6 @@ function ZoneTile({
 
   return (
     <Animated.View style={[styles.tileWrap, { transform: [{ scale: scaleAnim }] }]}>
-      {/* Glow halo behind card when ON */}
-      {light.isOn && (
-        <Animated.View
-          style={[
-            styles.glowHalo,
-            { opacity: glowAnim },
-          ]}
-        />
-      )}
-
       <TouchableOpacity
         activeOpacity={0.85}
         disabled={disabled}
@@ -101,7 +63,7 @@ function ZoneTile({
             <MaterialCommunityIcons
               name={light.isOn ? 'lightbulb-on' : 'lightbulb-outline'}
               size={22}
-              color={light.isOn ? '#fff' : dashboardTheme.colors.textMuted}
+              color={light.isOn ? dashboardTheme.colors.primaryDark : dashboardTheme.colors.textMuted}
             />
           </View>
         </View>
@@ -110,16 +72,6 @@ function ZoneTile({
         <Text style={[styles.tileLabel, light.isOn && styles.tileLabelOn]}>
           {light.label}
         </Text>
-        <Text style={styles.tileZone}>Zone {index + 1}</Text>
-
-        {/* Big power button at bottom */}
-        <View style={[styles.powerBtn, light.isOn && styles.powerBtnOn]}>
-          <MaterialCommunityIcons
-            name="power"
-            size={18}
-            color={light.isOn ? '#fff' : dashboardTheme.colors.textMuted}
-          />
-        </View>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -263,29 +215,16 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  glowHalo: {
-    ...StyleSheet.absoluteFill,
-    borderRadius: 18,
-    backgroundColor: dashboardTheme.colors.primary,
-    // spread glow outside the card boundaries
-    margin: -6,
-    borderWidth: 0,
-    shadowColor: dashboardTheme.colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.55,
-    shadowRadius: 14,
-    elevation: 8,
-  },
   tile: {
     padding: 14,
     borderRadius: 18,
-    backgroundColor: dashboardTheme.colors.surfaceSecondary,
-    borderWidth: 2,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
     borderColor: dashboardTheme.colors.border,
   },
   tileOn: {
-    backgroundColor: '#ECFDF5',        // very light green tint
-    borderColor: dashboardTheme.colors.primary,
+    backgroundColor: '#F0FDF4',
+    borderColor: '#22C55E',
   },
   tileDisabled: { opacity: 0.45 },
 
@@ -307,13 +246,13 @@ const styles = StyleSheet.create({
     borderColor: dashboardTheme.colors.border,
   },
   iconCircleOn: {
-    backgroundColor: dashboardTheme.colors.primary,
-    borderColor: dashboardTheme.colors.primary,
+    backgroundColor: 'rgba(34, 197, 94, 0.18)',
+    borderColor: 'rgba(34, 197, 94, 0.25)',
   },
 
   // Labels
   tileLabel: {
-    color: dashboardTheme.colors.textSecondary,
+    color: dashboardTheme.colors.textPrimary,
     fontSize: 13,
     fontWeight: '700',
     marginBottom: 2,
@@ -321,27 +260,4 @@ const styles = StyleSheet.create({
   tileLabelOn: {
     color: dashboardTheme.colors.textPrimary,
   },
-  tileZone: {
-    color: dashboardTheme.colors.textMuted,
-    fontSize: 10,
-    marginBottom: 12,
-  },
-
-  // Power button row
-  powerBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: dashboardTheme.colors.surface,
-    borderWidth: 1,
-    borderColor: dashboardTheme.colors.border,
-  },
-  powerBtnOn: {
-    backgroundColor: dashboardTheme.colors.primary,
-    borderColor: dashboardTheme.colors.primary,
-  },
-
 });

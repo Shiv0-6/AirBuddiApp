@@ -138,13 +138,6 @@ function ChamberGridTile({
             />
           </View>
 
-          <View style={[styles.powerBadge, isActive ? styles.powerBadgeActive : styles.powerBadgeInactive]}>
-            <MaterialCommunityIcons
-              name="power"
-              size={14}
-              color={isActive ? '#FFFFFF' : dashboardTheme.colors.textMuted}
-            />
-          </View>
         </View>
 
         <View style={styles.tileBottom}>
@@ -295,19 +288,6 @@ const styles = StyleSheet.create({
   },
   tileIconWrapInactive: {
     backgroundColor: '#E2E8F0',
-  },
-  powerBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  powerBadgeActive: {
-    backgroundColor: '#16A34A',
-  },
-  powerBadgeInactive: {
-    backgroundColor: '#CBD5E1',
   },
   tileBottom: {
     gap: 2,

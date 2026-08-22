@@ -277,9 +277,15 @@ function QuickControlsComponent({
               />
             </Animated.View>
           </View>
-          <View>
+          <View style={styles.fanHeaderCopy}>
             <Text style={styles.fanTitle}>Fan Control</Text>
             <Text style={styles.fanLabel}>{fanSpeedText}</Text>
+          </View>
+          <View style={[styles.fanStatePill, isPoweredOn && styles.fanStatePillActive]}>
+            <View style={[styles.fanStateDot, isPoweredOn && styles.fanStateDotActive]} />
+            <Text style={[styles.fanStateText, isPoweredOn && styles.fanStateTextActive]}>
+              {isAutoMode ? 'AUTO' : fanSpeedText.toUpperCase()}
+            </Text>
           </View>
         </View>
 
@@ -489,6 +495,9 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 16,
   },
+  fanHeaderCopy: {
+    flex: 1,
+  },
   fanIconWrapper: {
     width: 46,
     height: 46,
@@ -499,6 +508,39 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: dashboardTheme.colors.border,
     ...dashboardTheme.shadows.soft,
+  },
+  fanStatePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: '#F1F5F9',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  fanStatePillActive: {
+    backgroundColor: '#F0FDF4',
+    borderColor: '#BBF7D0',
+  },
+  fanStateDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#94A3B8',
+  },
+  fanStateDotActive: {
+    backgroundColor: dashboardTheme.colors.primary,
+  },
+  fanStateText: {
+    color: '#64748B',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  fanStateTextActive: {
+    color: dashboardTheme.colors.primaryDark,
   },
   fanTitle: {
     fontSize: 15,
@@ -530,7 +572,7 @@ const styles = StyleSheet.create({
   },
   speedBtnActive: {
     borderColor: dashboardTheme.colors.primary,
-    backgroundColor: dashboardTheme.colors.primary,
+    backgroundColor: '#F0FDF4',
   },
   speedBtnText: {
     fontSize: 14,
@@ -538,7 +580,7 @@ const styles = StyleSheet.create({
     color: dashboardTheme.colors.textSecondary,
   },
   speedBtnTextActive: {
-    color: '#FFFFFF',
+    color: dashboardTheme.colors.primaryDark,
   },
 });
 
