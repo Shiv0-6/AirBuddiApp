@@ -37,7 +37,7 @@ export function RootPurificationCard({
           </View>
           <View style={styles.headerText}>
             <Text style={styles.title}>Root Purification</Text>
-            <Text style={styles.subtitle}>Sub-surface & bio-bed air treatment</Text>
+            <Text style={styles.subtitle}>Bio-bed air treatment</Text>
           </View>
         </View>
       </View>
@@ -74,10 +74,10 @@ export function RootPurificationCard({
         />
         <Text style={styles.footerText}>
           {activeCount === 2
-            ? 'Dual-stage root bio-purification running'
+            ? 'Both chambers active'
             : activeCount === 1
-            ? 'Single chamber bio-purification active'
-            : 'Root purification turned off'}
+            ? 'One chamber active'
+            : 'Purification off'}
         </Text>
       </View>
     </View>

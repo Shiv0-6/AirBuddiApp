@@ -266,7 +266,7 @@ function QuickControlsComponent({
       </View>
 
       {/* ── Fan Speed & Power Section ───────────────────────────── */}
-      <View style={styles.section}>
+      <View style={[styles.section, styles.fanCard]}>
         <View style={styles.fanHeader}>
           <View style={styles.fanIconWrapper}>
             <Animated.View style={fanStyle}>
@@ -278,7 +278,7 @@ function QuickControlsComponent({
             </Animated.View>
           </View>
           <View>
-            <Text style={styles.fanTitle}>Fan Section</Text>
+            <Text style={styles.fanTitle}>Fan Control</Text>
             <Text style={styles.fanLabel}>{fanSpeedText}</Text>
           </View>
         </View>
@@ -412,7 +412,6 @@ const styles = StyleSheet.create({
 
   // Section
   section: {
-    width: '100%',
     paddingHorizontal: 20,
     marginTop: 28,
   },
@@ -422,6 +421,17 @@ const styles = StyleSheet.create({
     color: dashboardTheme.colors.textPrimary,
     letterSpacing: -0.3,
     marginBottom: 12,
+  },
+  fanCard: {
+    marginHorizontal: 20,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 18,
+    backgroundColor: dashboardTheme.colors.surface,
+    borderRadius: dashboardTheme.radii.lg,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    ...dashboardTheme.shadows.medium,
   },
 
   // Presets
@@ -536,23 +546,23 @@ const modeStyles = StyleSheet.create({
   card: {
     flex: 1,
     backgroundColor: dashboardTheme.colors.surface,
-    borderRadius: 18,
-    padding: 14,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 6,
     alignItems: 'center',
-    gap: 8,
-    borderWidth: 1.5,
+    gap: 6,
+    borderWidth: 1,
     borderColor: dashboardTheme.colors.border,
-    ...dashboardTheme.shadows.soft,
   },
   cardActive: {
     borderColor: dashboardTheme.colors.primary,
-    backgroundColor: dashboardTheme.colors.primary,
+    backgroundColor: dashboardTheme.colors.primarySoft,
   },
   cardDisabled: { opacity: 0.45 },
   iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: dashboardTheme.colors.surfaceSecondary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -564,9 +574,10 @@ const modeStyles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
     color: dashboardTheme.colors.textSecondary,
+    textAlign: 'center',
   },
   labelActive: {
-    color: '#FFFFFF',
+    color: dashboardTheme.colors.primaryDark,
   },
   indicator: {
     width: 4,
@@ -575,6 +586,6 @@ const modeStyles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   indicatorActive: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: dashboardTheme.colors.primary,
   },
 });
