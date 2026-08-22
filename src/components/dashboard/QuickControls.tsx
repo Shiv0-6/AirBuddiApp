@@ -179,7 +179,7 @@ function QuickControlsComponent({
       </View>
 
       {/* ── Operating Modes ──────────────────────────────────── */}
-      <View style={styles.section}>
+      <View style={[styles.section, styles.controlCard]}>
         <Text style={styles.sectionTitle}>Mode</Text>
         <View style={styles.modesRow}>
           <ModeCard
@@ -213,7 +213,7 @@ function QuickControlsComponent({
       </View>
 
       {/* ── Focus Presets & UV-C ───────────────────────────────── */}
-      <View style={styles.section}>
+      <View style={[styles.section, styles.controlCard]}>
         <Text style={styles.sectionTitle}>Presets</Text>
         <View style={styles.presetGrid}>
           {PRESETS.map(preset => {
@@ -429,6 +429,17 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   fanCard: {
+    marginHorizontal: 20,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 18,
+    backgroundColor: dashboardTheme.colors.surface,
+    borderRadius: dashboardTheme.radii.lg,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    ...dashboardTheme.shadows.medium,
+  },
+  controlCard: {
     marginHorizontal: 20,
     paddingHorizontal: 18,
     paddingTop: 18,
