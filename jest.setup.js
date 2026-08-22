@@ -51,3 +51,12 @@ jest.mock('react-native-image-picker', () => ({
   launchImageLibrary: jest.fn(() => Promise.resolve({ assets: [] })),
   launchCamera: jest.fn(() => Promise.resolve({ assets: [] })),
 }));
+
+jest.mock('react-native-webview', () => {
+	const React = require('react');
+	const { View } = require('react-native');
+
+	return {
+		WebView: props => React.createElement(View, props),
+	};
+});

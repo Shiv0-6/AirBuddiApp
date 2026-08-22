@@ -35,6 +35,9 @@ import type { DashboardRuntimeState } from './dashboardSlice';
 import { useDashboardRealtimeBridge } from './useDashboardRealtimeBridge';
 import { fetchLatestTelemetry } from '../../services/awsIot/awsTelemetryApiClient';
 
+import ExploreProductsScreen from './ExploreProductScreen';
+
+
 // ─── Bottom Tab Config ────────────────────────────────────────────────────────
 
 type TabId = 'airquality' | 'fan' | 'light' | 'more';
@@ -603,6 +606,9 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
   // ─────────────────────────────────────────────────────────────────────────────
 
+  const controlFanSpeed: 'off' | '1' | '2' | '3' | undefined =
+    device?.fanSpeed === 'turbo' ? '3' : device?.fanSpeed;
+
   return (
     <View style={styles.safeArea}>
       {/* Subtle background decor */}
@@ -875,7 +881,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               isAutoMode={device?.mode === 'auto'}
               isSleepMode={device?.sleepMode ?? false}
               isUvc={device?.uvc ?? true}
-              fanSpeed={device?.fanSpeed}
+              fanSpeed={controlFanSpeed}
               onTogglePower={handleTogglePower}
               onToggleAutoMode={handleToggleAutoMode}
               onToggleSleepMode={handleToggleSleepMode}
@@ -962,7 +968,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
       <Modal
         animationType="slide"
         transparent
-        visible={activeSheet !== null && activeSheet !== 'menu'}
+        visible={activeSheet !== null && activeSheet !== 'menu' && activeSheet !== 'explore-products'}
         onRequestClose={() => setActiveSheet(null)}
       >
         <View style={styles.profileBackdrop}>
@@ -1278,8 +1284,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
             </>}
 
-            {/* ── Explore Other Products ──────────────────────────── */}
-            {activeSheet === 'explore-products' && <>
+            ── Explore Other Products ────────────────────────────
+            {/* {activeSheet === 'explore-products' && <>
               <Text style={styles.sheetTitle}>Explore GreenVerse</Text>
               <Text style={styles.sheetIntro}>Discover our family of smart environmental products.</Text>
               <View style={styles.productCard}>
@@ -1298,7 +1304,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <View style={styles.productBadge}><Text style={styles.productBadgeText}>Soon</Text></View>
               </View>
               <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
-            </>}
+            </>} */}
           </View>
         </View>
       </Modal>
@@ -1353,6 +1359,10 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           })}
         </View>
       </View>
+      <ExploreProductsScreen 
+        visible={activeSheet === 'explore-products'} 
+        onClose={() => setActiveSheet(null)} 
+      />
     </View>
   );
 }
