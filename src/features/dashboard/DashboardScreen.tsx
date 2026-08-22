@@ -42,7 +42,7 @@ import ExploreProductsScreen from './ExploreProductScreen';
 
 type TabId = 'airquality' | 'fan' | 'light' | 'more';
 
-type SheetId = 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | 'explore-products' | null;
+type SheetId = 'account' | 'devices' | 'notification-settings' | 'preferences' | 'support' | 'more-settings' | 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | 'explore-products' | null;
 type HomeDevice = {
   id: string;
   name: string;
@@ -920,42 +920,14 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 Manage your account and AirBuddi home.
               </Text>
 
-              <Text style={styles.settingsSectionLabel}>ACCOUNT</Text>
+              <Text style={styles.settingsSectionLabel}>SETTINGS</Text>
               <View style={styles.settingsCard}>
-                <SettingsRow icon="account-circle-outline" title="Profile" subtitle={profileName} onPress={() => setActiveSheet('profile')} />
-                <SettingsRow icon="link-variant" title="Linked Accounts" subtitle="Google, Apple" onPress={() => setActiveSheet('linked-accounts')} last />
-              </View>
-
-              <Text style={styles.settingsSectionLabel}>DEVICES</Text>
-              <View style={styles.settingsCard}>
-                <SettingsRow icon="air-filter" title="My Devices" subtitle={devices.length > 0 ? `${devices.length} device${devices.length === 1 ? '' : 's'} added` : 'No device connected'} onPress={() => setActiveTab('fan')} />
-                <SettingsRow icon="plus-circle-outline" title="Add New Device" subtitle="Pair a new AirBuddi" onPress={() => setActiveSheet('add-device')} last />
-              </View>
-
-              <Text style={styles.settingsSectionLabel}>NOTIFICATIONS</Text>
-              <View style={styles.settingsCard}>
-                <SettingsRow icon="bell-outline" title="Push Notifications" subtitle="AQI alerts & reminders" onPress={() => setActiveSheet('notifications')} />
-                <SettingsRow icon="alert-circle-outline" title="Alert Thresholds" subtitle="Set AQI warning levels" onPress={() => setActiveSheet('alert-thresholds')} last />
-              </View>
-
-              <Text style={styles.settingsSectionLabel}>PREFERENCES</Text>
-              <View style={styles.settingsCard}>
-                <SettingsRow icon="palette-outline" title="Appearance" subtitle={`Theme: ${themePreference.charAt(0).toUpperCase() + themePreference.slice(1)}`} onPress={() => setActiveSheet('appearance')} />
-                <SettingsRow icon="earth" title="Units & Region" subtitle={`${tempUnit === 'celsius' ? '°C' : '°F'} · ${aqiStandard === 'us' ? 'US EPA' : 'India NAQI'}`} onPress={() => setActiveSheet('units')} />
-                <SettingsRow icon="shield-lock-outline" title="Data & Privacy" subtitle="Manage your data" onPress={() => setActiveSheet('data-privacy')} last />
-              </View>
-
-              <Text style={styles.settingsSectionLabel}>SUPPORT</Text>
-              <View style={styles.settingsCard}>
-                <SettingsRow icon="help-circle-outline" title="Help & Troubleshooting" subtitle="FAQs & guides" onPress={() => setActiveSheet('help')} />
-                <SettingsRow icon="headphones" title="Contact Support" subtitle="Email, phone, or chat" onPress={() => setActiveSheet('contact-support')} />
-                <SettingsRow icon="information-outline" title="About AirBuddi" subtitle="App version & legal" onPress={() => setActiveSheet('about')} last />
-              </View>
-
-              <Text style={styles.settingsSectionLabel}>MORE</Text>
-              <View style={styles.settingsCard}>
-                <SettingsRow icon="leaf-circle-outline" title="Explore Other Products" subtitle="Discover GreenVerse devices" onPress={() => setActiveSheet('explore-products')} />
-                <SettingsRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
+                <SettingsCategoryRow icon="account-circle-outline" title="Account" subtitle="Profile and linked accounts" onPress={() => setActiveSheet('account')} />
+                <SettingsCategoryRow icon="air-filter" title="Devices" subtitle="Manage your AirBuddi devices" onPress={() => setActiveSheet('devices')} />
+                <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => setActiveSheet('notification-settings')} />
+                <SettingsCategoryRow icon="tune-variant" title="Preferences" subtitle="Appearance, units, and privacy" onPress={() => setActiveSheet('preferences')} />
+                <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => setActiveSheet('support')} />
+                <SettingsCategoryRow icon="leaf-circle-outline" title="More" subtitle="Explore products and sign out" onPress={() => setActiveSheet('more-settings')} last />
               </View>
             </View>
           </Animated.View>
@@ -979,6 +951,68 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           />
           <View style={styles.profileSheet}>
             <View style={styles.sheetHandle} />
+            {activeSheet === 'account' && <>
+              <Text style={styles.sheetTitle}>Account</Text>
+              <Text style={styles.sheetIntro}>Manage your personal details and sign-in connections.</Text>
+              <View style={styles.settingsCard}>
+                <SettingsRow icon="account-circle-outline" title="Profile" subtitle={profileName || 'Add your name'} onPress={() => setActiveSheet('profile')} />
+                <SettingsRow icon="link-variant" title="Linked Accounts" subtitle="Google, Apple" onPress={() => setActiveSheet('linked-accounts')} last />
+              </View>
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
+
+            {activeSheet === 'devices' && <>
+              <Text style={styles.sheetTitle}>Devices</Text>
+              <Text style={styles.sheetIntro}>Manage the AirBuddi devices connected to your home.</Text>
+              <View style={styles.settingsCard}>
+                <SettingsRow icon="air-filter" title="My Devices" subtitle={devices.length > 0 ? `${devices.length} device${devices.length === 1 ? '' : 's'} added` : 'No device connected'} onPress={() => { setActiveSheet(null); setActiveTab('fan'); }} />
+                <SettingsRow icon="plus-circle-outline" title="Add New Device" subtitle="Pair a new AirBuddi" onPress={() => setActiveSheet('add-device')} last />
+              </View>
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
+
+            {activeSheet === 'notification-settings' && <>
+              <Text style={styles.sheetTitle}>Notifications</Text>
+              <Text style={styles.sheetIntro}>Manage alerts and notification preferences.</Text>
+              <View style={styles.settingsCard}>
+                <SettingsRow icon="bell-outline" title="Notification Preferences" subtitle="Choose which alerts you receive" onPress={() => setActiveSheet('notifications')} />
+                <SettingsRow icon="alert-circle-outline" title="Alert Thresholds" subtitle="Set AQI warning levels" onPress={() => setActiveSheet('alert-thresholds')} last />
+              </View>
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
+
+            {activeSheet === 'preferences' && <>
+              <Text style={styles.sheetTitle}>Preferences</Text>
+              <Text style={styles.sheetIntro}>Personalize your AirBuddi experience.</Text>
+              <View style={styles.settingsCard}>
+                <SettingsRow icon="palette-outline" title="Appearance" subtitle={`Theme: ${themePreference.charAt(0).toUpperCase() + themePreference.slice(1)}`} onPress={() => setActiveSheet('appearance')} />
+                <SettingsRow icon="earth" title="Units & Region" subtitle={`${tempUnit === 'celsius' ? '°C' : '°F'} · ${aqiStandard === 'us' ? 'US EPA' : 'India NAQI'}`} onPress={() => setActiveSheet('units')} />
+                <SettingsRow icon="shield-lock-outline" title="Data & Privacy" subtitle="Manage your data" onPress={() => setActiveSheet('data-privacy')} last />
+              </View>
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
+
+            {activeSheet === 'support' && <>
+              <Text style={styles.sheetTitle}>Support</Text>
+              <Text style={styles.sheetIntro}>Find answers or get in touch with the AirBuddi team.</Text>
+              <View style={styles.settingsCard}>
+                <SettingsRow icon="help-circle-outline" title="Help & Troubleshooting" subtitle="FAQs and setup guides" onPress={() => setActiveSheet('help')} />
+                <SettingsRow icon="headphones" title="Contact Support" subtitle="Email, phone, or chat" onPress={() => setActiveSheet('contact-support')} />
+                <SettingsRow icon="information-outline" title="About AirBuddi" subtitle="App version and legal" onPress={() => setActiveSheet('about')} last />
+              </View>
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
+
+            {activeSheet === 'more-settings' && <>
+              <Text style={styles.sheetTitle}>More</Text>
+              <Text style={styles.sheetIntro}>Discover more from GreenVerse.</Text>
+              <View style={styles.settingsCard}>
+                <SettingsRow icon="leaf-circle-outline" title="Explore Other Products" subtitle="Discover GreenVerse devices" onPress={() => setActiveSheet('explore-products')} />
+                <SettingsRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
+              </View>
+              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
+            </>}
+
             {activeSheet === 'profile' && <>
               <Text style={styles.sheetTitle}>Your profile</Text>
               <Text style={styles.sheetIntro}>Keep your account details up to date.</Text>
@@ -1415,6 +1449,16 @@ function SettingsRow({ icon, title, subtitle, onPress, last = false }: { icon: s
   );
 }
 
+function SettingsCategoryRow({ icon, title, subtitle, onPress, last = false }: { icon: string; title: string; subtitle: string; onPress: () => void; last?: boolean }) {
+  return (
+    <TouchableOpacity style={[styles.settingsCategoryRow, last && styles.settingsRowLast]} activeOpacity={0.75} onPress={onPress}>
+      <View style={styles.settingsCategoryIcon}><MaterialCommunityIcons name={icon} size={22} color={dashboardTheme.colors.primaryDark} /></View>
+      <View style={styles.settingsCopy}><Text style={styles.settingsCategoryTitle}>{title}</Text><Text style={styles.settingsSubtitle}>{subtitle}</Text></View>
+      <MaterialCommunityIcons name="chevron-right" size={24} color={dashboardTheme.colors.textMuted} />
+    </TouchableOpacity>
+  );
+}
+
 function getInitials(name: string) {
   const trimmed = name.trim();
   if (!trimmed) {
@@ -1844,6 +1888,40 @@ const styles = StyleSheet.create({
   borderColor: dashboardTheme.colors.border,
   overflow: 'hidden',
   ...dashboardTheme.shadows.soft,},
+  accountCard: {
+  marginBottom: 10,
+  borderRadius: 18,
+  backgroundColor: dashboardTheme.colors.surface,
+  borderWidth: 1,
+  borderColor: dashboardTheme.colors.border,
+  overflow: 'hidden',
+  ...dashboardTheme.shadows.soft,
+  },
+  accountIdentity: {
+  minHeight: 92,
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 13,
+  paddingHorizontal: 16,
+  paddingVertical: 14,
+  backgroundColor: dashboardTheme.colors.surfaceTint,
+  borderBottomWidth: 1,
+  borderBottomColor: dashboardTheme.colors.border,
+  },
+  accountAvatar: {
+  width: 54,
+  height: 54,
+  borderRadius: 27,
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: dashboardTheme.colors.primaryDark,
+  overflow: 'hidden',
+  },
+  accountAvatarPhoto: { width: 54, height: 54 },
+  accountAvatarText: { color: '#FFFFFF', fontSize: 17, fontWeight: '900' },
+  accountIdentityCopy: { flex: 1, minWidth: 0 },
+  accountName: { color: dashboardTheme.colors.textPrimary, fontSize: 17, fontWeight: '800' },
+  accountEmail: { marginTop: 4, color: dashboardTheme.colors.textSecondary, fontSize: 13, fontWeight: '500' },
   settingsRow: {
   flexDirection: 'row',
   alignItems: 'center',
@@ -1854,6 +1932,29 @@ const styles = StyleSheet.create({
   borderBottomWidth: 1,
   borderBottomColor: dashboardTheme.colors.border,},
   settingsRowLast: { borderBottomWidth: 0 },
+  settingsCategoryRow: {
+  minHeight: 82,
+  flexDirection: 'row',
+  alignItems: 'center',
+  gap: 14,
+  paddingHorizontal: 16,
+  paddingVertical: 12,
+  borderBottomWidth: 1,
+  borderBottomColor: dashboardTheme.colors.border,
+  },
+  settingsCategoryIcon: {
+  width: 42,
+  height: 42,
+  borderRadius: 13,
+  backgroundColor: dashboardTheme.colors.primarySoft,
+  justifyContent: 'center',
+  alignItems: 'center',
+  },
+  settingsCategoryTitle: {
+  color: dashboardTheme.colors.textPrimary,
+  fontSize: 16,
+  fontWeight: '800',
+  },
   settingsIcon: {
   width: 36,
   height: 36,
