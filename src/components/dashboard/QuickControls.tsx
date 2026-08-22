@@ -519,8 +519,8 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   speedBtnActive: {
-    borderColor: dashboardTheme.colors.primaryDark,
-    backgroundColor: dashboardTheme.colors.primaryDark,
+    borderColor: dashboardTheme.colors.primary,
+    backgroundColor: dashboardTheme.colors.primary,
   },
   speedBtnText: {
     fontSize: 14,
@@ -545,8 +545,8 @@ const modeStyles = StyleSheet.create({
     ...dashboardTheme.shadows.soft,
   },
   cardActive: {
-    borderColor: dashboardTheme.colors.primaryDark,
-    backgroundColor: dashboardTheme.colors.primaryDark,
+    borderColor: dashboardTheme.colors.primary,
+    backgroundColor: dashboardTheme.colors.primary,
   },
   cardDisabled: { opacity: 0.45 },
   iconWrap: {
