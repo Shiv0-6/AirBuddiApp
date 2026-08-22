@@ -1294,7 +1294,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               </View>
               <View style={styles.productCard}>
                 <View style={styles.productIconWrap}><MaterialCommunityIcons name="flower-outline" size={26} color={dashboardTheme.colors.primaryDark} /></View>
-                <View style={styles.productInfo}><Text style={styles.productName}>AirBuddi</Text><Text style={styles.productDesc}>Intelligent Air monitoring for your home.</Text></View>
+                <View style={styles.productInfo}><Text style={styles.productName}>AirBuddi Quality Monitor</Text><Text style={styles.productDesc}>Intelligent Air monitoring for your home.</Text></View>
                 <View style={styles.productBadge}><Text style={styles.productBadgeText}>Soon</Text></View>
               </View>
               <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
