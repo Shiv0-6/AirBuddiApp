@@ -176,34 +176,14 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
       await sendEspCommands([nextUvc ? 'uvc_on' : 'uvc_off']);
     },
 
-    setFanSpeedState: async (speed: 'off' | '1' | '2' | '3' | 'turbo') => {
+    setFanSpeedState: async (speed: 'off' | '1' | '2' | '3') => {
       dispatch(setFanSpeed(speed));
       await sendLegacyCommand('fanSpeed', speed);
       // EDIT THIS ARRAY for the fan speed button.
       // Example: ['fan_off'], ['fan_1'], ['fan_2'], ['fan_3'], ['fan_turbo'], or multiple messages.
       await sendEspCommands([`fan_${speed}`]);
     },
-
-    setLightStateState: async (zoneId: string, nextLightOn: boolean) => {
-      // Optimistic UI update immediately
-      dispatch(setLightZoneState({ zoneId, isOn: nextLightOn }));
-      try {
-        // Map zone-1 (Ambient) -> L1, zone-2 (Task) -> L2, zone-3 (Accent) -> L3
-        let commandPrefix = 'L1';
-        if (zoneId === 'zone-2') {
-          commandPrefix = 'L2';
-        } else if (zoneId === 'zone-3') {
-          commandPrefix = 'L3';
-        }
-        await sendEspCommands([nextLightOn ? `${commandPrefix}_on` : `${commandPrefix}_off`]);
-      } catch (error) {
-        console.error('[AirBuddi] Light command failed:', error);
-        dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
-        // Revert UI if command failed
-        dispatch(setLightZoneState({ zoneId, isOn: !nextLightOn }));
-      }
-    },
-
+    
     setUpperBedChamberStateState: async (nextVal: 'Active' | 'Standby') => {
       const currentVal = nextVal === 'Active' ? 'Standby' : 'Active';
       dispatch(setUpperBedChamberState(nextVal));

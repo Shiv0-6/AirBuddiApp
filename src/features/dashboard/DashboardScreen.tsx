@@ -26,7 +26,6 @@ import { AirQualityCard } from '../../components/dashboard/AirQualityCard';
 import { SensorGrid } from '../../components/dashboard/SensorGrid';
 import { QuickControls } from '../../components/dashboard/QuickControls';
 import { ConnectionPill } from '../../components/dashboard/ConnectionPill';
-import { LightControlPanel } from '../../components/dashboard/LightControlPanel';
 import { RootPurificationCard } from '../../components/dashboard/RootPurificationCard';
 
 import { useAppSelector } from '../../store/hooks';
@@ -124,20 +123,10 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     setSleepModeState,
     setUvcModeState,
     setFanSpeedState,
-    setLightStateState,
     setUpperBedChamberStateState,
     setLowerBedChamberStateState,
     refreshData,
   } = useDashboardRealtimeBridge(selectedDeviceId);
-
-  const lightZones = useMemo(
-  () => [
-  { id: 'zone-1', label: 'Ambient', icon: 'lamp', isOn: device?.lightZones?.['zone-1'] ?? false },
-  { id: 'zone-2', label: 'Task', icon: 'desk-lamp', isOn: device?.lightZones?.['zone-2'] ?? false },
-  { id: 'zone-3', label: 'Accent', icon: 'spotlight', isOn: device?.lightZones?.['zone-3'] ?? false },
-  ],
-    [device?.lightZones],
-  );
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -514,11 +503,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     }
   }, []);
 
-  const handleToggleLightZone = useCallback((zoneId: string) => {
-    const nextState = !(device?.lightZones?.[zoneId] ?? false);
-    setLightStateState(zoneId, nextState);
-  }, [device?.lightZones, setLightStateState]);
-
   const selectedDevice = devices.find(item => item.id === selectedDeviceId) ?? null;
   const deviceTitle = selectedDevice?.room ?? 'Add a device';
   const displayDeviceName = selectedDevice?.name ?? 'No device connected';
@@ -620,7 +604,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
       <DashboardHeader
         title={deviceTitle}
         subtitle={`${displayDeviceName} · ${selectedDevice?.status ?? 'Offline'}`}
-        showDeviceInfo={activeTab !== 'more'}
+        showDeviceInfo={activeTab === 'airquality' || activeTab === 'light'}
         onProfilePress={() => setActiveSheet('profile')}
         onRefreshPress={handleRefresh}
         onMenuPress={() => setActiveSheet('menu')}
@@ -900,11 +884,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   const currentVal = device?.lowerBedChamber ?? 'Standby';
                   setLowerBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
                 }}
-                disabled={device?.power !== 'on' || device?.mode === 'auto'}
-              />
-              <LightControlPanel
-                lights={lightZones}
-                onToggleLight={handleToggleLightZone}
                 disabled={device?.power !== 'on' || device?.mode === 'auto'}
               />
             </View>
@@ -1317,28 +1296,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               </TouchableOpacity>
               <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
             </>}
-
-            ── Explore Other Products ────────────────────────────
-            {/* {activeSheet === 'explore-products' && <>
-              <Text style={styles.sheetTitle}>Explore GreenVerse</Text>
-              <Text style={styles.sheetIntro}>Discover our family of smart environmental products.</Text>
-              <View style={styles.productCard}>
-                <View style={styles.productIconWrap}><MaterialCommunityIcons name="air-purifier" size={26} color={dashboardTheme.colors.primaryDark} /></View>
-                <View style={styles.productInfo}><Text style={styles.productName}>AirBuddi Max</Text><Text style={styles.productDesc}>Advanced air purification with HEPA H13 filter and UV-C sterilization.</Text></View>
-                <View style={styles.productBadge}><Text style={styles.productBadgeText}>New</Text></View>
-              </View>
-              <View style={styles.productCard}>
-                <View style={styles.productIconWrap}><MaterialCommunityIcons name="water-outline" size={26} color={dashboardTheme.colors.primaryDark} /></View>
-                <View style={styles.productInfo}><Text style={styles.productName}>AirBuddi Mini</Text><Text style={styles.productDesc}>Smart Air quality monitoring  and filtration for your home.</Text></View>
-                <View style={styles.productBadge}><Text style={styles.productBadgeText}>Soon</Text></View>
-              </View>
-              <View style={styles.productCard}>
-                <View style={styles.productIconWrap}><MaterialCommunityIcons name="flower-outline" size={26} color={dashboardTheme.colors.primaryDark} /></View>
-                <View style={styles.productInfo}><Text style={styles.productName}>AirBuddi Quality Monitor</Text><Text style={styles.productDesc}>Intelligent Air monitoring for your home.</Text></View>
-                <View style={styles.productBadge}><Text style={styles.productBadgeText}>Soon</Text></View>
-              </View>
-              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
-            </>} */}
           </View>
         </View>
       </Modal>
