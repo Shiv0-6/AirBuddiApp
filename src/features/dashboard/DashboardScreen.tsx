@@ -655,21 +655,23 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   />
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                  accessibilityLabel="Add device"
-                  style={styles.addDeviceHeaderButton}
-                  activeOpacity={0.8}
-                  onPress={() => setActiveSheet('add-device')}
-                >
-                  <MaterialCommunityIcons
-                    name="plus"
-                    size={18}
-                    color="#FFFFFF"
-                  />
-                  <Text style={styles.addDeviceHeaderButtonText}>
-                    Add device
-                  </Text>
-                </TouchableOpacity>
+                {devices.length > 0 && (
+                  <TouchableOpacity
+                    accessibilityLabel="Add device"
+                    style={styles.addDeviceHeaderButton}
+                    activeOpacity={0.8}
+                    onPress={() => setActiveSheet('add-device')}
+                  >
+                    <MaterialCommunityIcons
+                      name="plus"
+                      size={18}
+                      color="#FFFFFF"
+                    />
+                    <Text style={styles.addDeviceHeaderButtonText}>
+                      Add device
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </View>
               <View style={styles.deviceGrid}>
