@@ -527,7 +527,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
       const nextDevice = {
         id,
-        name: telemetry.esp32?.deviceName || name,
+        name,
         room,
         status: isOnline ? ('Online' as const) : ('Offline' as const),
         aqi: isOnline ? (telemetry.esp32?.aqi ?? telemetry.aqi ?? null) : null,
