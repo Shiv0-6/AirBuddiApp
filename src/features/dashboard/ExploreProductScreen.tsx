@@ -6,9 +6,22 @@ import { WebView } from 'react-native-webview';
 interface ExploreProductsProps {
   visible: boolean;
   onClose: () => void;
+  embedded?: boolean;
 }
 
-const ExploreProductsScreen: React.FC<ExploreProductsProps> = ({ visible, onClose }) => {
+const ExploreProductsScreen: React.FC<ExploreProductsProps> = ({ visible, onClose, embedded = false }) => {
+  const webView = (
+    <WebView
+      source={{ uri: 'https://www.airbuddi.in/shop' }}
+      style={styles.webview}
+      startInLoadingState={true}
+    />
+  );
+
+  if (embedded) {
+    return <View style={styles.embeddedContainer}>{webView}</View>;
+  }
+
   return (
     <Modal
       visible={visible}
@@ -24,12 +37,7 @@ const ExploreProductsScreen: React.FC<ExploreProductsProps> = ({ visible, onClos
           </TouchableOpacity>
         </View>
         
-        {/* The AirBuddi Shop WebView */}
-        <WebView
-          source={{ uri: 'https://www.airbuddi.in/shop' }}
-          style={styles.webview}
-          startInLoadingState={true}
-        />
+        {webView}
       </SafeAreaView>
     </Modal>
   );
@@ -56,6 +64,11 @@ const styles = StyleSheet.create({
   },
   webview: {
     flex: 1,
+  },
+  embeddedContainer: {
+    height: 680,
+    marginTop: 4,
+    overflow: 'hidden',
   },
 });
 

@@ -41,7 +41,7 @@ import ExploreProductsScreen from './ExploreProductScreen';
 
 type TabId = 'airquality' | 'fan' | 'light' | 'settings' | 'explore';
 
-type SheetId = 'account' | 'devices' | 'notification-settings' | 'preferences' | 'support' | 'more-settings' | 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | 'explore-products' | null;
+type SheetId = 'account' | 'devices' | 'notification-settings' | 'preferences' | 'support' | 'more-settings' | 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | null;
 type HomeDevice = {
   id: string;
   name: string;
@@ -601,14 +601,16 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         <View style={styles.bgCircleSecondary} />
       </View>
 
-      <DashboardHeader
-        title={deviceTitle}
-        subtitle={`${displayDeviceName} · ${selectedDevice?.status ?? 'Offline'}`}
-        showDeviceInfo={activeTab === 'airquality' || activeTab === 'light'}
-        onProfilePress={() => setActiveSheet('profile')}
-        onRefreshPress={handleRefresh}
-        onMenuPress={() => setActiveSheet('menu')}
-/>
+      {activeTab !== 'explore' && (
+        <DashboardHeader
+          title={deviceTitle}
+          subtitle={`${displayDeviceName} · ${selectedDevice?.status ?? 'Offline'}`}
+          showDeviceInfo={activeTab === 'airquality' || activeTab === 'light'}
+          onProfilePress={() => setActiveSheet('profile')}
+          onRefreshPress={handleRefresh}
+          onMenuPress={() => setActiveSheet('menu')}
+        />
+      )}
       <ScrollView
         style={styles.flex}
         contentContainerStyle={styles.contentContainer}
@@ -912,6 +914,16 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           </Animated.View>
         )}
 
+        {activeTab === 'explore' && (
+          <Animated.View style={[styles.tabContent, contentStyle]}>
+            <ExploreProductsScreen
+              visible
+              onClose={() => setActiveTab('fan')}
+              embedded
+            />
+          </Animated.View>
+        )}
+
         <View style={styles.bottomSpace} />
       </ScrollView>
 
@@ -919,7 +931,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
       <Modal
         animationType="slide"
         transparent
-        visible={activeSheet !== null && activeSheet !== 'menu' && activeSheet !== 'explore-products'}
+        visible={activeSheet !== null && activeSheet !== 'menu'}
         onRequestClose={() => setActiveSheet(null)}
       >
         <View style={styles.profileBackdrop}>
@@ -986,7 +998,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               <Text style={styles.sheetTitle}>More</Text>
               <Text style={styles.sheetIntro}>Discover more from GreenVerse.</Text>
               <View style={styles.settingsCard}>
-                <SettingsRow icon="leaf-circle-outline" title="Explore Other Products" subtitle="Discover GreenVerse devices" onPress={() => setActiveSheet('explore-products')} />
+                <SettingsRow icon="leaf-circle-outline" title="Explore Other Products" subtitle="Discover GreenVerse devices" onPress={() => { setActiveSheet(null); setActiveTab('explore'); }} />
                 <SettingsRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
               </View>
               <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
@@ -1336,7 +1348,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 onPress={() => {
                   if (tab.id === 'explore') {
                     setActiveTab('explore');
-                    setActiveSheet('explore-products');
                     return;
                   }
 
@@ -1358,10 +1369,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           })}
         </View>
       </View>
-      <ExploreProductsScreen 
-        visible={activeSheet === 'explore-products'} 
-        onClose={() => { setActiveSheet(null); setActiveTab('fan'); }} 
-      />
     </View>
   );
 }
