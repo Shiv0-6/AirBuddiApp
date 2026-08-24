@@ -14,6 +14,7 @@ import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
 type DashboardHeaderProps = {
   title: string;
   subtitle: string;
+  deviceName?: string;
   showDeviceInfo?: boolean;
   onProfilePress: () => void;
   onRefreshPress: () => void;
@@ -23,11 +24,16 @@ type DashboardHeaderProps = {
 function DashboardHeaderComponent({
   title,
   subtitle,
+  deviceName = '',
   showDeviceInfo = true,
   onProfilePress,
   onRefreshPress,
   onMenuPress,
 }: DashboardHeaderProps) {
+  const deviceImage = deviceName.trim().toLowerCase() === 'airbuddi max'
+    ? require('../../../assets/Max_l2.png')
+    : require('../../../assets/Mini.png');
+
   return (
     <View style={styles.wrapper}>
 
@@ -142,12 +148,10 @@ function DashboardHeaderComponent({
             {/* RIGHT: AirBuddi visual */}
 
             <View style={styles.heroDecoration}>
-
-
               {/* AirBuddi device */}
               <View style={styles.airDevice}>
                 <Image
-                  source={require('../../../assets/buddi.png')}
+                  source={deviceImage}
                   style={styles.heroPurifier}
                   resizeMode="contain"
                 />
@@ -366,7 +370,7 @@ const styles = StyleSheet.create({
   position: 'absolute',
   width: 175,
   height: 175,
-  right: -30,
+  right: -25,
   bottom: -70,
   zIndex: 1,
 },

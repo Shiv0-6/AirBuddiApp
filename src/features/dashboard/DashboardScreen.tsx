@@ -605,6 +605,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         <DashboardHeader
           title={deviceTitle}
           subtitle={`${displayDeviceName} · ${selectedDevice?.status ?? 'Offline'}`}
+          deviceName={displayDeviceName}
           showDeviceInfo={activeTab === 'airquality' || activeTab === 'light'}
           onProfilePress={() => setActiveSheet('profile')}
           onRefreshPress={handleRefresh}
