@@ -29,10 +29,10 @@ export const dashboardMockState: DashboardState = {
 };
 
 export const aqiLegend = [
-  { min: 0, max: 50, label: 'Excellent', color: '#1F9D55' },
-  { min: 51, max: 100, label: 'Good', color: '#3B82F6' },
-  { min: 101, max: 150, label: 'Moderate', color: '#F0A202' },
-  { min: 151, max: 200, label: 'Poor', color: '#D64545' },
+  { min: 0, max: 51, label: 'Excellent', color: '#1F9D55' },
+  { min: 51, max: 101, label: 'Good', color: '#3B82F6' },
+  { min: 101, max: 151, label: 'Moderate', color: '#F0A202' },
+  { min: 151, max: 201, label: 'Poor', color: '#D64545' },
 ];
 
 export const connectionLabels: Record<DashboardState['connection'], string> = {
