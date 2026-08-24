@@ -651,19 +651,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               </View>
 
               <View style={styles.homeHeadingActions}>
-                <TouchableOpacity
-                  accessibilityLabel="Refresh devices"
-                  style={styles.refreshButton}
-                  activeOpacity={0.8}
-                  onPress={handleRefresh}
-                >
-                  <MaterialCommunityIcons
-                    name="refresh"
-                    size={19}
-                    color={dashboardTheme.colors.primaryDark}
-                  />
-                </TouchableOpacity>
-
                 {devices.length > 0 && (
                   <TouchableOpacity
                     accessibilityLabel="Add device"
@@ -727,19 +714,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                     </Text>
                   </View>
 
-                  {/* MAC address information */}
-                  {/* <View style={styles.macHintCard}>
-                    <MaterialCommunityIcons
-                      name="shield-check-outline"
-                      size={20}
-                      color={dashboardTheme.colors.primary}
-                    />
-
-                    <Text style={styles.macHintText}>
-                      You'll need your device's MAC address
-                    </Text>
-                  </View> */}
-
                   {/* How it works */}
                   <View style={styles.howItWorks}>
                     <Text style={styles.howItWorksTitle}>
@@ -752,7 +726,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                         number="1"
                         icon="qrcode-scan"
                         title="Add Device"
-                        description="Enter your device MAC address"
+                        description="Scan to pair"
                       />
 
                       <View style={styles.stepConnector} />
@@ -761,7 +735,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                         number="2"
                         icon="wifi"
                         title="Connect"
-                        description="Your device connects via Wi-Fi"
+                        description="connects via Wi-Fi"
                       />
 
                       <View style={styles.stepConnector} />
@@ -770,7 +744,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                         number="3"
                         icon="chart-bar"
                         title="Monitor"
-                        description="View real-time air quality"
+                        description="Monitor air quality"
                       />
 
                     </View>
@@ -1634,12 +1608,12 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 34,
+    paddingTop: 25,
     paddingBottom: 24,
     paddingHorizontal: 20,
-    borderRadius: 24,
+    borderRadius: 26,
     backgroundColor: '#FFFFFF',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: '#E5EDE7',
     ...dashboardTheme.shadows.soft,
   },
@@ -1689,9 +1663,9 @@ const styles = StyleSheet.create({
 
   emptyDeviceButton: {
     marginTop: 22,
-    width: 250,
+    width: 200,
     height: 58,
-    borderRadius: 17,
+    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
