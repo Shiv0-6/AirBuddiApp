@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
   Animated,
   Image,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ScrollView,
   StatusBar,
@@ -119,8 +119,6 @@ function AppContent() {
 
   const handleSignOut = useCallback(async () => {
     try {
-      await AsyncStorage.clear();
-
       await AsyncStorage.removeItem(
         AUTH_STORAGE_KEY
       );
@@ -143,7 +141,6 @@ function AppContent() {
     return (
       <SafeAreaView
         style={styles.loadingContainer}
-        edges={['top']}
       >
         <ActivityIndicator
           size="large"
@@ -210,7 +207,7 @@ function SignInScreen({
     useState(false);
 
 
-  /* INPUT REFERENCES */
+  /* INPUT REFS */
 
   const usernameRef =
     useRef<TextInput>(null);
@@ -224,9 +221,10 @@ function SignInScreen({
 
   /* LOGO ANIMATION */
 
-  const glowAnim = useRef(
-    new Animated.Value(0)
-  ).current;
+  const glowAnim =
+    useRef(
+      new Animated.Value(0)
+    ).current;
 
 
   useEffect(() => {
@@ -255,10 +253,12 @@ function SignInScreen({
 
 
   /* =========================================================
-     LOGIN / REGISTER
+     SUBMIT
   ========================================================= */
 
   const handleSubmit = async () => {
+    Keyboard.dismiss();
+
     const trimmedUsername =
       username.trim();
 
@@ -270,45 +270,40 @@ function SignInScreen({
       return;
     }
 
+    if (isRegistering) {
+      if (trimmedUsername.length < 3) {
+        setErrorMessage(
+          'Username must be at least 3 characters.'
+        );
+
+        return;
+      }
+
+      if (password.length < 6) {
+        setErrorMessage(
+          'Password must be at least 6 characters.'
+        );
+
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setErrorMessage(
+          'Passwords do not match.'
+        );
+
+        return;
+      }
+    }
+
 
     setIsSubmitting(true);
 
-
     try {
 
-      /* ================= REGISTER ================= */
+      /* REGISTER */
 
       if (isRegistering) {
-
-        if (trimmedUsername.length < 3) {
-          setErrorMessage(
-            'Username must be at least 3 characters.'
-          );
-
-          return;
-        }
-
-
-        if (password.length < 6) {
-          setErrorMessage(
-            'Password must be at least 6 characters.'
-          );
-
-          return;
-        }
-
-
-        if (
-          password !== confirmPassword
-        ) {
-          setErrorMessage(
-            'Passwords do not match.'
-          );
-
-          return;
-        }
-
-
         await AsyncStorage.setItem(
           REGISTERED_ACCOUNT_STORAGE_KEY,
           JSON.stringify({
@@ -317,12 +312,10 @@ function SignInScreen({
           })
         );
 
-
-        setErrorMessage('');
         setUsername('');
         setPassword('');
         setConfirmPassword('');
-
+        setErrorMessage('');
 
         onSignIn();
 
@@ -330,15 +323,14 @@ function SignInScreen({
       }
 
 
-      /* ================= SIGN IN ================= */
+      /* LOGIN */
 
       let isValidLogin = false;
 
 
       /*
-        Default testing credentials.
-
-        These are NOT displayed in the UI.
+        Internal testing credentials.
+        Not displayed in the UI.
       */
 
       if (
@@ -369,10 +361,9 @@ function SignInScreen({
 
 
       if (isValidLogin) {
-        setErrorMessage('');
-
         setUsername('');
         setPassword('');
+        setErrorMessage('');
 
         onSignIn();
       } else {
@@ -383,35 +374,27 @@ function SignInScreen({
 
     } catch (error) {
       console.error(
-        '[AirBuddi] Authentication failed:',
+        '[AirBuddi] Authentication error:',
         error
       );
 
       setErrorMessage(
-        isRegistering
-          ? 'Unable to create your account. Please try again.'
-          : 'Unable to sign in. Please try again.'
+        'Something went wrong. Please try again.'
       );
-
     } finally {
       setIsSubmitting(false);
     }
   };
 
 
-  /* =========================================================
-     SWITCH LOGIN / REGISTER
-  ========================================================= */
+  const switchAuthMode = () => {
+    Keyboard.dismiss();
 
-  const switchAuthMode = (
-    register: boolean
-  ) => {
-    setIsRegistering(register);
+    setIsRegistering(previous => !previous);
 
     setUsername('');
     setPassword('');
     setConfirmPassword('');
-
     setErrorMessage('');
     setFocusedInput('');
   };
@@ -420,14 +403,14 @@ function SignInScreen({
   const glowScale =
     glowAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: [1, 1.13],
+      outputRange: [1, 1.12],
     });
 
 
   const glowOpacity =
     glowAnim.interpolate({
       inputRange: [0, 1],
-      outputRange: [0.25, 0.65],
+      outputRange: [0.2, 0.55],
     });
 
 
@@ -436,670 +419,503 @@ function SignInScreen({
       style={signInStyles.container}
       edges={['top', 'bottom']}
     >
-      <KeyboardAvoidingView
-        style={signInStyles.flex}
-        behavior={
-          Platform.OS === 'ios'
-            ? 'padding'
-            : undefined
-        }
+      <View
+        style={signInStyles.background}
       >
 
+        {/* BACKGROUND DECORATION */}
+
         <View
-          style={signInStyles.background}
+          pointerEvents="none"
+          style={signInStyles.airLineOne}
+        />
+
+        <View
+          pointerEvents="none"
+          style={signInStyles.airLineTwo}
+        />
+
+        <MaterialCommunityIcons
+          pointerEvents="none"
+          name="leaf"
+          size={36}
+          color="rgba(34,197,94,0.14)"
+          style={signInStyles.leafLeft}
+        />
+
+
+        <ScrollView
+          style={signInStyles.scrollView}
+          contentContainerStyle={
+            signInStyles.scrollContent
+          }
+          keyboardShouldPersistTaps="always"
+          keyboardDismissMode="none"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
         >
 
-          {/* Decorative background */}
+          {/* ================= LOGO ================= */}
 
           <View
-            pointerEvents="none"
-            style={signInStyles.airLineOne}
-          />
-
-          <View
-            pointerEvents="none"
-            style={signInStyles.airLineTwo}
-          />
-
-          <View
-            pointerEvents="none"
-            style={signInStyles.airLineThree}
-          />
-
-
-          <MaterialCommunityIcons
-            pointerEvents="none"
-            name="leaf"
-            size={38}
-            color="rgba(34,197,94,0.15)"
-            style={signInStyles.leafLeft}
-          />
-
-
-          <MaterialCommunityIcons
-            pointerEvents="none"
-            name="leaf"
-            size={30}
-            color="rgba(34,197,94,0.14)"
-            style={signInStyles.leafRight}
-          />
-
-
-          <ScrollView
-            contentContainerStyle={
-              signInStyles.scrollContent
-            }
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
+            style={signInStyles.logoSection}
           >
 
-            {/* ================= LOGO ================= */}
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                signInStyles.logoGlow,
+                {
+                  opacity: glowOpacity,
+                  transform: [
+                    {
+                      scale: glowScale,
+                    },
+                  ],
+                },
+              ]}
+            />
+
 
             <View
-              style={signInStyles.logoSection}
+              style={
+                signInStyles.logoCircleOuter
+              }
             >
-
-              <Animated.View
-                pointerEvents="none"
-                style={[
-                  signInStyles.logoGlow,
-                  {
-                    opacity: glowOpacity,
-
-                    transform: [
-                      {
-                        scale: glowScale,
-                      },
-                    ],
-                  },
-                ]}
-              />
-
-
               <View
                 style={
-                  signInStyles.logoCircleOuter
+                  signInStyles.logoCircle
                 }
               >
-                <View
+                <Image
+                  source={require('./assets/airbuddi-favicon.png')}
                   style={
-                    signInStyles.logoCircle
+                    signInStyles.logoImage
                   }
-                >
-                  <Image
-                    source={require('./assets/airbuddi-favicon.png')}
-                    style={
-                      signInStyles.logoImage
-                    }
-                    resizeMode="contain"
-                  />
-                </View>
+                  resizeMode="contain"
+                />
               </View>
-
-
-              <Text
-                style={signInStyles.brandName}
-              >
-                GREENVERSE
-              </Text>
-
-
-              <Text
-                style={signInStyles.appName}
-              >
-                AirBuddi
-              </Text>
-
-
-              <Text
-                style={signInStyles.tagline}
-              >
-                Your indoor air companion
-              </Text>
-
             </View>
 
 
-            {/* ================= FORM CARD ================= */}
+            <Text
+              style={signInStyles.brandName}
+            >
+              GREENVERSE
+            </Text>
+
+            <Text
+              style={signInStyles.appName}
+            >
+              AirBuddi
+            </Text>
+
+            <Text
+              style={signInStyles.tagline}
+            >
+              Your indoor air companion
+            </Text>
+
+          </View>
+
+
+          {/* ================= FORM ================= */}
+
+          <View
+            style={signInStyles.formCard}
+          >
+
+            <Text
+              style={signInStyles.formTitle}
+            >
+              {isRegistering
+                ? 'Create your account'
+                : 'Welcome back 👋'}
+            </Text>
+
+
+            <Text
+              style={
+                signInStyles.formSubtitle
+              }
+            >
+              {isRegistering
+                ? 'Create an account to manage your devices'
+                : 'Sign in to monitor and control your devices'}
+            </Text>
+
+
+            {/* ERROR */}
+
+            {Boolean(errorMessage) && (
+              <View
+                style={signInStyles.errorBox}
+              >
+                <MaterialCommunityIcons
+                  name="alert-circle-outline"
+                  size={19}
+                  color="#DC2626"
+                />
+
+                <Text
+                  style={
+                    signInStyles.errorText
+                  }
+                >
+                  {errorMessage}
+                </Text>
+              </View>
+            )}
+
+
+            {/* USERNAME */}
 
             <View
-              style={signInStyles.formCard}
+              style={signInStyles.inputGroup}
             >
-
               <Text
-                style={signInStyles.formTitle}
+                style={signInStyles.label}
               >
-                {isRegistering
-                  ? 'Create your account'
-                  : 'Welcome back 👋'}
+                Username
               </Text>
 
 
-              <Text
-                style={
-                  signInStyles.formSubtitle
-                }
-              >
-                {isRegistering
-                  ? 'Create an account to manage your devices'
-                  : 'Sign in to monitor and control your devices'}
-              </Text>
-
-
-              {/* ERROR */}
-
-              {Boolean(errorMessage) && (
-                <View
-                  style={
-                    signInStyles.errorBox
-                  }
-                >
-                  <MaterialCommunityIcons
-                    name="alert-circle-outline"
-                    size={19}
-                    color="#DC2626"
-                  />
-
-                  <Text
-                    style={
-                      signInStyles.errorText
-                    }
-                  >
-                    {errorMessage}
-                  </Text>
-                </View>
-              )}
-
-
-              {/* ================= USERNAME ================= */}
-
               <View
-                style={
-                  signInStyles.inputGroup
-                }
-              >
-
-                <Text
-                  style={signInStyles.label}
-                >
-                  Username
-                </Text>
-
-
-                <View
-                  style={[
-                    signInStyles.inputWrapper,
-
-                    focusedInput ===
-                      'username' &&
-                      signInStyles.inputWrapperFocused,
-                  ]}
-                >
-
-                  <MaterialCommunityIcons
-                    name="account-outline"
-                    size={22}
-                    color={
-                      focusedInput ===
-                      'username'
-                        ? '#16A34A'
-                        : '#64748B'
-                    }
-                    style={
-                      signInStyles.inputIcon
-                    }
-                  />
-
-
-                  <TextInput
-                    ref={usernameRef}
-                    style={signInStyles.input}
-
-                    placeholder="Enter your username"
-                    placeholderTextColor="#94A3B8"
-
-                    value={username}
-
-                    editable={!isSubmitting}
-
-                    onFocus={() =>
-                      setFocusedInput(
-                        'username'
-                      )
-                    }
-
-                    onBlur={() =>
-                      setFocusedInput('')
-                    }
-
-                    onChangeText={text => {
-                      setUsername(text);
-
-                      if (errorMessage) {
-                        setErrorMessage('');
-                      }
-                    }}
-
-                    autoCapitalize="none"
-
-                    autoCorrect={false}
-
-                    keyboardType="default"
-
-                    returnKeyType="next"
-
-                    blurOnSubmit={false}
-
-                    onSubmitEditing={() => {
-                      passwordRef.current?.focus();
-                    }}
-                  />
-
-                </View>
-
-              </View>
-
-
-              {/* ================= PASSWORD ================= */}
-
-              <View
-                style={
-                  signInStyles.inputGroup
-                }
-              >
-
-                <Text
-                  style={signInStyles.label}
-                >
-                  Password
-                </Text>
-
-
-                <View
-                  style={[
-                    signInStyles.inputWrapper,
-
-                    focusedInput ===
-                      'password' &&
-                      signInStyles.inputWrapperFocused,
-                  ]}
-                >
-
-                  <MaterialCommunityIcons
-                    name="lock-outline"
-                    size={22}
-                    color={
-                      focusedInput ===
-                      'password'
-                        ? '#16A34A'
-                        : '#64748B'
-                    }
-                    style={
-                      signInStyles.inputIcon
-                    }
-                  />
-
-
-                  <TextInput
-                    ref={passwordRef}
-
-                    style={
-                      signInStyles.input
-                    }
-
-                    placeholder="Enter your password"
-
-                    placeholderTextColor="#94A3B8"
-
-                    value={password}
-
-                    editable={!isSubmitting}
-
-                    onFocus={() =>
-                      setFocusedInput(
-                        'password'
-                      )
-                    }
-
-                    onBlur={() =>
-                      setFocusedInput('')
-                    }
-
-                    onChangeText={text => {
-                      setPassword(text);
-
-                      if (errorMessage) {
-                        setErrorMessage('');
-                      }
-                    }}
-
-                    secureTextEntry={
-                      !showPassword
-                    }
-
-                    autoCapitalize="none"
-
-                    autoCorrect={false}
-
-                    keyboardType="default"
-
-                    returnKeyType={
-                      isRegistering
-                        ? 'next'
-                        : 'done'
-                    }
-
-                    blurOnSubmit={
-                      !isRegistering
-                    }
-
-                    onSubmitEditing={() => {
-                      if (isRegistering) {
-                        confirmPasswordRef.current?.focus();
-                      } else {
-                        handleSubmit();
-                      }
-                    }}
-                  />
-
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      setShowPassword(
-                        previous => !previous
-                      )
-                    }
-
-                    style={
-                      signInStyles.eyeButton
-                    }
-
-                    hitSlop={{
-                      top: 10,
-                      bottom: 10,
-                      left: 10,
-                      right: 10,
-                    }}
-                  >
-
-                    <MaterialCommunityIcons
-                      name={
-                        showPassword
-                          ? 'eye-off-outline'
-                          : 'eye-outline'
-                      }
-
-                      size={22}
-
-                      color="#64748B"
-                    />
-
-                  </TouchableOpacity>
-
-                </View>
-
-              </View>
-
-
-              {/* ================= CONFIRM PASSWORD ================= */}
-
-              {isRegistering && (
-
-                <View
-                  style={
-                    signInStyles.inputGroup
-                  }
-                >
-
-                  <Text
-                    style={
-                      signInStyles.label
-                    }
-                  >
-                    Confirm Password
-                  </Text>
-
-
-                  <View
-                    style={[
-                      signInStyles.inputWrapper,
-
-                      focusedInput ===
-                        'confirmPassword' &&
-                        signInStyles.inputWrapperFocused,
-                    ]}
-                  >
-
-                    <MaterialCommunityIcons
-                      name="lock-check-outline"
-
-                      size={22}
-
-                      color={
-                        focusedInput ===
-                        'confirmPassword'
-                          ? '#16A34A'
-                          : '#64748B'
-                      }
-
-                      style={
-                        signInStyles.inputIcon
-                      }
-                    />
-
-
-                    <TextInput
-                      ref={confirmPasswordRef}
-
-                      style={
-                        signInStyles.input
-                      }
-
-                      placeholder="Confirm your password"
-
-                      placeholderTextColor="#94A3B8"
-
-                      value={confirmPassword}
-
-                      editable={!isSubmitting}
-
-                      onFocus={() =>
-                        setFocusedInput(
-                          'confirmPassword'
-                        )
-                      }
-
-                      onBlur={() =>
-                        setFocusedInput('')
-                      }
-
-                      onChangeText={text => {
-                        setConfirmPassword(
-                          text
-                        );
-
-                        if (errorMessage) {
-                          setErrorMessage('');
-                        }
-                      }}
-
-                      secureTextEntry={
-                        !showPassword
-                      }
-
-                      autoCapitalize="none"
-
-                      autoCorrect={false}
-
-                      returnKeyType="done"
-
-                      blurOnSubmit={true}
-
-                      onSubmitEditing={
-                        handleSubmit
-                      }
-                    />
-
-                  </View>
-
-                </View>
-
-              )}
-
-
-              {/* ================= SUBMIT BUTTON ================= */}
-
-              <TouchableOpacity
                 style={[
-                  signInStyles.signInButton,
-
-                  isSubmitting &&
-                    signInStyles.signInButtonDisabled,
+                  signInStyles.inputWrapper,
+                  focusedInput === 'username' &&
+                    signInStyles.inputWrapperFocused,
                 ]}
-
-                activeOpacity={0.85}
-
-                onPress={handleSubmit}
-
-                disabled={isSubmitting}
               >
 
-                {isSubmitting ? (
-
-                  <ActivityIndicator
-                    color="#FFFFFF"
-                  />
-
-                ) : (
-
-                  <>
-
-                    <MaterialCommunityIcons
-                      name={
-                        isRegistering
-                          ? 'account-plus-outline'
-                          : 'login'
-                      }
-
-                      size={23}
-
-                      color="#FFFFFF"
-                    />
-
-
-                    <Text
-                      style={
-                        signInStyles.signInButtonText
-                      }
-                    >
-                      {isRegistering
-                        ? 'Create Account'
-                        : 'Sign In'}
-                    </Text>
-
-                  </>
-
-                )}
-
-              </TouchableOpacity>
-
-
-              {/* ================= DIVIDER ================= */}
-
-              <View
-                style={
-                  signInStyles.divider
-                }
-              >
-
-                <View
-                  style={
-                    signInStyles.dividerLine
+                <MaterialCommunityIcons
+                  name="account-outline"
+                  size={22}
+                  color={
+                    focusedInput === 'username'
+                      ? '#16A34A'
+                      : '#64748B'
                   }
+                  style={signInStyles.inputIcon}
                 />
 
 
-                <Text
-                  style={
-                    signInStyles.dividerText
-                  }
-                >
-                  or
-                </Text>
+                <TextInput
+                  ref={usernameRef}
+                  style={signInStyles.input}
+                  placeholder="Enter your username"
+                  placeholderTextColor="#94A3B8"
+                  value={username}
+                  editable={!isSubmitting}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="username"
+                  textContentType="username"
+                  returnKeyType="next"
+                  blurOnSubmit={false}
 
-
-                <View
-                  style={
-                    signInStyles.dividerLine
+                  onFocus={() =>
+                    setFocusedInput('username')
                   }
+
+                  onBlur={() =>
+                    setFocusedInput('')
+                  }
+
+                  onChangeText={text => {
+                    setUsername(text);
+
+                    if (errorMessage) {
+                      setErrorMessage('');
+                    }
+                  }}
+
+                  onSubmitEditing={() => {
+                    passwordRef.current?.focus();
+                  }}
                 />
 
               </View>
+            </View>
 
 
-              {/* ================= REGISTER / LOGIN ================= */}
+            {/* PASSWORD */}
+
+            <View
+              style={signInStyles.inputGroup}
+            >
+              <Text
+                style={signInStyles.label}
+              >
+                Password
+              </Text>
+
 
               <View
-                style={
-                  signInStyles.authPrompt
-                }
+                style={[
+                  signInStyles.inputWrapper,
+                  focusedInput === 'password' &&
+                    signInStyles.inputWrapperFocused,
+                ]}
               >
 
-                <Text
-                  style={
-                    signInStyles.authPromptText
+                <MaterialCommunityIcons
+                  name="lock-outline"
+                  size={22}
+                  color={
+                    focusedInput === 'password'
+                      ? '#16A34A'
+                      : '#64748B'
                   }
-                >
-                  {isRegistering
-                    ? 'Already have an account?'
-                    : 'New to AirBuddi?'}
-                </Text>
+                  style={signInStyles.inputIcon}
+                />
+
+
+                <TextInput
+                  ref={passwordRef}
+                  style={signInStyles.input}
+                  placeholder="Enter your password"
+                  placeholderTextColor="#94A3B8"
+                  value={password}
+                  editable={!isSubmitting}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="password"
+                  textContentType="password"
+                  returnKeyType={
+                    isRegistering
+                      ? 'next'
+                      : 'done'
+                  }
+
+                  onFocus={() =>
+                    setFocusedInput('password')
+                  }
+
+                  onBlur={() =>
+                    setFocusedInput('')
+                  }
+
+                  onChangeText={text => {
+                    setPassword(text);
+
+                    if (errorMessage) {
+                      setErrorMessage('');
+                    }
+                  }}
+
+                  onSubmitEditing={() => {
+                    if (isRegistering) {
+                      confirmPasswordRef.current?.focus();
+                    }
+                  }}
+                />
 
 
                 <TouchableOpacity
+                  style={signInStyles.eyeButton}
+                  activeOpacity={0.7}
                   onPress={() =>
-                    switchAuthMode(
-                      !isRegistering
+                    setShowPassword(
+                      previous => !previous
                     )
                   }
-
-                  activeOpacity={0.7}
-
-                  style={
-                    signInStyles.authActionButton
-                  }
                 >
-
-                  <Text
-                    style={
-                      signInStyles.authPromptAction
-                    }
-                  >
-                    {isRegistering
-                      ? 'Sign In'
-                      : 'Create an account'}
-                  </Text>
-
-
                   <MaterialCommunityIcons
-                    name="arrow-right"
-
-                    size={19}
-
-                    color="#16A34A"
+                    name={
+                      showPassword
+                        ? 'eye-off-outline'
+                        : 'eye-outline'
+                    }
+                    size={22}
+                    color="#64748B"
                   />
-
                 </TouchableOpacity>
 
               </View>
-
             </View>
 
-          </ScrollView>
 
-        </View>
+            {/* CONFIRM PASSWORD */}
 
-      </KeyboardAvoidingView>
+            {isRegistering && (
+              <View
+                style={signInStyles.inputGroup}
+              >
+                <Text
+                  style={signInStyles.label}
+                >
+                  Confirm Password
+                </Text>
+
+
+                <View
+                  style={[
+                    signInStyles.inputWrapper,
+                    focusedInput ===
+                      'confirmPassword' &&
+                      signInStyles.inputWrapperFocused,
+                  ]}
+                >
+
+                  <MaterialCommunityIcons
+                    name="lock-check-outline"
+                    size={22}
+                    color={
+                      focusedInput ===
+                      'confirmPassword'
+                        ? '#16A34A'
+                        : '#64748B'
+                    }
+                    style={signInStyles.inputIcon}
+                  />
+
+
+                  <TextInput
+                    ref={confirmPasswordRef}
+                    style={signInStyles.input}
+                    placeholder="Confirm your password"
+                    placeholderTextColor="#94A3B8"
+                    value={confirmPassword}
+                    editable={!isSubmitting}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    autoComplete="password"
+                    textContentType="password"
+                    returnKeyType="done"
+
+                    onFocus={() =>
+                      setFocusedInput(
+                        'confirmPassword'
+                      )
+                    }
+
+                    onBlur={() =>
+                      setFocusedInput('')
+                    }
+
+                    onChangeText={text => {
+                      setConfirmPassword(text);
+
+                      if (errorMessage) {
+                        setErrorMessage('');
+                      }
+                    }}
+                  />
+
+                </View>
+              </View>
+            )}
+
+
+            {/* SIGN IN BUTTON */}
+
+            <TouchableOpacity
+              style={[
+                signInStyles.signInButton,
+                isSubmitting &&
+                  signInStyles.signInButtonDisabled,
+              ]}
+              activeOpacity={0.85}
+              onPress={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator
+                  color="#FFFFFF"
+                />
+              ) : (
+                <>
+                  <MaterialCommunityIcons
+                    name={
+                      isRegistering
+                        ? 'account-plus-outline'
+                        : 'login'
+                    }
+                    size={22}
+                    color="#FFFFFF"
+                  />
+
+                  <Text
+                    style={
+                      signInStyles.signInButtonText
+                    }
+                  >
+                    {isRegistering
+                      ? 'Create Account'
+                      : 'Sign In'}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+
+            {/* SWITCH MODE */}
+
+            <View
+              style={signInStyles.divider}
+            >
+              <View
+                style={signInStyles.dividerLine}
+              />
+
+              <Text
+                style={signInStyles.dividerText}
+              >
+                or
+              </Text>
+
+              <View
+                style={signInStyles.dividerLine}
+              />
+            </View>
+
+
+            <View
+              style={signInStyles.authPrompt}
+            >
+              <Text
+                style={
+                  signInStyles.authPromptText
+                }
+              >
+                {isRegistering
+                  ? 'Already have an account?'
+                  : 'New to AirBuddi?'}
+              </Text>
+
+
+              <TouchableOpacity
+                style={
+                  signInStyles.authActionButton
+                }
+                activeOpacity={0.7}
+                onPress={switchAuthMode}
+              >
+                <Text
+                  style={
+                    signInStyles.authPromptAction
+                  }
+                >
+                  {isRegistering
+                    ? 'Sign In'
+                    : 'Create an account'}
+                </Text>
+
+                <MaterialCommunityIcons
+                  name="arrow-right"
+                  size={19}
+                  color="#16A34A"
+                />
+              </TouchableOpacity>
+            </View>
+
+          </View>
+
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -1110,7 +926,6 @@ function SignInScreen({
 ========================================================= */
 
 const styles = StyleSheet.create({
-
   flex: {
     flex: 1,
   },
@@ -1122,14 +937,10 @@ const styles = StyleSheet.create({
 
   loadingContainer: {
     flex: 1,
-
     backgroundColor: '#F4F9F5',
-
     alignItems: 'center',
-
     justifyContent: 'center',
   },
-
 });
 
 
@@ -1138,122 +949,63 @@ const styles = StyleSheet.create({
 ========================================================= */
 
 const signInStyles = StyleSheet.create({
-
-  flex: {
-    flex: 1,
-  },
-
-
   container: {
     flex: 1,
     backgroundColor: '#EFF8F2',
   },
-
 
   background: {
     flex: 1,
     backgroundColor: '#EFF8F2',
   },
 
+  scrollView: {
+    flex: 1,
+  },
 
   scrollContent: {
     flexGrow: 1,
-
-    justifyContent: 'center',
-
     paddingHorizontal: 22,
-
-    paddingVertical: 28,
+    paddingTop: 28,
+    paddingBottom: 40,
   },
-
-
-  /* BACKGROUND DECORATION */
 
   airLineOne: {
     position: 'absolute',
-
     width: 500,
-
     height: 150,
-
     borderRadius: 300,
-
     borderWidth: 1,
-
-    borderColor:
-      'rgba(34,197,94,0.08)',
-
+    borderColor: 'rgba(34,197,94,0.08)',
     top: 170,
-
     left: -130,
-
     transform: [
       {
         rotate: '-8deg',
       },
     ],
   },
-
 
   airLineTwo: {
     position: 'absolute',
-
     width: 520,
-
     height: 180,
-
     borderRadius: 300,
-
     borderWidth: 1,
-
-    borderColor:
-      'rgba(34,197,94,0.06)',
-
+    borderColor: 'rgba(34,197,94,0.06)',
     top: 190,
-
     left: -100,
-
     transform: [
       {
         rotate: '-8deg',
       },
     ],
   },
-
-
-  airLineThree: {
-    position: 'absolute',
-
-    width: 560,
-
-    height: 210,
-
-    borderRadius: 300,
-
-    borderWidth: 1,
-
-    borderColor:
-      'rgba(34,197,94,0.05)',
-
-    top: 210,
-
-    left: -80,
-
-    transform: [
-      {
-        rotate: '-8deg',
-      },
-    ],
-  },
-
 
   leafLeft: {
     position: 'absolute',
-
     top: 120,
-
     left: 25,
-
     transform: [
       {
         rotate: '-25deg',
@@ -1261,408 +1013,246 @@ const signInStyles = StyleSheet.create({
     ],
   },
 
-
-  leafRight: {
-    position: 'absolute',
-
-    top: 250,
-
-    right: 28,
-
-    transform: [
-      {
-        rotate: '30deg',
-      },
-    ],
-  },
-
-
-  /* LOGO */
-
   logoSection: {
     alignItems: 'center',
-
-    marginBottom: 26,
+    marginBottom: 24,
   },
-
 
   logoGlow: {
     position: 'absolute',
-
     top: -8,
-
     width: 112,
-
     height: 112,
-
     borderRadius: 56,
-
     backgroundColor:
       'rgba(34,197,94,0.15)',
   },
 
-
   logoCircleOuter: {
     width: 94,
-
     height: 94,
-
     borderRadius: 47,
-
     backgroundColor:
       'rgba(34,197,94,0.08)',
-
     alignItems: 'center',
-
     justifyContent: 'center',
-
     marginBottom: 15,
   },
 
-
   logoCircle: {
     width: 74,
-
     height: 74,
-
     borderRadius: 37,
-
     backgroundColor: '#E6F7EC',
-
     alignItems: 'center',
-
     justifyContent: 'center',
-
     borderWidth: 1.5,
-
     borderColor:
       'rgba(34,197,94,0.28)',
   },
-
 
   logoImage: {
     width: 43,
     height: 43,
   },
 
-
   brandName: {
     fontSize: 11,
-
     fontWeight: '900',
-
     letterSpacing: 5,
-
     color: '#4B8A61',
-
     marginBottom: 6,
   },
 
-
   appName: {
     fontSize: 38,
-
     fontWeight: '900',
-
     color: '#102A1B',
-
     letterSpacing: -1.5,
-
     marginBottom: 8,
   },
 
-
   tagline: {
     fontSize: 16,
-
     color: '#496455',
-
     textAlign: 'center',
-
     fontWeight: '500',
   },
 
-
-  /* FORM */
-
   formCard: {
     backgroundColor:
-      'rgba(255,255,255,0.96)',
-
-    borderRadius: 30,
-
+      'rgba(255,255,255,0.97)',
+    borderRadius: 28,
     padding: 24,
 
     shadowColor: '#173322',
-
     shadowOffset: {
       width: 0,
       height: 10,
     },
-
     shadowOpacity: 0.1,
-
     shadowRadius: 22,
-
     elevation: 6,
 
     borderWidth: 1,
-
     borderColor:
       'rgba(34,197,94,0.14)',
   },
 
-
   formTitle: {
     fontSize: 27,
-
     fontWeight: '800',
-
     color: '#173322',
-
     marginBottom: 7,
   },
 
-
   formSubtitle: {
     fontSize: 14,
-
     color: '#64748B',
-
     lineHeight: 21,
-
     marginBottom: 22,
   },
 
-
-  /* ERROR */
-
   errorBox: {
     flexDirection: 'row',
-
     alignItems: 'center',
-
     backgroundColor: '#FEF2F2',
-
     borderWidth: 1,
-
     borderColor: '#FECACA',
-
     borderRadius: 14,
-
     paddingHorizontal: 14,
-
     paddingVertical: 11,
-
     marginBottom: 18,
   },
 
-
   errorText: {
-    fontSize: 13,
-
-    color: '#DC2626',
-
-    fontWeight: '600',
-
     flex: 1,
-
     marginLeft: 8,
+    fontSize: 13,
+    color: '#DC2626',
+    fontWeight: '600',
   },
-
-
-  /* INPUT */
 
   inputGroup: {
     marginBottom: 17,
   },
 
-
   label: {
     fontSize: 14,
-
     fontWeight: '800',
-
     color: '#334155',
-
     marginBottom: 8,
   },
 
-
   inputWrapper: {
-    flexDirection: 'row',
-
-    alignItems: 'center',
-
-    backgroundColor: '#F8FAFC',
-
-    borderWidth: 1.5,
-
-    borderColor: '#E2E8F0',
-
-    borderRadius: 17,
-
-    paddingHorizontal: 15,
-
     height: 58,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 17,
+    paddingHorizontal: 15,
   },
-
 
   inputWrapperFocused: {
     borderColor: '#22C55E',
-
     backgroundColor: '#FFFFFF',
-
-    shadowColor: '#22C55E',
-
-    shadowOffset: {
-      width: 0,
-      height: 0,
-    },
-
-    shadowOpacity: 0.12,
-
-    shadowRadius: 8,
-
-    elevation: 2,
   },
-
 
   inputIcon: {
     marginRight: 11,
   },
 
-
   input: {
     flex: 1,
-
     fontSize: 16,
-
     color: '#0F172A',
 
-    paddingVertical: 0,
-
-    height: '100%',
+    /*
+      Important:
+      No height: '100%' here.
+      This can cause cursor/layout issues
+      on some Android devices.
+    */
+    paddingVertical: 8,
   },
-
 
   eyeButton: {
-    padding: 6,
+    padding: 8,
+    marginRight: -4,
   },
-
-
-  /* BUTTON */
 
   signInButton: {
     width: '100%',
-
     height: 58,
-
     borderRadius: 17,
-
     backgroundColor: '#159447',
-
     flexDirection: 'row',
-
     alignItems: 'center',
-
     justifyContent: 'center',
 
-    gap: 11,
-
     shadowColor: '#159447',
-
     shadowOffset: {
       width: 0,
       height: 7,
     },
-
     shadowOpacity: 0.25,
-
     shadowRadius: 12,
-
     elevation: 5,
   },
-
 
   signInButtonDisabled: {
     opacity: 0.7,
   },
 
-
   signInButtonText: {
     color: '#FFFFFF',
-
     fontSize: 17,
-
     fontWeight: '800',
+    marginLeft: 10,
   },
-
-
-  /* DIVIDER */
 
   divider: {
     flexDirection: 'row',
-
     alignItems: 'center',
-
     marginVertical: 22,
   },
 
-
   dividerLine: {
     flex: 1,
-
     height: 1,
-
     backgroundColor: '#E2E8F0',
   },
 
-
   dividerText: {
     fontSize: 13,
-
     color: '#94A3B8',
-
     marginHorizontal: 12,
   },
 
-
-  /* REGISTER / LOGIN */
-
   authPrompt: {
     alignItems: 'center',
-
     justifyContent: 'center',
   },
 
-
   authPromptText: {
     fontSize: 14,
-
     color: '#64748B',
-
     marginBottom: 8,
   },
 
-
   authActionButton: {
     flexDirection: 'row',
-
     alignItems: 'center',
   },
 
-
   authPromptAction: {
     fontSize: 15,
-
     fontWeight: '800',
-
     color: '#15803D',
-
     marginRight: 4,
   },
-
 });
 
 
