@@ -25,6 +25,7 @@ import { store } from './src/store/store';
 import { resetDashboard } from './src/features/dashboard/dashboardSlice';
 
 const AUTH_STORAGE_KEY = '@airbuddi_signed_in';
+const REGISTERED_ACCOUNT_STORAGE_KEY = '@airbuddi_registered_account';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -105,19 +106,66 @@ function AppContent() {
 // ─── Sign In Screen ───────────────────────────────────────────────────────────
 
 function SignInScreen({ onSignIn }: { onSignIn: () => void }) {
+  const [isRegistering, setIsRegistering] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleLogin = () => {
+  const handleSubmit = async () => {
     const trimmedUsername = username.trim();
     if (!trimmedUsername || !password) {
       setErrorMessage('Please enter both username and password.');
       return;
     }
 
-    if (trimmedUsername === 'admin' && password === 'admin123') {
+    if (isRegistering) {
+      if (trimmedUsername.length < 3) {
+        setErrorMessage('Username must be at least 3 characters.');
+        return;
+      }
+
+      if (password.length < 6) {
+        setErrorMessage('Password must be at least 6 characters.');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setErrorMessage('Passwords do not match.');
+        return;
+      }
+
+      try {
+        await AsyncStorage.setItem(
+          REGISTERED_ACCOUNT_STORAGE_KEY,
+          JSON.stringify({ username: trimmedUsername, password }),
+        );
+        setErrorMessage('');
+        setUsername('');
+        setPassword('');
+        setConfirmPassword('');
+        onSignIn();
+      } catch (error) {
+        console.error('[AirBuddi] Registration failed:', error);
+        setErrorMessage('Unable to create your account. Please try again.');
+      }
+      return;
+    }
+
+    let isValidLogin = trimmedUsername === 'admin' && password === 'admin123';
+
+    try {
+      const storedAccount = await AsyncStorage.getItem(REGISTERED_ACCOUNT_STORAGE_KEY);
+      if (storedAccount) {
+        const account = JSON.parse(storedAccount);
+        isValidLogin = isValidLogin || (account.username === trimmedUsername && account.password === password);
+      }
+    } catch (error) {
+      console.error('[AirBuddi] Failed to read registered account:', error);
+    }
+
+    if (isValidLogin) {
       setErrorMessage('');
       setUsername('');
       setPassword('');
@@ -128,8 +176,18 @@ function SignInScreen({ onSignIn }: { onSignIn: () => void }) {
   };
 
   const handleAutoFill = () => {
+    setIsRegistering(false);
     setUsername('admin');
     setPassword('admin123');
+    setConfirmPassword('');
+    setErrorMessage('');
+  };
+
+  const switchAuthMode = (register: boolean) => {
+    setIsRegistering(register);
+    setUsername('');
+    setPassword('');
+    setConfirmPassword('');
     setErrorMessage('');
   };
 
@@ -165,8 +223,8 @@ function SignInScreen({ onSignIn }: { onSignIn: () => void }) {
 
           {/* Login Form Card */}
           <View style={signInStyles.formCard}>
-            <Text style={signInStyles.formTitle}>Admin Login</Text>
-            <Text style={signInStyles.formSubtitle}>Sign in to manage your devices</Text>
+            <Text style={signInStyles.formTitle}>{isRegistering ? 'Create your account' : 'Welcome back'}</Text>
+            <Text style={signInStyles.formSubtitle}>{isRegistering ? 'Register to manage your devices' : 'Sign in to manage your devices'}</Text>
 
             {Boolean(errorMessage) && (
               <View style={signInStyles.errorBox}>
@@ -182,7 +240,7 @@ function SignInScreen({ onSignIn }: { onSignIn: () => void }) {
                 <MaterialCommunityIcons name="account-outline" size={20} color="#64748B" style={signInStyles.inputIcon} />
                 <TextInput
                   style={signInStyles.input}
-                  placeholder="Enter username (admin)"
+                  placeholder={isRegistering ? 'Choose a username' : 'Enter username (admin)'}
                   placeholderTextColor="#94A3B8"
                   value={username}
                   onChangeText={text => {
@@ -202,7 +260,7 @@ function SignInScreen({ onSignIn }: { onSignIn: () => void }) {
                 <MaterialCommunityIcons name="lock-outline" size={20} color="#64748B" style={signInStyles.inputIcon} />
                 <TextInput
                   style={signInStyles.input}
-                  placeholder="Enter password (admin123)"
+                  placeholder={isRegistering ? 'Create a password' : 'Enter password (admin123)'}
                   placeholderTextColor="#94A3B8"
                   value={password}
                   onChangeText={text => {
@@ -227,21 +285,56 @@ function SignInScreen({ onSignIn }: { onSignIn: () => void }) {
               </View>
             </View>
 
+            {isRegistering && (
+              <View style={signInStyles.inputGroup}>
+                <Text style={signInStyles.label}>Confirm Password</Text>
+                <View style={signInStyles.inputWrapper}>
+                  <MaterialCommunityIcons name="lock-check-outline" size={20} color="#64748B" style={signInStyles.inputIcon} />
+                  <TextInput
+                    style={signInStyles.input}
+                    placeholder="Re-enter your password"
+                    placeholderTextColor="#94A3B8"
+                    value={confirmPassword}
+                    onChangeText={text => {
+                      setConfirmPassword(text);
+                      if (errorMessage) setErrorMessage('');
+                    }}
+                    secureTextEntry={!showPassword}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+                </View>
+              </View>
+            )}
+
             {/* Quick Demo Fill Button */}
-            <TouchableOpacity style={signInStyles.autoFillChip} onPress={handleAutoFill} activeOpacity={0.7}>
-              <MaterialCommunityIcons name="key-variant" size={14} color="#16A34A" />
-              <Text style={signInStyles.autoFillText}>Fill Demo Credentials (admin / admin123)</Text>
-            </TouchableOpacity>
+            {!isRegistering && (
+              <TouchableOpacity style={signInStyles.autoFillChip} onPress={handleAutoFill} activeOpacity={0.7}>
+                <MaterialCommunityIcons name="key-variant" size={14} color="#16A34A" />
+                <Text style={signInStyles.autoFillText}>Fill Demo Credentials (admin / admin123)</Text>
+              </TouchableOpacity>
+            )}
 
             {/* Submit Button */}
             <TouchableOpacity
               style={signInStyles.signInButton}
               activeOpacity={0.8}
-              onPress={handleLogin}
+              onPress={handleSubmit}
             >
               <MaterialCommunityIcons name="login" size={20} color="#FFFFFF" />
-              <Text style={signInStyles.signInButtonText}>Sign In</Text>
+              <Text style={signInStyles.signInButtonText}>{isRegistering ? 'Create Account' : 'Sign In'}</Text>
             </TouchableOpacity>
+
+            <View style={signInStyles.authPrompt}>
+              <Text style={signInStyles.authPromptText}>
+                {isRegistering ? 'Already have an account?' : "Don't have an account?"}
+              </Text>
+              <TouchableOpacity onPress={() => switchAuthMode(!isRegistering)} activeOpacity={0.7}>
+                <Text style={signInStyles.authPromptAction}>
+                  {isRegistering ? 'Sign In' : 'Register'}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -353,6 +446,22 @@ const signInStyles = StyleSheet.create({
     color: '#64748B',
     marginBottom: 20,
   },
+  authPrompt: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 16,
+  },
+  authPromptText: {
+    fontSize: 13,
+    color: '#64748B',
+  },
+  authPromptAction: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#16A34A',
+  },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -440,4 +549,4 @@ const signInStyles = StyleSheet.create({
   },
 });
 
-export default App;
+export default App;
