@@ -67,9 +67,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   embeddedContainer: {
-    height: 680,
-    marginTop: 4,
-    overflow: 'hidden',
+    flex: 1,
+    backgroundColor: '#FFFFFF',
   },
 });
 

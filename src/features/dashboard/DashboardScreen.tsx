@@ -611,19 +611,28 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           onMenuPress={() => setActiveSheet('menu')}
         />
       )}
-      <ScrollView
-        style={styles.flex}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            colors={[dashboardTheme.colors.primary]}
-            tintColor={dashboardTheme.colors.primary}
+      {activeTab === 'explore' ? (
+        <View style={styles.exploreViewport}>
+          <ExploreProductsScreen
+            visible
+            onClose={() => setActiveTab('fan')}
+            embedded
           />
-        }
-      >
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              colors={[dashboardTheme.colors.primary]}
+              tintColor={dashboardTheme.colors.primary}
+            />
+          }
+        >
         {/* ── Home Tab ──────────────────────────────────────────────── */}
         {activeTab === 'fan' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
@@ -719,7 +728,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   </View>
 
                   {/* MAC address information */}
-                  <View style={styles.macHintCard}>
+                  {/* <View style={styles.macHintCard}>
                     <MaterialCommunityIcons
                       name="shield-check-outline"
                       size={20}
@@ -729,7 +738,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                     <Text style={styles.macHintText}>
                       You'll need your device's MAC address
                     </Text>
-                  </View>
+                  </View> */}
 
                   {/* How it works */}
                   <View style={styles.howItWorks}>
@@ -916,18 +925,9 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           </Animated.View>
         )}
 
-        {activeTab === 'explore' && (
-          <Animated.View style={[styles.tabContent, contentStyle]}>
-            <ExploreProductsScreen
-              visible
-              onClose={() => setActiveTab('fan')}
-              embedded
-            />
-          </Animated.View>
-        )}
-
         <View style={styles.bottomSpace} />
-      </ScrollView>
+        </ScrollView>
+      )}
 
       {/* ── Account, device, and overflow sheets ───────────────────── */}
       <Modal
@@ -1496,6 +1496,9 @@ const styles = StyleSheet.create({
   },
   tabContent: {
     width: '100%',
+  },
+  exploreViewport: {
+    flex: 1,
   },
   tabPad: {
     paddingHorizontal: 20,
