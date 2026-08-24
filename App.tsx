@@ -38,9 +38,12 @@ import { DashboardScreen } from './src/features/dashboard/DashboardScreen';
 import { store } from './src/store/store';
 import { resetDashboard } from './src/features/dashboard/dashboardSlice';
 
+
 const AUTH_STORAGE_KEY = '@airbuddi_signed_in';
+
 const REGISTERED_ACCOUNT_STORAGE_KEY =
   '@airbuddi_registered_account';
+
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -64,16 +67,22 @@ function App() {
   );
 }
 
+
 function AppContent() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [isLoading, setIsLoading] =
+    useState(true);
+
+  const [isSignedIn, setIsSignedIn] =
+    useState(false);
+
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const value = await AsyncStorage.getItem(
-          AUTH_STORAGE_KEY
-        );
+        const value =
+          await AsyncStorage.getItem(
+            AUTH_STORAGE_KEY
+          );
 
         setIsSignedIn(value === 'true');
       } catch {
@@ -86,9 +95,12 @@ function AppContent() {
     checkAuth();
   }, []);
 
+
   const handleSignIn = useCallback(async () => {
     try {
-      store.dispatch(resetDashboard(undefined));
+      store.dispatch(
+        resetDashboard(undefined)
+      );
 
       await AsyncStorage.setItem(
         AUTH_STORAGE_KEY,
@@ -104,6 +116,7 @@ function AppContent() {
     }
   }, []);
 
+
   const handleSignOut = useCallback(async () => {
     try {
       await AsyncStorage.clear();
@@ -113,15 +126,18 @@ function AppContent() {
       );
     } catch (error) {
       console.error(
-        '[AirBuddi] Storage clear failed:',
+        '[AirBuddi] Sign out failed:',
         error
       );
     } finally {
-      store.dispatch(resetDashboard(undefined));
+      store.dispatch(
+        resetDashboard(undefined)
+      );
 
       setIsSignedIn(false);
     }
   }, []);
+
 
   if (isLoading) {
     return (
@@ -137,6 +153,7 @@ function AppContent() {
     );
   }
 
+
   if (!isSignedIn) {
     return (
       <SignInScreen
@@ -144,6 +161,7 @@ function AppContent() {
       />
     );
   }
+
 
   return (
     <SafeAreaView
@@ -157,9 +175,10 @@ function AppContent() {
   );
 }
 
-/* ─────────────────────────────────────────────
+
+/* =========================================================
    SIGN IN SCREEN
-───────────────────────────────────────────── */
+========================================================= */
 
 function SignInScreen({
   onSignIn,
@@ -169,8 +188,12 @@ function SignInScreen({
   const [isRegistering, setIsRegistering] =
     useState(false);
 
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] =
+    useState('');
+
+  const [password, setPassword] =
+    useState('');
+
   const [confirmPassword, setConfirmPassword] =
     useState('');
 
@@ -186,11 +209,25 @@ function SignInScreen({
   const [isSubmitting, setIsSubmitting] =
     useState(false);
 
+
+  /* INPUT REFERENCES */
+
+  const usernameRef =
+    useRef<TextInput>(null);
+
+  const passwordRef =
+    useRef<TextInput>(null);
+
+  const confirmPasswordRef =
+    useRef<TextInput>(null);
+
+
+  /* LOGO ANIMATION */
+
   const glowAnim = useRef(
     new Animated.Value(0)
   ).current;
 
-  /* Logo breathing animation */
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -216,12 +253,14 @@ function SignInScreen({
     };
   }, [glowAnim]);
 
-  /* ─────────────────────────────────────────
+
+  /* =========================================================
      LOGIN / REGISTER
-  ───────────────────────────────────────── */
+  ========================================================= */
 
   const handleSubmit = async () => {
-    const trimmedUsername = username.trim();
+    const trimmedUsername =
+      username.trim();
 
     if (!trimmedUsername || !password) {
       setErrorMessage(
@@ -231,12 +270,16 @@ function SignInScreen({
       return;
     }
 
+
     setIsSubmitting(true);
 
+
     try {
-      /* REGISTER */
+
+      /* ================= REGISTER ================= */
 
       if (isRegistering) {
+
         if (trimmedUsername.length < 3) {
           setErrorMessage(
             'Username must be at least 3 characters.'
@@ -244,6 +287,7 @@ function SignInScreen({
 
           return;
         }
+
 
         if (password.length < 6) {
           setErrorMessage(
@@ -253,13 +297,17 @@ function SignInScreen({
           return;
         }
 
-        if (password !== confirmPassword) {
+
+        if (
+          password !== confirmPassword
+        ) {
           setErrorMessage(
             'Passwords do not match.'
           );
 
           return;
         }
+
 
         await AsyncStorage.setItem(
           REGISTERED_ACCOUNT_STORAGE_KEY,
@@ -269,26 +317,28 @@ function SignInScreen({
           })
         );
 
+
         setErrorMessage('');
         setUsername('');
         setPassword('');
         setConfirmPassword('');
+
 
         onSignIn();
 
         return;
       }
 
-      /* SIGN IN */
+
+      /* ================= SIGN IN ================= */
 
       let isValidLogin = false;
 
-      /*
-        Default test account.
 
-        It is NOT shown anywhere in the UI.
-        You can remove this later when you connect
-        your real backend authentication.
+      /*
+        Default testing credentials.
+
+        These are NOT displayed in the UI.
       */
 
       if (
@@ -298,10 +348,12 @@ function SignInScreen({
         isValidLogin = true;
       }
 
+
       const storedAccount =
         await AsyncStorage.getItem(
           REGISTERED_ACCOUNT_STORAGE_KEY
         );
+
 
       if (storedAccount) {
         const account =
@@ -315,6 +367,7 @@ function SignInScreen({
         }
       }
 
+
       if (isValidLogin) {
         setErrorMessage('');
 
@@ -327,6 +380,7 @@ function SignInScreen({
           'Invalid username or password.'
         );
       }
+
     } catch (error) {
       console.error(
         '[AirBuddi] Authentication failed:',
@@ -338,14 +392,16 @@ function SignInScreen({
           ? 'Unable to create your account. Please try again.'
           : 'Unable to sign in. Please try again.'
       );
+
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  /* ─────────────────────────────────────────
+
+  /* =========================================================
      SWITCH LOGIN / REGISTER
-  ───────────────────────────────────────── */
+  ========================================================= */
 
   const switchAuthMode = (
     register: boolean
@@ -360,17 +416,20 @@ function SignInScreen({
     setFocusedInput('');
   };
 
+
   const glowScale =
     glowAnim.interpolate({
       inputRange: [0, 1],
       outputRange: [1, 1.13],
     });
 
+
   const glowOpacity =
     glowAnim.interpolate({
       inputRange: [0, 1],
       outputRange: [0.25, 0.65],
     });
+
 
   return (
     <SafeAreaView
@@ -385,9 +444,11 @@ function SignInScreen({
             : undefined
         }
       >
+
         <View
           style={signInStyles.background}
         >
+
           {/* Decorative background */}
 
           <View
@@ -405,6 +466,7 @@ function SignInScreen({
             style={signInStyles.airLineThree}
           />
 
+
           <MaterialCommunityIcons
             pointerEvents="none"
             name="leaf"
@@ -412,6 +474,7 @@ function SignInScreen({
             color="rgba(34,197,94,0.15)"
             style={signInStyles.leafLeft}
           />
+
 
           <MaterialCommunityIcons
             pointerEvents="none"
@@ -421,24 +484,28 @@ function SignInScreen({
             style={signInStyles.leafRight}
           />
 
+
           <ScrollView
             contentContainerStyle={
               signInStyles.scrollContent
             }
-            keyboardShouldPersistTaps="always"
+            keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >
-            {/* ───────── LOGO SECTION ───────── */}
+
+            {/* ================= LOGO ================= */}
 
             <View
               style={signInStyles.logoSection}
             >
+
               <Animated.View
                 pointerEvents="none"
                 style={[
                   signInStyles.logoGlow,
                   {
                     opacity: glowOpacity,
+
                     transform: [
                       {
                         scale: glowScale,
@@ -447,6 +514,7 @@ function SignInScreen({
                   },
                 ]}
               />
+
 
               <View
                 style={
@@ -468,11 +536,13 @@ function SignInScreen({
                 </View>
               </View>
 
+
               <Text
                 style={signInStyles.brandName}
               >
                 GREENVERSE
               </Text>
+
 
               <Text
                 style={signInStyles.appName}
@@ -480,18 +550,22 @@ function SignInScreen({
                 AirBuddi
               </Text>
 
+
               <Text
                 style={signInStyles.tagline}
               >
                 Your indoor air companion
               </Text>
+
             </View>
 
-            {/* ───────── FORM CARD ───────── */}
+
+            {/* ================= FORM CARD ================= */}
 
             <View
               style={signInStyles.formCard}
             >
+
               <Text
                 style={signInStyles.formTitle}
               >
@@ -499,6 +573,7 @@ function SignInScreen({
                   ? 'Create your account'
                   : 'Welcome back 👋'}
               </Text>
+
 
               <Text
                 style={
@@ -510,7 +585,8 @@ function SignInScreen({
                   : 'Sign in to monitor and control your devices'}
               </Text>
 
-              {/* ERROR MESSAGE */}
+
+              {/* ERROR */}
 
               {Boolean(errorMessage) && (
                 <View
@@ -534,18 +610,21 @@ function SignInScreen({
                 </View>
               )}
 
-              {/* ───────── USERNAME ───────── */}
+
+              {/* ================= USERNAME ================= */}
 
               <View
                 style={
                   signInStyles.inputGroup
                 }
               >
+
                 <Text
                   style={signInStyles.label}
                 >
                   Username
                 </Text>
+
 
                 <View
                   style={[
@@ -556,6 +635,7 @@ function SignInScreen({
                       signInStyles.inputWrapperFocused,
                   ]}
                 >
+
                   <MaterialCommunityIcons
                     name="account-outline"
                     size={22}
@@ -570,20 +650,28 @@ function SignInScreen({
                     }
                   />
 
+
                   <TextInput
+                    ref={usernameRef}
                     style={signInStyles.input}
+
                     placeholder="Enter your username"
                     placeholderTextColor="#94A3B8"
+
                     value={username}
-                    editable={true}
+
+                    editable={!isSubmitting}
+
                     onFocus={() =>
                       setFocusedInput(
                         'username'
                       )
                     }
+
                     onBlur={() =>
                       setFocusedInput('')
                     }
+
                     onChangeText={text => {
                       setUsername(text);
 
@@ -591,25 +679,41 @@ function SignInScreen({
                         setErrorMessage('');
                       }
                     }}
+
                     autoCapitalize="none"
+
                     autoCorrect={false}
+
+                    keyboardType="default"
+
                     returnKeyType="next"
+
+                    blurOnSubmit={false}
+
+                    onSubmitEditing={() => {
+                      passwordRef.current?.focus();
+                    }}
                   />
+
                 </View>
+
               </View>
 
-              {/* ───────── PASSWORD ───────── */}
+
+              {/* ================= PASSWORD ================= */}
 
               <View
                 style={
                   signInStyles.inputGroup
                 }
               >
+
                 <Text
                   style={signInStyles.label}
                 >
                   Password
                 </Text>
+
 
                 <View
                   style={[
@@ -620,6 +724,7 @@ function SignInScreen({
                       signInStyles.inputWrapperFocused,
                   ]}
                 >
+
                   <MaterialCommunityIcons
                     name="lock-outline"
                     size={22}
@@ -634,20 +739,32 @@ function SignInScreen({
                     }
                   />
 
+
                   <TextInput
-                    style={signInStyles.input}
+                    ref={passwordRef}
+
+                    style={
+                      signInStyles.input
+                    }
+
                     placeholder="Enter your password"
+
                     placeholderTextColor="#94A3B8"
+
                     value={password}
-                    editable={true}
+
+                    editable={!isSubmitting}
+
                     onFocus={() =>
                       setFocusedInput(
                         'password'
                       )
                     }
+
                     onBlur={() =>
                       setFocusedInput('')
                     }
+
                     onChangeText={text => {
                       setPassword(text);
 
@@ -655,22 +772,36 @@ function SignInScreen({
                         setErrorMessage('');
                       }
                     }}
+
                     secureTextEntry={
                       !showPassword
                     }
+
                     autoCapitalize="none"
+
                     autoCorrect={false}
+
+                    keyboardType="default"
+
                     returnKeyType={
                       isRegistering
                         ? 'next'
                         : 'done'
                     }
+
+                    blurOnSubmit={
+                      !isRegistering
+                    }
+
                     onSubmitEditing={() => {
-                      if (!isRegistering) {
+                      if (isRegistering) {
+                        confirmPasswordRef.current?.focus();
+                      } else {
                         handleSubmit();
                       }
                     }}
                   />
+
 
                   <TouchableOpacity
                     onPress={() =>
@@ -678,9 +809,11 @@ function SignInScreen({
                         previous => !previous
                       )
                     }
+
                     style={
                       signInStyles.eyeButton
                     }
+
                     hitSlop={{
                       top: 10,
                       bottom: 10,
@@ -688,27 +821,36 @@ function SignInScreen({
                       right: 10,
                     }}
                   >
+
                     <MaterialCommunityIcons
                       name={
                         showPassword
                           ? 'eye-off-outline'
                           : 'eye-outline'
                       }
+
                       size={22}
+
                       color="#64748B"
                     />
+
                   </TouchableOpacity>
+
                 </View>
+
               </View>
 
-              {/* ───────── CONFIRM PASSWORD ───────── */}
+
+              {/* ================= CONFIRM PASSWORD ================= */}
 
               {isRegistering && (
+
                 <View
                   style={
                     signInStyles.inputGroup
                   }
                 >
+
                   <Text
                     style={
                       signInStyles.label
@@ -716,6 +858,7 @@ function SignInScreen({
                   >
                     Confirm Password
                   </Text>
+
 
                   <View
                     style={[
@@ -726,36 +869,50 @@ function SignInScreen({
                         signInStyles.inputWrapperFocused,
                     ]}
                   >
+
                     <MaterialCommunityIcons
                       name="lock-check-outline"
+
                       size={22}
+
                       color={
                         focusedInput ===
                         'confirmPassword'
                           ? '#16A34A'
                           : '#64748B'
                       }
+
                       style={
                         signInStyles.inputIcon
                       }
                     />
 
+
                     <TextInput
+                      ref={confirmPasswordRef}
+
                       style={
                         signInStyles.input
                       }
+
                       placeholder="Confirm your password"
+
                       placeholderTextColor="#94A3B8"
+
                       value={confirmPassword}
-                      editable={true}
+
+                      editable={!isSubmitting}
+
                       onFocus={() =>
                         setFocusedInput(
                           'confirmPassword'
                         )
                       }
+
                       onBlur={() =>
                         setFocusedInput('')
                       }
+
                       onChangeText={text => {
                         setConfirmPassword(
                           text
@@ -765,21 +922,32 @@ function SignInScreen({
                           setErrorMessage('');
                         }
                       }}
+
                       secureTextEntry={
                         !showPassword
                       }
+
                       autoCapitalize="none"
+
                       autoCorrect={false}
+
                       returnKeyType="done"
+
+                      blurOnSubmit={true}
+
                       onSubmitEditing={
                         handleSubmit
                       }
                     />
+
                   </View>
+
                 </View>
+
               )}
 
-              {/* ───────── SIGN IN BUTTON ───────── */}
+
+              {/* ================= SUBMIT BUTTON ================= */}
 
               <TouchableOpacity
                 style={[
@@ -788,25 +956,36 @@ function SignInScreen({
                   isSubmitting &&
                     signInStyles.signInButtonDisabled,
                 ]}
+
                 activeOpacity={0.85}
+
                 onPress={handleSubmit}
+
                 disabled={isSubmitting}
               >
+
                 {isSubmitting ? (
+
                   <ActivityIndicator
                     color="#FFFFFF"
                   />
+
                 ) : (
+
                   <>
+
                     <MaterialCommunityIcons
                       name={
                         isRegistering
                           ? 'account-plus-outline'
                           : 'login'
                       }
+
                       size={23}
+
                       color="#FFFFFF"
                     />
+
 
                     <Text
                       style={
@@ -817,20 +996,28 @@ function SignInScreen({
                         ? 'Create Account'
                         : 'Sign In'}
                     </Text>
+
                   </>
+
                 )}
+
               </TouchableOpacity>
 
-              {/* DIVIDER */}
+
+              {/* ================= DIVIDER ================= */}
 
               <View
-                style={signInStyles.divider}
+                style={
+                  signInStyles.divider
+                }
               >
+
                 <View
                   style={
                     signInStyles.dividerLine
                   }
                 />
+
 
                 <Text
                   style={
@@ -840,20 +1027,24 @@ function SignInScreen({
                   or
                 </Text>
 
+
                 <View
                   style={
                     signInStyles.dividerLine
                   }
                 />
+
               </View>
 
-              {/* LOGIN / REGISTER SWITCH */}
+
+              {/* ================= REGISTER / LOGIN ================= */}
 
               <View
                 style={
                   signInStyles.authPrompt
                 }
               >
+
                 <Text
                   style={
                     signInStyles.authPromptText
@@ -864,17 +1055,21 @@ function SignInScreen({
                     : 'New to AirBuddi?'}
                 </Text>
 
+
                 <TouchableOpacity
                   onPress={() =>
                     switchAuthMode(
                       !isRegistering
                     )
                   }
+
                   activeOpacity={0.7}
+
                   style={
                     signInStyles.authActionButton
                   }
                 >
+
                   <Text
                     style={
                       signInStyles.authPromptAction
@@ -885,26 +1080,37 @@ function SignInScreen({
                       : 'Create an account'}
                   </Text>
 
+
                   <MaterialCommunityIcons
                     name="arrow-right"
+
                     size={19}
+
                     color="#16A34A"
                   />
+
                 </TouchableOpacity>
+
               </View>
+
             </View>
+
           </ScrollView>
+
         </View>
+
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-/* ─────────────────────────────────────────────
+
+/* =========================================================
    GENERAL STYLES
-───────────────────────────────────────────── */
+========================================================= */
 
 const styles = StyleSheet.create({
+
   flex: {
     flex: 1,
   },
@@ -916,84 +1122,123 @@ const styles = StyleSheet.create({
 
   loadingContainer: {
     flex: 1,
+
     backgroundColor: '#F4F9F5',
+
     alignItems: 'center',
+
     justifyContent: 'center',
   },
+
 });
 
-/* ─────────────────────────────────────────────
+
+/* =========================================================
    SIGN IN STYLES
-───────────────────────────────────────────── */
+========================================================= */
 
 const signInStyles = StyleSheet.create({
+
   flex: {
     flex: 1,
   },
+
 
   container: {
     flex: 1,
     backgroundColor: '#EFF8F2',
   },
 
+
   background: {
     flex: 1,
     backgroundColor: '#EFF8F2',
   },
 
+
   scrollContent: {
     flexGrow: 1,
+
     justifyContent: 'center',
+
     paddingHorizontal: 22,
+
     paddingVertical: 28,
   },
 
-  /* Decorative Air Lines */
+
+  /* BACKGROUND DECORATION */
 
   airLineOne: {
     position: 'absolute',
+
     width: 500,
+
     height: 150,
+
     borderRadius: 300,
+
     borderWidth: 1,
+
     borderColor:
       'rgba(34,197,94,0.08)',
+
     top: 170,
+
     left: -130,
+
     transform: [
       {
         rotate: '-8deg',
       },
     ],
   },
+
 
   airLineTwo: {
     position: 'absolute',
+
     width: 520,
+
     height: 180,
+
     borderRadius: 300,
+
     borderWidth: 1,
+
     borderColor:
       'rgba(34,197,94,0.06)',
+
     top: 190,
+
     left: -100,
+
     transform: [
       {
         rotate: '-8deg',
       },
     ],
   },
+
 
   airLineThree: {
     position: 'absolute',
+
     width: 560,
+
     height: 210,
+
     borderRadius: 300,
+
     borderWidth: 1,
+
     borderColor:
       'rgba(34,197,94,0.05)',
+
     top: 210,
+
     left: -80,
+
     transform: [
       {
         rotate: '-8deg',
@@ -1001,10 +1246,14 @@ const signInStyles = StyleSheet.create({
     ],
   },
 
+
   leafLeft: {
     position: 'absolute',
+
     top: 120,
+
     left: 25,
+
     transform: [
       {
         rotate: '-25deg',
@@ -1012,10 +1261,14 @@ const signInStyles = StyleSheet.create({
     ],
   },
 
+
   leafRight: {
     position: 'absolute',
+
     top: 250,
+
     right: 28,
+
     transform: [
       {
         rotate: '30deg',
@@ -1023,80 +1276,121 @@ const signInStyles = StyleSheet.create({
     ],
   },
 
-  /* Logo */
+
+  /* LOGO */
 
   logoSection: {
     alignItems: 'center',
+
     marginBottom: 26,
   },
 
+
   logoGlow: {
     position: 'absolute',
+
     top: -8,
+
     width: 112,
+
     height: 112,
+
     borderRadius: 56,
+
     backgroundColor:
       'rgba(34,197,94,0.15)',
   },
 
+
   logoCircleOuter: {
     width: 94,
+
     height: 94,
+
     borderRadius: 47,
+
     backgroundColor:
       'rgba(34,197,94,0.08)',
+
     alignItems: 'center',
+
     justifyContent: 'center',
+
     marginBottom: 15,
   },
 
+
   logoCircle: {
     width: 74,
+
     height: 74,
+
     borderRadius: 37,
+
     backgroundColor: '#E6F7EC',
+
     alignItems: 'center',
+
     justifyContent: 'center',
+
     borderWidth: 1.5,
+
     borderColor:
       'rgba(34,197,94,0.28)',
   },
+
 
   logoImage: {
     width: 43,
     height: 43,
   },
 
+
   brandName: {
     fontSize: 11,
+
     fontWeight: '900',
+
     letterSpacing: 5,
+
     color: '#4B8A61',
+
     marginBottom: 6,
   },
 
+
   appName: {
     fontSize: 38,
+
     fontWeight: '900',
+
     color: '#102A1B',
+
     letterSpacing: -1.5,
+
     marginBottom: 8,
   },
 
+
   tagline: {
     fontSize: 16,
+
     color: '#496455',
+
     textAlign: 'center',
+
     fontWeight: '500',
   },
 
-  /* Form Card */
+
+  /* FORM */
 
   formCard: {
     backgroundColor:
       'rgba(255,255,255,0.96)',
+
     borderRadius: 30,
+
     padding: 24,
 
     shadowColor: '#173322',
@@ -1107,6 +1401,7 @@ const signInStyles = StyleSheet.create({
     },
 
     shadowOpacity: 0.1,
+
     shadowRadius: 22,
 
     elevation: 6,
@@ -1117,62 +1412,92 @@ const signInStyles = StyleSheet.create({
       'rgba(34,197,94,0.14)',
   },
 
+
   formTitle: {
     fontSize: 27,
+
     fontWeight: '800',
+
     color: '#173322',
+
     marginBottom: 7,
   },
 
+
   formSubtitle: {
     fontSize: 14,
+
     color: '#64748B',
+
     lineHeight: 21,
+
     marginBottom: 22,
   },
 
-  /* Error */
+
+  /* ERROR */
 
   errorBox: {
     flexDirection: 'row',
+
     alignItems: 'center',
+
     backgroundColor: '#FEF2F2',
+
     borderWidth: 1,
+
     borderColor: '#FECACA',
+
     borderRadius: 14,
+
     paddingHorizontal: 14,
+
     paddingVertical: 11,
+
     marginBottom: 18,
   },
 
+
   errorText: {
     fontSize: 13,
+
     color: '#DC2626',
+
     fontWeight: '600',
+
     flex: 1,
+
     marginLeft: 8,
   },
 
-  /* Input */
+
+  /* INPUT */
 
   inputGroup: {
     marginBottom: 17,
   },
 
+
   label: {
     fontSize: 14,
+
     fontWeight: '800',
+
     color: '#334155',
+
     marginBottom: 8,
   },
 
+
   inputWrapper: {
     flexDirection: 'row',
+
     alignItems: 'center',
 
     backgroundColor: '#F8FAFC',
 
     borderWidth: 1.5,
+
     borderColor: '#E2E8F0',
 
     borderRadius: 17,
@@ -1181,6 +1506,7 @@ const signInStyles = StyleSheet.create({
 
     height: 58,
   },
+
 
   inputWrapperFocused: {
     borderColor: '#22C55E',
@@ -1195,18 +1521,23 @@ const signInStyles = StyleSheet.create({
     },
 
     shadowOpacity: 0.12,
+
     shadowRadius: 8,
 
     elevation: 2,
   },
 
+
   inputIcon: {
     marginRight: 11,
   },
 
+
   input: {
     flex: 1,
+
     fontSize: 16,
+
     color: '#0F172A',
 
     paddingVertical: 0,
@@ -1214,11 +1545,13 @@ const signInStyles = StyleSheet.create({
     height: '100%',
   },
 
+
   eyeButton: {
     padding: 6,
   },
 
-  /* Main Button */
+
+  /* BUTTON */
 
   signInButton: {
     width: '100%',
@@ -1251,17 +1584,22 @@ const signInStyles = StyleSheet.create({
     elevation: 5,
   },
 
+
   signInButtonDisabled: {
     opacity: 0.7,
   },
 
+
   signInButtonText: {
     color: '#FFFFFF',
+
     fontSize: 17,
+
     fontWeight: '800',
   },
 
-  /* Divider */
+
+  /* DIVIDER */
 
   divider: {
     flexDirection: 'row',
@@ -1271,6 +1609,7 @@ const signInStyles = StyleSheet.create({
     marginVertical: 22,
   },
 
+
   dividerLine: {
     flex: 1,
 
@@ -1278,6 +1617,7 @@ const signInStyles = StyleSheet.create({
 
     backgroundColor: '#E2E8F0',
   },
+
 
   dividerText: {
     fontSize: 13,
@@ -1287,30 +1627,43 @@ const signInStyles = StyleSheet.create({
     marginHorizontal: 12,
   },
 
-  /* Bottom */
+
+  /* REGISTER / LOGIN */
 
   authPrompt: {
     alignItems: 'center',
+
     justifyContent: 'center',
   },
 
+
   authPromptText: {
     fontSize: 14,
+
     color: '#64748B',
+
     marginBottom: 8,
   },
 
+
   authActionButton: {
     flexDirection: 'row',
+
     alignItems: 'center',
   },
 
+
   authPromptAction: {
     fontSize: 15,
+
     fontWeight: '800',
+
     color: '#15803D',
+
     marginRight: 4,
   },
+
 });
+
 
 export default App;
