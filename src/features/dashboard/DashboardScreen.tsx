@@ -39,7 +39,7 @@ import ExploreProductsScreen from './ExploreProductScreen';
 
 // ─── Bottom Tab Config ────────────────────────────────────────────────────────
 
-type TabId = 'airquality' | 'fan' | 'light' | 'more';
+type TabId = 'airquality' | 'fan' | 'light' | 'settings' | 'explore';
 
 type SheetId = 'account' | 'devices' | 'notification-settings' | 'preferences' | 'support' | 'more-settings' | 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | 'explore-products' | null;
 type HomeDevice = {
@@ -55,7 +55,7 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'fan', label: 'Home', icon: 'home-outline' },
   { id: 'airquality', label: 'Monitor', icon: 'chart-line' },
   { id: 'light', label: 'Control', icon: 'lightbulb-outline' },
-  { id: 'more', label: 'Settings', icon: 'cog-outline' },
+  { id: 'explore', label: 'Explore', icon: 'shopping-outline' },
 ];
 
 const PROFILE_STORAGE_KEY = '@airbuddi_profile';
@@ -891,7 +891,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         )}
 
         {/* ── Settings Tab ──────────────────────────────────────────── */}
-        {activeTab === 'more' && (
+        {activeTab === 'settings' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
               <Text style={styles.sectionTitle}>Settings</Text>
@@ -1316,7 +1316,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             <DropdownMenuItem icon="air-filter" label="My devices" onPress={() => { setActiveSheet(null); setActiveTab('fan'); }} />
             <DropdownMenuItem icon="chart-line" label="Air quality monitor" onPress={() => { setActiveSheet(null); setActiveTab('airquality'); }} />
             <DropdownMenuItem icon="account-circle-outline" label="Profile" onPress={() => setActiveSheet('profile')} />
-            <DropdownMenuItem icon="cog-outline" label="Settings" onPress={() => { setActiveSheet(null); setActiveTab('more'); }} />
+            <DropdownMenuItem icon="cog-outline" label="Settings" onPress={() => { setActiveSheet(null); setActiveTab('settings'); }} />
             <DropdownMenuItem icon="information-outline" label="About us" onPress={() => setActiveSheet('about')} />
             <DropdownMenuItem icon="logout" label="Sign out" onPress={() => { setActiveSheet(null); handleSignOut(); }} last />
           </View>
@@ -1333,7 +1333,15 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 key={tab.id}
                 activeOpacity={0.7}
                 style={styles.navItem}
-                onPress={() => setActiveTab(tab.id)}
+                onPress={() => {
+                  if (tab.id === 'explore') {
+                    setActiveTab('explore');
+                    setActiveSheet('explore-products');
+                    return;
+                  }
+
+                  setActiveTab(tab.id);
+                }}
               >
                 <View style={[styles.navIconContainer, isActive && styles.navIconContainerActive]}>
                   <MaterialCommunityIcons
@@ -1352,7 +1360,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
       </View>
       <ExploreProductsScreen 
         visible={activeSheet === 'explore-products'} 
-        onClose={() => setActiveSheet(null)} 
+        onClose={() => { setActiveSheet(null); setActiveTab('fan'); }} 
       />
     </View>
   );
