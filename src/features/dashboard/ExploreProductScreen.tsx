@@ -15,6 +15,7 @@ const ExploreProductsScreen: React.FC<ExploreProductsProps> = ({ visible, onClos
       source={{ uri: 'https://www.airbuddi.in/shop' }}
       style={styles.webview}
       startInLoadingState={true}
+      nestedScrollEnabled
     />
   );
 
