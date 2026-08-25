@@ -12,6 +12,7 @@ import {
   Switch,
   Linking,
   Alert,
+  Dimensions,
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -673,22 +674,20 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             </View>
               <View style={styles.deviceGrid}>
                 {devices.length === 0 ? (
-                  <TouchableOpacity
-                  style={styles.emptyDeviceState}
-                  activeOpacity={0.9}
-                  onPress={() => setActiveSheet('add-device')}
-                >
+                  <View style={styles.emptyDeviceState}>
                   {/* Connection icon */}
                   <View style={styles.connectionIconWrapper}>
-                    <View style={styles.connectionIconRingOuter} />
-
-                    <View style={styles.connectionIconRingInner}>
-                      <MaterialCommunityIcons
-                        name="help"
-                        size={30}
-                        color={dashboardTheme.colors.primaryDark}
+                    {/* 1. Smoke Ribbon Layer (Behind Everything) */}
+                    <Image
+                      source={require('../../../assets/sm_bg.png')}
+                      style={styles.ribbonBackground}
+                      resizeMode="contain"
+                    />
+                      <Image
+                        source={require('../../../assets/Max_l1.png')}
+                        style={styles.logoImage}
+                        resizeMode="contain"
                       />
-                    </View>
                   </View>
 
                   {/* Title */}
@@ -698,12 +697,16 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
                   {/* Description */}
                   <Text style={styles.emptyDeviceCopy}>
-                    Add a device to monitor your air quality and
-                    control your space.
+                    Add your AirBuddi Companion. 
                   </Text>
 
                   {/* Add device button */}
-                  <View style={styles.emptyDeviceButton}>
+                  <TouchableOpacity
+                    accessibilityLabel="Add a device"
+                    style={styles.emptyDeviceButton}
+                    activeOpacity={0.8}
+                    onPress={() => setActiveSheet('add-device')}
+                  >
                     <MaterialCommunityIcons
                       name="plus"
                       size={22}
@@ -713,7 +716,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                     <Text style={styles.emptyDeviceButtonText}>
                       Add a device
                     </Text>
-                  </View>
+                  </TouchableOpacity>
 
                   {/* How it works */}
                   <View style={styles.howItWorks}>
@@ -781,7 +784,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                       color={dashboardTheme.colors.textSecondary}
                     />
                   </TouchableOpacity>
-                </TouchableOpacity>
+                </View>
                 ) : (
                   <>
                     {devices.map(item => {
@@ -1778,6 +1781,18 @@ const styles = StyleSheet.create({
     borderStyle: 'dotted',
     marginTop: 31,
   },
+
+  logoImage:{
+    width: 85,
+    height: 80,
+    resizeMode: 'contain',
+  },
+  ribbonBackground: {
+      position: 'absolute',
+      width: 280,
+      height: 100,
+      zIndex: 0,
+    },
 
   connectionHelp: {
     width: '100%',
