@@ -40,7 +40,7 @@ import ExploreProductsScreen from './ExploreProductScreen';
 
 // ─── Bottom Tab Config ────────────────────────────────────────────────────────
 
-type TabId = 'airquality' | 'fan' | 'light' | 'settings' | 'explore';
+type TabId = 'home' | 'monitor' | 'control' | 'settings' | 'explore';
 
 type SheetId = 'account' | 'devices' | 'notification-settings' | 'preferences' | 'support' | 'more-settings' | 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | null;
 type HomeDevice = {
@@ -53,9 +53,9 @@ type HomeDevice = {
 };
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'fan', label: 'Home', icon: 'home-outline' },
-  { id: 'airquality', label: 'Monitor', icon: 'chart-line' },
-  { id: 'light', label: 'Control', icon: 'lightbulb-outline' },
+  { id: 'home', label: 'Home', icon: 'home-outline' },
+  { id: 'monitor', label: 'Monitor', icon: 'chart-line' },
+  { id: 'control', label: 'Control', icon: 'lightbulb-outline' },
   { id: 'explore', label: 'Explore', icon: 'shopping-outline' },
 ];
 
@@ -72,7 +72,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const sensors = dashboard.sensors ?? [];
   const pm25Value = sensors.find(s => s.id === 'pm2_5')?.value ?? null;
 
-  const [activeTab, setActiveTab] = useState<TabId>('fan');
+  const [activeTab, setActiveTab] = useState<TabId>('home');
   const [refreshing, setRefreshing] = useState(false);
   const [activeSheet, setActiveSheet] = useState<SheetId>(null);
 
@@ -607,7 +607,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           title={deviceTitle}
           subtitle={`${displayDeviceName} · ${selectedDevice?.status ?? 'Offline'}`}
           deviceName={displayDeviceName}
-          showDeviceInfo={activeTab === 'airquality' || activeTab === 'light'}
+          showDeviceInfo={activeTab === 'monitor' || activeTab === 'control'}
           onProfilePress={() => setActiveSheet('profile')}
           onRefreshPress={handleRefresh}
           onMenuPress={() => setActiveSheet('menu')}
@@ -617,7 +617,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         <View style={styles.exploreViewport}>
           <ExploreProductsScreen
             visible
-            onClose={() => setActiveTab('fan')}
+            onClose={() => setActiveTab('home')}
             embedded
           />
         </View>
@@ -636,7 +636,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           }
         >
         {/* ── Home Tab ──────────────────────────────────────────────── */}
-        {activeTab === 'fan' && (
+        {activeTab === 'home' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
             <View style={styles.homeHeading}>
@@ -651,6 +651,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                     : 'No device connected'}
                 </Text>
               </View>
+
 
               <View style={styles.homeHeadingActions}>
                 {devices.length > 0 && (
@@ -837,7 +838,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         )}
 
         {/* ── Monitor Tab ───────────────────────────────────────────── */}
-        {activeTab === 'airquality' && (
+        {activeTab === 'monitor' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
               <AirQualityCard aqi={pm25Value} />
@@ -849,7 +850,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         )}
 
         {/* ── Control Tab ───────────────────────────────────────────── */}
-        {activeTab === 'light' && (
+        {activeTab === 'control' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <QuickControls
               isPoweredOn={device?.power === 'on'}
@@ -936,7 +937,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               <Text style={styles.sheetTitle}>Devices</Text>
               <Text style={styles.sheetIntro}>Manage the AirBuddi devices connected to your home.</Text>
               <View style={styles.settingsCard}>
-                <SettingsRow icon="air-filter" title="My Devices" subtitle={devices.length > 0 ? `${devices.length} device${devices.length === 1 ? '' : 's'} added` : 'No device connected'} onPress={() => { setActiveSheet(null); setActiveTab('fan'); }} />
+                <SettingsRow icon="air-filter" title="My Devices" subtitle={devices.length > 0 ? `${devices.length} device${devices.length === 1 ? '' : 's'} added` : 'No device connected'} onPress={() => { setActiveSheet(null); setActiveTab('home'); }} />
                 <SettingsRow icon="plus-circle-outline" title="Add New Device" subtitle="Pair a new AirBuddi" onPress={() => setActiveSheet('add-device')} last />
               </View>
               <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
@@ -1305,11 +1306,11 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           onPress={() => setActiveSheet(null)}
         >
           <View style={styles.dropdownMenu}>
-            <DropdownMenuItem icon="air-filter" label="My devices" onPress={() => { setActiveSheet(null); setActiveTab('fan'); }} />
-            <DropdownMenuItem icon="chart-line" label="Air quality monitor" onPress={() => { setActiveSheet(null); setActiveTab('airquality'); }} />
             <DropdownMenuItem icon="account-circle-outline" label="Profile" onPress={() => setActiveSheet('profile')} />
+            <DropdownMenuItem icon="air-filter" label="My devices" onPress={() => { setActiveSheet(null); setActiveTab('home'); }} />
+            <DropdownMenuItem icon="chart-line" label="Air quality monitor" onPress={() => { setActiveSheet(null); setActiveTab('monitor'); }} />
             <DropdownMenuItem icon="cog-outline" label="Settings" onPress={() => { setActiveSheet(null); setActiveTab('settings'); }} />
-            <DropdownMenuItem icon="information-outline" label="About us" onPress={() => setActiveSheet('about')} />
+            {/* <DropdownMenuItem icon="information-outline" label="About us" onPress={() => setActiveSheet('about')} /> */}
             <DropdownMenuItem icon="logout" label="Sign out" onPress={() => { setActiveSheet(null); handleSignOut(); }} last />
           </View>
         </TouchableOpacity>
