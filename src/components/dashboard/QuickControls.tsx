@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect } from 'react';
+import React, { memo, useCallback, useEffect, useState } from 'react';
 import {
   StyleSheet,
   Text,
@@ -91,6 +91,7 @@ function QuickControlsComponent({
   const ringScale = useSharedValue(1);
   const ringOpacity = useSharedValue(0.15);
   const rotation = useSharedValue(0);
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
 
   const effectiveFanSpeed = isSleepMode ? 'off' : fanSpeed;
 
@@ -121,27 +122,24 @@ function QuickControlsComponent({
   }));
 
   const activeSpeedLabel = SPEED_REVERSE_MAP[effectiveFanSpeed] ?? 'Medium';
+  const presetControlsDisabled = !isPoweredOn;
   const manualControlsDisabled = !isPoweredOn || isAutoMode;
 
   const handleSpeedPress = useCallback((label: string) => {
     const mapped = SPEED_MAP[label];
     if (mapped) {
+      setActivePresetId(null);
       onToggleAutoMode(false);
       onSelectFanSpeed(mapped);
     }
   }, [onSelectFanSpeed, onToggleAutoMode]);
 
   const handlePresetPress = useCallback((preset: (typeof PRESETS)[number]) => {
+    setActivePresetId(preset.id);
     onToggleAutoMode(preset.auto);
     onToggleUvc(preset.uvc);
-    // onSelectFanSpeed(preset.speed);
-  }, [onToggleAutoMode, onToggleUvc]);
-
-  const activePresetId = isAutoMode && fanSpeed === '3'
-    ? 'fresh'
-    : isAutoMode && fanSpeed === '3'
-    ? 'deep'
-    : null;
+    onSelectFanSpeed(preset.speed);
+  }, [onSelectFanSpeed, onToggleAutoMode, onToggleUvc]);
 
   const fanSpeedText = !isPoweredOn || effectiveFanSpeed === 'off'
     ? 'Off'
@@ -195,6 +193,7 @@ function QuickControlsComponent({
             value={!isAutoMode && !isSleepMode && isPoweredOn}
             disabled={!isPoweredOn}
             onToggle={() => {
+              setActivePresetId(null);
               onToggleAutoMode(false);
               if (isSleepMode) onToggleSleepMode(false);
             }}
@@ -205,6 +204,7 @@ function QuickControlsComponent({
             value={isSleepMode && isPoweredOn}
             disabled={!isPoweredOn}
             onToggle={() => {
+              setActivePresetId(null);
               onToggleAutoMode(false);
               onToggleSleepMode(!isSleepMode);
             }}
@@ -222,9 +222,9 @@ function QuickControlsComponent({
               <TouchableOpacity
                 key={preset.id}
                 activeOpacity={0.8}
-                disabled={manualControlsDisabled}
+                disabled={presetControlsDisabled}
                 onPress={() => handlePresetPress(preset)}
-                style={[styles.presetCard, manualControlsDisabled && styles.controlDisabled, isActive && styles.presetCardActive]}
+                style={[styles.presetCard, presetControlsDisabled && styles.controlDisabled, isActive && styles.presetCardActive]}
               >
                 <MaterialCommunityIcons
                   name={preset.icon}
