@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
 
   actionsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     gap: 8,
   },
 

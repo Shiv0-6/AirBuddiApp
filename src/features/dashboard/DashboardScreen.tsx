@@ -652,6 +652,24 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 </Text>
               </View>
 
+              {/* Help */}
+                  <TouchableOpacity
+                    style={styles.connectionHelp}
+                    activeOpacity={0.8}
+                    onPress={() => setActiveSheet('help')}
+                  >
+                    <View style={styles.connectionHelpText}>
+                      <Text style={styles.connectionHelpTitle}>
+                        Need help?
+                      </Text>
+                    </View>
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={22}
+                      color={dashboardTheme.colors.textSecondary}
+                    />
+                  </TouchableOpacity>
+              
 
               <View style={styles.homeHeadingActions}>
                 {devices.length > 0 && (
@@ -693,12 +711,12 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
                   {/* Title */}
                   <Text style={styles.emptyDeviceTitle}>
-                    Connect your AirBuddi
+                    Set up your AirBuddi
                   </Text>
 
                   {/* Description */}
                   <Text style={styles.emptyDeviceCopy}>
-                    Add your AirBuddi Companion. 
+                    Bring nature closer with Airbuddi. 
                   </Text>
 
                   {/* Add device button */}
@@ -755,36 +773,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                     </View>
                   </View>
 
-                  {/* Help */}
-                  <TouchableOpacity
-                    style={styles.connectionHelp}
-                    activeOpacity={0.8}
-                    onPress={() => setActiveSheet('help')}
-                  >
-                    <View style={styles.connectionHelpIcon}>
-                      <MaterialCommunityIcons
-                        name="leaf"
-                        size={22}
-                        color={dashboardTheme.colors.primaryDark}
-                      />
-                    </View>
-
-                    <View style={styles.connectionHelpText}>
-                      <Text style={styles.connectionHelpTitle}>
-                        Need help connecting?
-                      </Text>
-
-                      <Text style={styles.connectionHelpSubtitle}>
-                        View our quick guide
-                      </Text>
-                    </View>
-
-                    <MaterialCommunityIcons
-                      name="chevron-right"
-                      size={26}
-                      color={dashboardTheme.colors.textSecondary}
-                    />
-                  </TouchableOpacity>
+                  
                 </View>
                 ) : (
                   <>
@@ -1655,6 +1644,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
     letterSpacing: -0.4,
+    marginTop: 16,
   },
 
   emptyDeviceCopy: {
@@ -1667,7 +1657,7 @@ const styles = StyleSheet.create({
   },
 
   emptyDeviceButton: {
-    marginTop: 22,
+    marginTop: 20,
     width: 200,
     height: 58,
     borderRadius: 20,
@@ -1675,8 +1665,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
-    backgroundColor: dashboardTheme.colors.primaryDark,
-    ...dashboardTheme.shadows.medium,
+    // backgroundColor: dashboardTheme.colors.primaryDark,
+    // ...dashboardTheme.shadows.medium,
+    backgroundColor:'#11833cff'
   },
 
   emptyDeviceButtonText: {
@@ -1784,11 +1775,12 @@ const styles = StyleSheet.create({
   },
 
   logoImage:{
-    width: 85,
-    height: 80,
+    width: 105,
+    height: 205,
     resizeMode: 'contain',
+    marginBottom:45,
   },
-  ribbonBackground: {
+    ribbonBackground: {
       position: 'absolute',
       width: 280,
       height: 100,
@@ -1796,42 +1788,31 @@ const styles = StyleSheet.create({
     },
 
   connectionHelp: {
-    width: '100%',
-    marginTop: 25,
-    padding: 12,
-    borderRadius: 18,
+    width: 105,
+    height:30,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: '#DDE9DF',
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     backgroundColor: '#FFFFFF',
-  },
-
-  connectionHelpIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: '#EAF8ED',
-    alignItems: 'center',
-    justifyContent: 'center',
+    marginTop:20,
   },
 
   connectionHelpText: {
     flex: 1,
-    marginLeft: 12,
-  },
+    marginBottom:4,
+    marginLeft: 4,
+    alignItems: 'flex-end',
 
+  },
+  
   connectionHelpTitle: {
-    color: dashboardTheme.colors.textPrimary,
+    // color: dashboardTheme.colors.textPrimary,
+    color: '#123fa0',
     fontSize: 14,
-    fontWeight: '800',
-  },
-
-  connectionHelpSubtitle: {
-    marginTop: 4,
-    color: dashboardTheme.colors.primaryDark,
-    fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
+    textAlign: 'right',
   },
   deviceIcon: { width: 50, height: 50, borderRadius: 16, justifyContent: 'center', alignItems: 'center', backgroundColor: dashboardTheme.colors.primarySoft },
   deviceIconSelected: { backgroundColor: dashboardTheme.colors.primary },
