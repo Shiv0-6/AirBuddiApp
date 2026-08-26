@@ -42,7 +42,7 @@ import ExploreProductsScreen from './ExploreProductScreen';
 
 type TabId = 'home' | 'monitor' | 'control' | 'settings' | 'explore';
 
-type SheetId = 'account' | 'devices' | 'notification-settings' | 'preferences' | 'support' | 'more-settings' | 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | null;
+type SheetId = 'account' | 'devices' | 'notification-settings' | 'preferences' | 'support' | 'Explore other Products' | 'Sign Out' | 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | null;
 type HomeDevice = {
   id: string;
   name: string;
@@ -640,19 +640,20 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
             <View style={styles.homeHeading}>
-              <View style={styles.homeHeadingText}>
-                <Text style={styles.sectionTitle}>
-                  My devices
-                </Text>
+              <View style={styles.homeHeadingTopRow}>
+                <View style={styles.homeHeadingText}>
+                  <Text style={styles.sectionTitle}>
+                    My devices
+                  </Text>
 
-                <Text style={styles.sectionSubtitle}>
-                  {devices.length > 0
-                    ? `${devices.length} device${devices.length === 1 ? '' : 's'} added`
-                    : 'No device connected'}
-                </Text>
-              </View>
+                  <Text style={styles.sectionSubtitle}>
+                    {devices.length > 0
+                      ? `${devices.length} device${devices.length === 1 ? '' : 's'} added`
+                      : 'No device connected'}
+                  </Text>
+                </View>
 
-              {/* Help */}
+                {devices.length === 0 && (
                   <TouchableOpacity
                     style={styles.connectionHelp}
                     activeOpacity={0.8}
@@ -669,7 +670,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                       color={dashboardTheme.colors.textSecondary}
                     />
                   </TouchableOpacity>
-              
+                )}
+              </View>
 
               <View style={styles.homeHeadingActions}>
                 {devices.length > 0 && (
@@ -816,6 +818,24 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   </>
                 )}
               </View>
+              {devices.length > 0 && (
+                <TouchableOpacity
+                  style={styles.connectionHelp}
+                  activeOpacity={0.8}
+                  onPress={() => setActiveSheet('help')}
+                >
+                  <View style={styles.connectionHelpText}>
+                    <Text style={styles.connectionHelpTitle}>
+                      Need help?
+                    </Text>
+                  </View>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={22}
+                    color={dashboardTheme.colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              )}
               {devices.length > 0 && <>
                 <View style={styles.homeSummary}>
                   <MaterialCommunityIcons name="leaf-circle-outline" size={28} color={dashboardTheme.colors.primaryDark} />
@@ -887,7 +907,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => setActiveSheet('notification-settings')} />
                 <SettingsCategoryRow icon="tune-variant" title="Preferences" subtitle="Appearance, units, and privacy" onPress={() => setActiveSheet('preferences')} />
                 <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => setActiveSheet('support')} />
-                <SettingsCategoryRow icon="leaf-circle-outline" title="More" subtitle="Explore products and sign out" onPress={() => setActiveSheet('more-settings')} last />
+                <SettingsCategoryRow icon="leaf-circle-outline" title="Explore Products" subtitle="Explore other products" onPress={() => { setActiveSheet(null); setActiveTab('explore'); }} />
+                <SettingsCategoryRow icon="leaf-circle-outline" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
               </View>
             </View>
           </Animated.View>
@@ -962,17 +983,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <SettingsRow icon="information-outline" title="About AirBuddi" subtitle="App version and legal" onPress={() => setActiveSheet('about')} last />
               </View>
               <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
-            </>}
-
-            {activeSheet === 'more-settings' && <>
-              <Text style={styles.sheetTitle}>More</Text>
-              <Text style={styles.sheetIntro}>Discover more from GreenVerse.</Text>
-              <View style={styles.settingsCard}>
-                <SettingsRow icon="leaf-circle-outline" title="Explore Other Products" subtitle="Discover GreenVerse devices" onPress={() => { setActiveSheet(null); setActiveTab('explore'); }} />
-                <SettingsRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
-              </View>
-              <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
-            </>}
+            </>} 
 
             {activeSheet === 'profile' && <>
               <Text style={styles.sheetTitle}>Your profile</Text>
@@ -1478,11 +1489,14 @@ const styles = StyleSheet.create({
     height: 32,
   },
   homeHeading: {
+    marginTop: 4,
+    marginBottom: 18,
+  },
+
+  homeHeadingTopRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: 4,
-    marginBottom: 18,
   },
 
   homeHeadingText: {
@@ -1507,6 +1521,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    marginTop: 10,
+    justifyContent: 'flex-end',
   },
 
   addDeviceHeaderButton: {
@@ -1788,6 +1804,7 @@ const styles = StyleSheet.create({
     },
 
   connectionHelp: {
+    alignSelf: 'flex-end',
     width: 105,
     height:30,
     borderRadius: 14,
