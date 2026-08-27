@@ -9,7 +9,7 @@ describe('postEspCommand', () => {
   });
 
   it('posts an arbitrary command message to the devices endpoint', async () => {
-    await postEspCommand('fan_high');
+    await postEspCommand('dummy-id', 'fan_high');
 
     expect((globalThis as any).fetch).toHaveBeenCalledWith(
       expect.stringContaining('/devices'),
@@ -21,7 +21,7 @@ describe('postEspCommand', () => {
   });
 
   it('posts multiple command messages to the devices endpoint', async () => {
-    await postEspCommands(['power_on', 'fan_high']);
+    await postEspCommands('dummy-id', ['power_on', 'fan_high']);
 
     expect((globalThis as any).fetch).toHaveBeenCalledTimes(2);
     expect((globalThis as any).fetch).toHaveBeenNthCalledWith(

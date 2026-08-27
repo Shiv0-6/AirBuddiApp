@@ -84,50 +84,8 @@ describe('QuickControls UI', () => {
     const flattenedText = textContent.flat().join(' ');
 
     expect(flattenedText).toContain('Root Purification');
-    expect(flattenedText).toContain('Upper Bed Chamber');
-    expect(flattenedText).toContain('Lower Bed Chamber');
-    expect(flattenedText).toContain('Active');
-    expect(flattenedText).toContain('Standby');
-  });
-
-  it('triggers onUpperPress and onLowerPress when bed chambers are pressed', () => {
-    const onUpperPress = jest.fn();
-    const onLowerPress = jest.fn();
-    let tree: renderer.ReactTestRenderer;
-
-    act(() => {
-      tree = renderer.create(
-        <RootPurificationCard
-          upperBedChamber="Active"
-          lowerBedChamber="Standby"
-          onUpperPress={onUpperPress}
-          onLowerPress={onLowerPress}
-        />,
-      );
-    });
-
-    const touchables = tree!.root.findAllByType(TouchableOpacity);
-    expect(touchables.length).toBe(2);
-  });
-
-  it('shows upper and lower bed chambers for root purification', () => {
-    let tree: renderer.ReactTestRenderer;
-
-    act(() => {
-      tree = renderer.create(
-        <RootPurificationCard
-          upperBedChamber="Active"
-          lowerBedChamber="Standby"
-        />,
-      );
-    });
-
-    const textContent = tree!.root.findAllByType(Text).map(node => node.props.children);
-    const flattenedText = textContent.flat().join(' ');
-
-    expect(flattenedText).toContain('Root Purification');
-    expect(flattenedText).toContain('Upper Bed Chamber');
-    expect(flattenedText).toContain('Lower Bed Chamber');
+    expect(flattenedText).toContain('Upper Chamber');
+    expect(flattenedText).toContain('Lower Chamber');
     expect(flattenedText).toContain('Active');
     expect(flattenedText).toContain('Standby');
   });

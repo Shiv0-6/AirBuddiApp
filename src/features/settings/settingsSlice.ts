@@ -31,6 +31,7 @@ export interface SettingsState {
   };
   devices: HomeDevice[];
   selectedDeviceId: string | null;
+  activeSheet: 'account' | 'devices' | 'notification-settings' | 'preferences' | 'support' | 'Explore other Products' | 'Sign Out' | 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | 'legal' | null;
 }
 
 const initialState: SettingsState = {
@@ -55,6 +56,7 @@ const initialState: SettingsState = {
   },
   devices: [],
   selectedDeviceId: null,
+  activeSheet: null,
 };
 
 export const settingsSlice = createSlice({
@@ -99,6 +101,9 @@ export const settingsSlice = createSlice({
     setSelectedDeviceId: (state, action: PayloadAction<string | null>) => {
       state.selectedDeviceId = action.payload;
     },
+    setActiveSheet: (state, action: PayloadAction<SettingsState['activeSheet']>) => {
+      state.activeSheet = action.payload;
+    },
     resetSettings: () => {
       return initialState;
     },
@@ -114,6 +119,7 @@ export const {
   updateDevice,
   removeDevice,
   setSelectedDeviceId,
+  setActiveSheet,
   resetSettings,
 } = settingsSlice.actions;
 
