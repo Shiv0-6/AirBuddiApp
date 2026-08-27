@@ -13,10 +13,14 @@ import {
   Linking,
   Alert,
   Dimensions,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
+import { launchImageLibrary } from 'react-native-image-picker';
+import BarcodeScanning from '@react-native-ml-kit/barcode-scanning';
+import Camera, { CameraType } from 'react-native-camera-kit';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
@@ -86,6 +90,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
   const [addDeviceMode, setAddDeviceMode] = useState<'qr' | 'manual'>('qr');
   const [isScanningQr, setIsScanningQr] = useState(false);
+  const [isQrScannerVisible, setIsQrScannerVisible] = useState(false);
+  const [scannedQrValue, setScannedQrValue] = useState('');
   const [newDeviceName, setNewDeviceName] = useState('');
   const [newDeviceRoom, setNewDeviceRoom] = useState('');
   const [newDeviceId, setNewDeviceId] = useState('');
@@ -424,52 +430,73 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     setFanSpeedState(speed);
   }, [setFanSpeedState]);
 
-  const handleScanQr = useCallback(async () => {
-    setIsScanningQr(true);
-    setAddDeviceError('');
-    try {
-      const response = await launchCamera({
-        mediaType: 'photo',
-        cameraType: 'back',
-        saveToPhotos: false,
-        quality: 0.8,
-      });
+  const applyScannedQrValue = useCallback((value: string) => {
+    const scannedValue = value.trim();
 
-      if (response.didCancel) {
-        setIsScanningQr(false);
-        return;
-      }
+    // 1. Try to find a MAC address
+    const macMatch = scannedValue.match(/(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}/i);
+    const scannedMac = macMatch?.[0].replace(/-/g, ':').toUpperCase() ?? '';
 
-      if (response.errorMessage) {
-        setAddDeviceError(`Camera error: ${response.errorMessage}`);
-        setIsScanningQr(false);
-        return;
+    // 2. Try to extract ID from a URL if the scanned value is a link
+    let extractedId = scannedMac;
+    if (!extractedId && (scannedValue.startsWith('http') || scannedValue.includes('/'))) {
+      try {
+        const urlMatch = scannedValue.match(/[?&](?:id|mac)=([^&]+)/i) || scannedValue.match(/\/([^/?#]+)$/);
+        if (urlMatch) {
+          extractedId = urlMatch[1].toUpperCase();
+        }
+      } catch (e) {
+        // Fallback to raw value if URL parsing fails
       }
+    }
 
-      if (response.assets && response.assets.length > 0) {
-        const sampleMacs = [
-          'F4:65:0B:49:12:60',
-          '24:62:AB:3A:41:88',
-          'D8:3B:DA:60:1C:92',
-        ];
-        const scannedMac = sampleMacs[Math.floor(Math.random() * sampleMacs.length)];
-        setNewDeviceId(scannedMac);
-        setNewDeviceName(prev => prev || 'AirBuddi Purifier');
-        setNewDeviceRoom(prev => prev || 'Living Room');
-      }
-    } catch (err) {
-      const sampleMacs = [
-        'F4:65:0B:49:12:60',
-        '24:62:AB:3A:41:88',
-        'D8:3B:DA:60:1C:92',
-      ];
-      const scannedMac = sampleMacs[Math.floor(Math.random() * sampleMacs.length)];
-      setNewDeviceId(scannedMac);
+    // 3. If still no ID, use the raw trimmed value if it looks like a valid ID
+    if (!extractedId && scannedValue.length > 0) {
+      extractedId = scannedValue.toUpperCase();
+    }
+
+    setScannedQrValue(scannedValue);
+    setIsQrScannerVisible(false);
+    setIsScanningQr(false);
+
+    if (extractedId) {
+      setAddDeviceError('');
+      setNewDeviceId(extractedId);
       setNewDeviceName(prev => prev || 'AirBuddi Purifier');
       setNewDeviceRoom(prev => prev || 'Living Room');
-    } finally {
-      setIsScanningQr(false);
+    } else {
+      setAddDeviceError('The QR code was read, but it appears to be empty or invalid.');
     }
+  }, []);
+
+  const handleScanQr = useCallback(async () => {
+    setAddDeviceError('');
+    setScannedQrValue('');
+
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: 'Camera Permission',
+            message: 'AirBuddi needs access to your camera to scan device QR codes.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          },
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          setAddDeviceError('Camera permission is required to scan QR codes.');
+          return;
+        }
+      } catch (err) {
+        setAddDeviceError('Failed to request camera permission.');
+        return;
+      }
+    }
+
+    setIsScanningQr(true);
+    setIsQrScannerVisible(true);
   }, []);
 
   const handlePickQrFromLibrary = useCallback(async () => {
@@ -487,22 +514,26 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
       }
 
       if (response.assets && response.assets.length > 0) {
-        const sampleMacs = [
-          'F4:65:0B:49:12:60',
-          '24:62:AB:3A:41:88',
-          'D8:3B:DA:60:1C:92',
-        ];
-        const scannedMac = sampleMacs[Math.floor(Math.random() * sampleMacs.length)];
-        setNewDeviceId(scannedMac);
-        setNewDeviceName(prev => prev || 'AirBuddi Purifier');
-        setNewDeviceRoom(prev => prev || 'Living Room');
+        const imageUri = response.assets[0].uri;
+        if (!imageUri) {
+          setAddDeviceError('The selected image could not be read.');
+          return;
+        }
+
+        const barcodes = await BarcodeScanning.scan(imageUri);
+        const scannedValue = barcodes.find(barcode => barcode.value)?.value;
+        if (scannedValue) {
+          applyScannedQrValue(scannedValue);
+        } else {
+          setAddDeviceError('No QR code was found in the selected image.');
+        }
       }
     } catch (err) {
-      setAddDeviceError('Failed to access photo library.');
+      setAddDeviceError(err instanceof Error ? err.message : 'Failed to decode the selected image.');
     } finally {
       setIsScanningQr(false);
     }
-  }, []);
+  }, [applyScannedQrValue]);
 
   const selectedDevice = devices.find(item => item.id === selectedDeviceId) ?? null;
   const deviceTitle = selectedDevice?.room ?? 'Add a device';
@@ -1060,6 +1091,9 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                       <Text style={styles.qrSuccessBadgeText}>Scanned: {newDeviceId}</Text>
                     </View>
                   ) : null}
+                  {scannedQrValue && !newDeviceId ? (
+                    <Text style={styles.qrScanText}>Read: {scannedQrValue}</Text>
+                  ) : null}
 
                   <View style={styles.qrActionsRow}>
                     <TouchableOpacity
@@ -1289,6 +1323,46 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               </TouchableOpacity>
               <TouchableOpacity style={styles.secondarySheetButton} onPress={() => setActiveSheet(null)}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
             </>}
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="slide"
+        visible={isQrScannerVisible}
+        onRequestClose={() => {
+          setIsQrScannerVisible(false);
+          setIsScanningQr(false);
+        }}
+      >
+        <View style={styles.qrScannerScreen}>
+          <Camera
+            style={StyleSheet.absoluteFill}
+            cameraType={CameraType.Back}
+            scanBarcode
+            showFrame
+            laserColor="#22C55E"
+            frameColor="#FFFFFF"
+            allowedBarcodeTypes={['qr']}
+            onReadCode={(event: { nativeEvent: { codeStringValue: string } }) => applyScannedQrValue(event.nativeEvent.codeStringValue)}
+            onError={(event: { nativeEvent: { errorMessage: string } }) => {
+              setAddDeviceError(`Camera error: ${event.nativeEvent.errorMessage}`);
+              setIsQrScannerVisible(false);
+              setIsScanningQr(false);
+            }}
+          />
+          <View style={styles.qrScannerOverlay}>
+            <Text style={styles.qrScannerTitle}>Scan device QR code</Text>
+            <Text style={styles.qrScannerHint}>Align the code inside the frame</Text>
+            <TouchableOpacity
+              style={styles.qrScannerCloseButton}
+              onPress={() => {
+                setIsQrScannerVisible(false);
+                setIsScanningQr(false);
+              }}
+            >
+              <Text style={styles.qrScannerCloseText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -2327,6 +2401,38 @@ settingsSubtitle: {
     top: '50%',
     height: 2,
     backgroundColor: '#EF4444',
+  },
+  qrScannerScreen: {
+    flex: 1,
+    backgroundColor: '#000000',
+  },
+  qrScannerOverlay: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    paddingTop: 72,
+  },
+  qrScannerTitle: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  qrScannerHint: {
+    color: '#E2E8F0',
+    fontSize: 14,
+    marginTop: 8,
+  },
+  qrScannerCloseButton: {
+    position: 'absolute',
+    bottom: 48,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+  },
+  qrScannerCloseText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
   qrScanText: {
     fontSize: 12,

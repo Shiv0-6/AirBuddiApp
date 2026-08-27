@@ -52,6 +52,21 @@ jest.mock('react-native-image-picker', () => ({
   launchCamera: jest.fn(() => Promise.resolve({ assets: [] })),
 }));
 
+jest.mock('@react-native-ml-kit/barcode-scanning', () => ({
+	scan: jest.fn(() => Promise.resolve([])),
+}));
+
+jest.mock('react-native-camera-kit', () => {
+	const React = require('react');
+	const { View } = require('react-native');
+
+	return {
+		__esModule: true,
+		default: props => React.createElement(View, props),
+		CameraType: { Back: 'back', Front: 'front' },
+	};
+});
+
 jest.mock('react-native-webview', () => {
 	const React = require('react');
 	const { View } = require('react-native');
