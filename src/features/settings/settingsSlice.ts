@@ -38,6 +38,8 @@ const initialState: SettingsState = {
   profile: {
     name: 'AirBuddi Member',
     email: 'member@airbuddi.app',
+    phone: '',
+    location: '',
     avatarUri: null,
   },
   notifications: {

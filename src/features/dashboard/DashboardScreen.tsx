@@ -86,11 +86,15 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const {
     name: profileName,
     email: profileEmail,
+    phone: profilePhone,
+    location: profileLocation,
     avatarUri: profileAvatarUri
   } = profile;
 
   const [profileNameError, setProfileNameError] = useState('');
   const [profileEmailError, setProfileEmailError] = useState('');
+  const [profilePhoneError, setProfilePhoneError] = useState('');
+  const [profileLocationError, setProfileLocationError] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   const [addDeviceMode, setAddDeviceMode] = useState<'qr' | 'manual'>('qr');
@@ -304,6 +308,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const saveProfile = useCallback(async () => {
     const name = profileName.trim();
     const email = profileEmail.trim();
+    const phone = profilePhone.trim();
+    const location = profileLocation.trim();
 
     let hasError = false;
 
@@ -332,6 +338,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
       const profileData = {
         name,
         email,
+        phone,
+        location,
         avatarUri: profileAvatarUri,
       };
 
@@ -347,7 +355,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     } finally {
       setIsSavingProfile(false);
     }
-  }, [profileName, profileEmail, profileAvatarUri, dispatch]);
+  }, [profileName, profileEmail, profilePhone, profileLocation, profileAvatarUri, dispatch]);
 
   const clearProfileData = useCallback(async () => {
     try {
@@ -358,10 +366,14 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     dispatch(setProfile({
       name: 'AirBuddi Member',
       email: 'member@airbuddi.app',
+      phone: '',
+      location: '',
       avatarUri: null,
     }));
     setProfileNameError('');
     setProfileEmailError('');
+    setProfilePhoneError('');
+    setProfileLocationError('');
   }, [dispatch]);
 
   const handleSignOut = useCallback(() => {
@@ -926,7 +938,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
       <Modal
         animationType="slide"
         transparent
-        visible={activeSheet !== null && activeSheet !== 'menu'}
+        visible={activeSheet !== null && activeSheet !== 'menu' && activeSheet !== 'profile'}
         onRequestClose={() => dispatch(setActiveSheet(null))}
       >
         <View style={styles.profileBackdrop}>
@@ -987,40 +999,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <SettingsRow icon="information-outline" title="About AirBuddi" subtitle="App version and legal" onPress={() => dispatch(setActiveSheet('about'))} last />
               </View>
               <TouchableOpacity style={styles.secondarySheetButton} onPress={() => dispatch(setActiveSheet(null))}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
-            </>}
-            {activeSheet === 'profile' && <>
-              <Text style={styles.sheetTitle}>Your profile</Text>
-              <Text style={styles.sheetIntro}>Keep your account details up to date.</Text>
-
-              <TouchableOpacity style={styles.profileIdentity} activeOpacity={0.8} onPress={pickProfileImage}>
-                <View style={styles.profileAvatar}>
-                  {profileAvatarUri ? (
-                    <Image source={{ uri: profileAvatarUri }} style={styles.profileAvatarPhoto} />
-                  ) : (
-                    <Text style={styles.profileAvatarText}>{getInitials(profileName)}</Text>
-                  )}
-                </View>
-                <View>
-                  <Text style={styles.profileName}>{profileName || 'Add your name'}</Text>
-                  <Text style={styles.profileEmail}>Tap to change photo</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TextInput value={profileName} onChangeText={value => { dispatch(setProfile({ name: value })); setProfileNameError(''); }} style={styles.textInput} placeholder="Your name" placeholderTextColor={dashboardTheme.colors.textMuted} />
-              {!!profileNameError && <Text style={styles.inputError}>{profileNameError}</Text>}
-
-              <Text style={styles.inputLabel}>EMAIL</Text>
-              <TextInput value={profileEmail} onChangeText={value => { dispatch(setProfile({ email: value })); setProfileEmailError(''); }} style={styles.textInput} keyboardType="email-address" autoCapitalize="none" placeholder="you@example.com" placeholderTextColor={dashboardTheme.colors.textMuted} />
-              {!!profileEmailError && <Text style={styles.inputError}>{profileEmailError}</Text>}
-
-              <TouchableOpacity style={[styles.primarySheetButton, isSavingProfile && styles.primarySheetButtonDisabled]} disabled={isSavingProfile} onPress={saveProfile}>
-                <Text style={styles.primarySheetButtonText}>{isSavingProfile ? 'Saving…' : 'Save profile'}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.dangerSheetButton} onPress={clearProfileData}>
-                <MaterialCommunityIcons name="restore" size={18} color="#DC2626" />
-                <Text style={styles.dangerSheetButtonText}>Reset profile to default</Text>
-              </TouchableOpacity>
             </>}
 
             {activeSheet === 'add-device' && <>
@@ -1290,6 +1268,94 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               <TouchableOpacity style={styles.secondarySheetButton} onPress={() => dispatch(setActiveSheet(null))}><Text style={styles.secondarySheetButtonText}>Done</Text></TouchableOpacity>
             </>}
           </View>
+        </View>
+      </Modal>
+
+      <Modal
+        animationType="slide"
+        visible={activeSheet === 'profile'}
+        onRequestClose={() => dispatch(setActiveSheet(null))}
+      >
+        <View style={styles.fullPageContainer}>
+          <View style={styles.pageHeader}>
+            <TouchableOpacity onPress={() => dispatch(setActiveSheet(null))} style={styles.pageBackButton}>
+              <MaterialCommunityIcons name="arrow-left" size={26} color={dashboardTheme.colors.textPrimary} />
+            </TouchableOpacity>
+            <Text style={styles.pageTitle}>Profile</Text>
+            <View style={styles.pageHeaderPlaceholder} />
+          </View>
+
+          <ScrollView style={styles.pageContent} contentContainerStyle={styles.pageContentScroll} showsVerticalScrollIndicator={false}>
+            <View style={styles.pageIntroSection}>
+              <Text style={styles.pageSectionTitle}>Personal Info</Text>
+              <Text style={styles.pageSectionSubtitle}>Update your photo and personal details here.</Text>
+            </View>
+
+            <TouchableOpacity style={styles.profileIdentityFull} activeOpacity={0.8} onPress={pickProfileImage}>
+              <View style={styles.premiumAvatarContainerLarge}>
+                <View style={styles.avatarGlowLarge} />
+                <View style={styles.profileAvatarLarge}>
+                  {profileAvatarUri ? (
+                    <Image source={{ uri: profileAvatarUri }} style={styles.profileAvatarPhotoLarge} />
+                  ) : (
+                    <Text style={styles.profileAvatarTextLarge}>{getInitials(profileName)}</Text>
+                  )}
+                </View>
+                <View style={styles.cameraBadgeLarge}>
+                  <MaterialCommunityIcons name="camera" size={16} color="#FFFFFF" />
+                </View>
+              </View>
+              <Text style={styles.profileNameFull}>{profileName || 'Add your name'}</Text>
+              <Text style={styles.profileActionLinkFull}>Change profile photo</Text>
+            </TouchableOpacity>
+
+            <View style={styles.formSectionCardRefined}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabelRefined}>DISPLAY NAME</Text>
+                <View style={styles.inputWithIconRefined}>
+                  <MaterialCommunityIcons name="account-outline" size={20} color={dashboardTheme.colors.primaryDark} style={styles.inputIcon} />
+                  <TextInput value={profileName} onChangeText={value => { dispatch(setProfile({ name: value })); setProfileNameError(''); }} style={styles.textInputWithIcon} placeholder="Your name" placeholderTextColor={dashboardTheme.colors.textMuted} />
+                </View>
+                {!!profileNameError && <Text style={styles.inputError}>{profileNameError}</Text>}
+
+                <View style={styles.inputSpacer} />
+
+                <Text style={styles.inputLabelRefined}>EMAIL ADDRESS</Text>
+                <View style={styles.inputWithIconRefined}>
+                  <MaterialCommunityIcons name="email-outline" size={20} color={dashboardTheme.colors.primaryDark} style={styles.inputIcon} />
+                  <TextInput value={profileEmail} onChangeText={value => { dispatch(setProfile({ email: value })); setProfileEmailError(''); }} style={styles.textInputWithIcon} keyboardType="email-address" autoCapitalize="none" placeholder="you@example.com" placeholderTextColor={dashboardTheme.colors.textMuted} />
+                </View>
+                {!!profileEmailError && <Text style={styles.inputError}>{profileEmailError}</Text>}
+
+                <View style={styles.inputSpacer} />
+
+                <Text style={styles.inputLabelRefined}>PHONE</Text>
+                <View style={styles.inputWithIconRefined}>
+                  <MaterialCommunityIcons name="phone-outline" size={18} color={dashboardTheme.colors.primaryDark} style={styles.inputIcon} />
+                  <TextInput value={profilePhone} onChangeText={value => { dispatch(setProfile({ phone: value })); }} style={styles.textInputWithIcon} keyboardType="phone-pad" placeholder="+91..." placeholderTextColor={dashboardTheme.colors.textMuted} />
+                </View>
+
+                <View style={styles.inputSpacer} />
+
+                <Text style={styles.inputLabelRefined}>LOCATION</Text>
+                <View style={styles.inputWithIconRefined}>
+                  <MaterialCommunityIcons name="map-marker-outline" size={18} color={dashboardTheme.colors.primaryDark} style={styles.inputIcon} />
+                  <TextInput value={profileLocation} onChangeText={value => { dispatch(setProfile({ location: value })); }} style={styles.textInputWithIcon} placeholder="City, IN" placeholderTextColor={dashboardTheme.colors.textMuted} />
+                </View>
+              </View>
+            </View>
+
+            <TouchableOpacity style={[styles.primarySheetButtonRefined, isSavingProfile && styles.primarySheetButtonDisabled]} disabled={isSavingProfile} onPress={saveProfile}>
+              <Text style={styles.primarySheetButtonText}>{isSavingProfile ? 'Saving…' : 'Save Changes'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.ghostSheetButton} onPress={clearProfileData}>
+              <MaterialCommunityIcons name="restore" size={18} color={dashboardTheme.colors.textMuted} />
+              <Text style={styles.ghostSheetButtonText}>Reset to Default</Text>
+            </TouchableOpacity>
+
+            <View style={styles.bottomSpaceLarge} />
+          </ScrollView>
         </View>
       </Modal>
 
@@ -2464,4 +2530,49 @@ settingsSubtitle: {
     fontWeight: '700',
     color: '#FFFFFF',
   },
+  premiumAvatarContainer: { position: 'relative', width: 64, height: 64, alignItems: 'center', justifyContent: 'center' },
+  avatarGlow: { position: 'absolute', width: 72, height: 72, borderRadius: 36, backgroundColor: dashboardTheme.colors.primarySoft, opacity: 0.3 },
+  cameraBadge: { position: 'absolute', bottom: 0, right: 0, width: 22, height: 22, borderRadius: 11, backgroundColor: dashboardTheme.colors.primary, borderWidth: 2, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' },
+  inputWithIcon: { flexDirection: 'row', alignItems: 'center', height: 48, borderRadius: 12, borderWidth: 1, borderColor: dashboardTheme.colors.border, backgroundColor: dashboardTheme.colors.surfaceTint, paddingHorizontal: 12, marginTop: 4 },
+  inputIcon: { marginRight: 10 },
+  textInputWithIcon: { flex: 1, color: dashboardTheme.colors.textPrimary, fontSize: 15, padding: 0 },
+  inputRow: { flexDirection: 'row', gap: 12, marginTop: 14 },
+  inputHalf: { flex: 1 },
+  sheetHeaderWithAction: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 5 },
+  profileIdentityRefined: { flexDirection: 'row', alignItems: 'center', gap: 16, marginBottom: 24, padding: 4 },
+  profileIdentityText: { flex: 1 },
+  profileNameLarge: { fontSize: 20, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.5 },
+  profileActionLink: { fontSize: 13, fontWeight: '600', color: dashboardTheme.colors.primary, marginTop: 4 },
+  formSectionCard: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#F1F5F9', ...dashboardTheme.shadows.soft },
+  sectionLabelRefined: { fontSize: 11, fontWeight: '800', color: dashboardTheme.colors.textMuted, letterSpacing: 1.2, marginBottom: 16 },
+  inputGroup: { gap: 0 },
+  inputLabelRefined: { fontSize: 10, fontWeight: '700', color: dashboardTheme.colors.textSecondary, letterSpacing: 0.5, marginBottom: 6 },
+  inputWithIconRefined: { flexDirection: 'row', alignItems: 'center', height: 50, borderRadius: 12, backgroundColor: '#F1F5F9', paddingHorizontal: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  inputSpacer: { height: 16 },
+  primarySheetButtonRefined: { marginTop: 8, height: 54, borderRadius: 16, backgroundColor: dashboardTheme.colors.primaryDark, alignItems: 'center', justifyContent: 'center', shadowColor: dashboardTheme.colors.primaryDark, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
+  ghostSheetButton: { marginTop: 16, height: 50, borderRadius: 16, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+  ghostSheetButtonText: { color: dashboardTheme.colors.textMuted, fontWeight: '700', fontSize: 14 },
+  sheetScroll: { maxHeight: 500 },
+  bottomSheetGap: { height: 20 },
+  fullPageContainer: { flex: 1, backgroundColor: dashboardTheme.colors.background },
+  pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 60 : 20, paddingBottom: 16, backgroundColor: dashboardTheme.colors.surface, borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
+  pageBackButton: { padding: 8, marginLeft: -8 },
+  pageTitle: { fontSize: 20, fontWeight: '800', color: dashboardTheme.colors.textPrimary },
+  pageHeaderPlaceholder: { width: 42 },
+  pageContent: { flex: 1 },
+  pageContentScroll: { padding: 20 },
+  pageIntroSection: { marginBottom: 24 },
+  pageSectionTitle: { fontSize: 24, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.5 },
+  pageSectionSubtitle: { fontSize: 14, color: dashboardTheme.colors.textSecondary, marginTop: 4, fontWeight: '500' },
+  profileIdentityFull: { alignItems: 'center', marginBottom: 32 },
+  premiumAvatarContainerLarge: { position: 'relative', width: 100, height: 100, alignItems: 'center', justifyContent: 'center' },
+  avatarGlowLarge: { position: 'absolute', width: 116, height: 116, borderRadius: 58, backgroundColor: dashboardTheme.colors.primarySoft, opacity: 0.25 },
+  profileAvatarLarge: { width: 100, height: 100, borderRadius: 50, alignItems: 'center', justifyContent: 'center', backgroundColor: dashboardTheme.colors.primarySoft, overflow: 'hidden', borderWidth: 3, borderColor: '#FFFFFF' },
+  profileAvatarPhotoLarge: { width: 100, height: 100, borderRadius: 50 },
+  profileAvatarTextLarge: { color: '#FFFFFF', fontSize: 32, fontWeight: '900' },
+  cameraBadgeLarge: { position: 'absolute', bottom: 2, right: 2, width: 32, height: 32, borderRadius: 16, backgroundColor: dashboardTheme.colors.primary, borderWidth: 3, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', ...dashboardTheme.shadows.soft },
+  profileNameFull: { fontSize: 22, fontWeight: '800', color: dashboardTheme.colors.textPrimary, marginTop: 16 },
+  profileActionLinkFull: { fontSize: 14, fontWeight: '700', color: dashboardTheme.colors.primary, marginTop: 6 },
+  formSectionCardRefined: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, marginBottom: 24, borderWidth: 1, borderColor: '#F1F5F9', ...dashboardTheme.shadows.soft },
+  bottomSpaceLarge: { height: 60 },
 });
