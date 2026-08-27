@@ -299,11 +299,11 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         }
         const uri = response.assets?.[0]?.uri;
         if (uri) {
-          setProfileAvatarUri(uri);
+          dispatch(setProfile({ avatarUri: uri }));
         }
       },
     );
-  }, []);
+  }, [dispatch]);
 
   const saveProfile = useCallback(async () => {
     const name = profileName.trim();
