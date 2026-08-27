@@ -18,6 +18,7 @@ type DashboardHeaderProps = {
   showDeviceInfo?: boolean;
   onProfilePress: () => void;
   onRefreshPress: () => void;
+  onNotificationPress: () => void;
   onMenuPress: () => void;
 };
 
@@ -28,6 +29,7 @@ function DashboardHeaderComponent({
   showDeviceInfo = true,
   onProfilePress,
   onRefreshPress,
+  onNotificationPress,
   onMenuPress,
 }: DashboardHeaderProps) {
   const deviceImage = deviceName.trim().toLowerCase() === 'airbuddi max'
@@ -65,6 +67,19 @@ function DashboardHeaderComponent({
         </View>
 
         <View style={styles.actionsContainer}>
+
+          <TouchableOpacity
+            accessibilityLabel="View notifications"
+            onPress={onNotificationPress}
+            activeOpacity={0.75}
+            style={styles.iconBtn}
+          >
+            <MaterialCommunityIcons
+              name="bell-outline"
+              size={22}
+              color={dashboardTheme.colors.textSecondary}
+            />
+          </TouchableOpacity>
 
           <TouchableOpacity
             accessibilityLabel="More options"

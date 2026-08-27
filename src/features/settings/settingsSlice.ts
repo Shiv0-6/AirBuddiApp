@@ -31,7 +31,7 @@ export interface SettingsState {
   };
   devices: HomeDevice[];
   selectedDeviceId: string | null;
-  activeSheet: 'account' | 'devices' | 'notification-settings' | 'preferences' | 'support' | 'Explore other Products' | 'Sign Out' | 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | 'legal' | null;
+  activeSheet: 'account' | 'devices' | 'notification-settings' | 'preferences' | 'support' | 'Explore other Products' | 'Sign Out' | 'profile' | 'add-device' | 'edit-device' | 'menu' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | 'legal' | 'settings-main' | null;
 }
 
 const initialState: SettingsState = {
