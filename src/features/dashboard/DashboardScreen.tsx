@@ -20,7 +20,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchImageLibrary } from 'react-native-image-picker';
 import BarcodeScanning from '@react-native-ml-kit/barcode-scanning';
-import Camera, { CameraType } from 'react-native-camera-kit';
+import { Camera, CameraType } from 'react-native-camera-kit';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
