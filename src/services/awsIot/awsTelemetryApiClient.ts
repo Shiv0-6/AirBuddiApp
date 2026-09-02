@@ -17,6 +17,33 @@ function asString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function resolveConnectionState(entry: Record<string, unknown>): 'connected' | 'offline' {
+  const explicitStatus = asString(entry.status ?? entry.connection ?? entry.state ?? entry.deviceStatus).toLowerCase();
+  if (explicitStatus === 'online' || explicitStatus === 'connected' || explicitStatus === 'active') {
+    return 'connected';
+  }
+  if (explicitStatus === 'offline' || explicitStatus === 'disconnected' || explicitStatus === 'inactive') {
+    return 'offline';
+  }
+
+  const onlineValue = entry.online;
+  if (typeof onlineValue === 'boolean') {
+    return onlineValue ? 'connected' : 'offline';
+  }
+
+  if (typeof onlineValue === 'string') {
+    const normalized = onlineValue.trim().toLowerCase();
+    if (normalized === 'true' || normalized === 'online' || normalized === 'connected') {
+      return 'connected';
+    }
+    if (normalized === 'false' || normalized === 'offline' || normalized === 'disconnected') {
+      return 'offline';
+    }
+  }
+
+  return 'connected';
+}
+
 function findMatchingDeviceEntry(payload: unknown, fallbackDeviceId: string) {
   const candidates = Array.isArray(payload)
     ? payload
@@ -141,7 +168,20 @@ export function toDashboardTelemetryMessage(payload: unknown, fallbackDeviceId: 
       deviceId,
       deviceName: asString(deviceEntry.NAME ?? deviceEntry.name ?? deviceEntry.deviceName),
       ts: tsText,
-      connection: deviceEntry.online === false ? 'offline' : 'connected',
+      connection: resolveConnectionState(deviceEntry),
+      online: deviceEntry.online,
+      status: deviceEntry.status,
+      power: deviceEntry.power,
+      mode: deviceEntry.mode ?? (deviceEntry.autoMode === true ? 'auto' : deviceEntry.autoMode === false ? 'manual' : undefined),
+      autoMode: deviceEntry.autoMode,
+      fanSpeed: deviceEntry.fanSpeed,
+      fan_speed: deviceEntry.fan_speed,
+      sleepMode: deviceEntry.sleepMode,
+      uvc: deviceEntry.uvc,
+      upperBedChamber: deviceEntry.upperBedChamber ?? deviceEntry.upperChamber,
+      upperChamber: deviceEntry.upperChamber,
+      lowerBedChamber: deviceEntry.lowerBedChamber ?? deviceEntry.lowerChamber,
+      lowerChamber: deviceEntry.lowerChamber,
       aqi: typeof deviceEntry.IAQ === 'number' ? deviceEntry.IAQ : typeof deviceEntry.aqi === 'number' ? deviceEntry.aqi : undefined,
       filterHealth: typeof deviceEntry.filterHealth === 'number' ? deviceEntry.filterHealth : undefined,
       remainingLifeDays: typeof deviceEntry.remainingLifeDays === 'number' ? deviceEntry.remainingLifeDays : undefined,

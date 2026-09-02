@@ -26,6 +26,8 @@ export interface AwsIotConnectionConfig {
 
 
 export interface DashboardTelemetryMessage {
+  deviceId?: string;
+  deviceName?: string;
   aqi?: number;
   connection?: ConnectionState;
   device?: Partial<DashboardDevice>;

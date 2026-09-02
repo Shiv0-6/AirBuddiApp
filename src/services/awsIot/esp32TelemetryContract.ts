@@ -45,7 +45,11 @@ export interface Esp32DeviceTelemetry {
   connection?: ConnectionState;
   power?: PowerState;
   mode?: DeviceMode;
-  fanSpeed?: '1' | '2' | '3' | 'turbo';
+  fanSpeed?: 'off' | '1' | '2' | '3' | 'turbo';
+  sleepMode?: boolean;
+  uvc?: boolean;
+  upperBedChamber?: 'Active' | 'Standby';
+  lowerBedChamber?: 'Active' | 'Standby';
   aqi?: number;
   filterHealth?: number;
   remainingLifeDays?: number;

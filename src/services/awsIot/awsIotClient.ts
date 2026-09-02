@@ -206,23 +206,150 @@ export function parseJsonPayload(payload: string, defaultDeviceId: string): Dash
   }
 }
 
+function normalizeBooleanState(value: unknown): boolean | undefined {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['true', 'on', 'active', 'enabled', 'yes'].includes(normalized)) return true;
+    if (['false', 'off', 'inactive', 'disabled', 'no', 'standby'].includes(normalized)) return false;
+  }
+
+  if (typeof value === 'number') {
+    return value === 1 ? true : value === 0 ? false : undefined;
+  }
+
+  return undefined;
+}
+
+function normalizePowerState(value: unknown): 'on' | 'off' | undefined {
+  const asBool = normalizeBooleanState(value);
+  if (typeof asBool === 'boolean') {
+    return asBool ? 'on' : 'off';
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'on' || normalized === 'true') return 'on';
+    if (normalized === 'off' || normalized === 'false') return 'off';
+  }
+
+  return undefined;
+}
+
+function normalizeModeState(value: unknown): 'auto' | 'manual' | undefined {
+  const asBool = normalizeBooleanState(value);
+  if (typeof asBool === 'boolean') {
+    return asBool ? 'auto' : 'manual';
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'auto' || normalized === 'automatic') return 'auto';
+    if (normalized === 'manual' || normalized === 'local') return 'manual';
+  }
+
+  return undefined;
+}
+
+function normalizeFanState(value: unknown): 'off' | '1' | '2' | '3' | 'turbo' | undefined {
+  if (value === null || value === undefined) return undefined;
+
+  if (typeof value === 'number') {
+    if (value === 0) return 'off';
+    if (value === 1) return '1';
+    if (value === 2) return '2';
+    if (value === 3) return '3';
+    return undefined;
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === 'off' || normalized === '0' || normalized === 'stop') return 'off';
+    if (normalized === '1' || normalized === 'one' || normalized === 'low') return '1';
+    if (normalized === '2' || normalized === 'two' || normalized === 'medium') return '2';
+    if (normalized === '3' || normalized === 'three' || normalized === 'high' || normalized === 'turbo') return normalized === 'turbo' ? 'turbo' : '3';
+    if (normalized.includes('fan_')) {
+      const speed = normalized.split('fan_')[1];
+      if (speed === 'off') return 'off';
+      if (speed === '1') return '1';
+      if (speed === '2') return '2';
+      if (speed === '3') return '3';
+      if (speed === 'turbo') return 'turbo';
+    }
+  }
+
+  return undefined;
+}
+
+function normalizeChamberState(value: unknown): 'Active' | 'Standby' | undefined {
+  const asBool = normalizeBooleanState(value);
+  if (typeof asBool === 'boolean') {
+    return asBool ? 'Active' : 'Standby';
+  }
+
+  if (typeof value === 'string') {
+    const normalized = value.trim().toLowerCase();
+    if (['active', 'on', 'open', 'enabled', 'true'].includes(normalized)) return 'Active';
+    if (['standby', 'off', 'closed', 'disabled', 'false'].includes(normalized)) return 'Standby';
+  }
+
+  return undefined;
+}
+
+function resolveConnectionStateFromMessage(message: any): 'connected' | 'offline' {
+  const statusValue = message?.status ?? message?.connection ?? message?.state ?? message?.deviceStatus;
+  const statusText = typeof statusValue === 'string' ? statusValue.trim().toLowerCase() : '';
+
+  if (statusText === 'online' || statusText === 'connected' || statusText === 'active') {
+    return 'connected';
+  }
+  if (statusText === 'offline' || statusText === 'disconnected' || statusText === 'inactive') {
+    return 'offline';
+  }
+
+  if (typeof message?.online === 'boolean') {
+    return message.online ? 'connected' : 'offline';
+  }
+
+  if (typeof message?.online === 'string') {
+    const normalized = message.online.trim().toLowerCase();
+    if (normalized === 'true' || normalized === 'online' || normalized === 'connected') {
+      return 'connected';
+    }
+    if (normalized === 'false' || normalized === 'offline' || normalized === 'disconnected') {
+      return 'offline';
+    }
+  }
+
+  return 'connected';
+}
+
 export function normalizeTelemetryMessage(message: any, defaultDeviceId: string): DashboardTelemetryMessage {
   if (message.esp32) {
     return message;
   }
 
   const maybeEsp32 = message as FlatEsp32Telemetry;
+  const flatConnection = maybeEsp32.connection ?? resolveConnectionStateFromMessage(maybeEsp32);
 
   return {
     ...message,
+    connection: flatConnection,
     esp32: {
       deviceId: maybeEsp32.deviceId ?? maybeEsp32.device_id ?? defaultDeviceId,
-      deviceName: maybeEsp32.deviceName,
+      deviceName: maybeEsp32.deviceName ?? maybeEsp32.NAME ?? maybeEsp32.name,
       ts: maybeEsp32.ts ?? maybeEsp32.timestamp,
-      connection: maybeEsp32.connection ?? 'connected',
-      power: maybeEsp32.power,
-      mode: maybeEsp32.mode,
-      fanSpeed: maybeEsp32.fanSpeed,
+      connection: flatConnection,
+      power: normalizePowerState(maybeEsp32.power ?? maybeEsp32.device?.power ?? maybeEsp32.powerState) ?? maybeEsp32.power,
+      mode: normalizeModeState(maybeEsp32.mode ?? maybeEsp32.autoMode ?? maybeEsp32.device?.mode) ?? maybeEsp32.mode,
+      fanSpeed: normalizeFanState(maybeEsp32.fanSpeed ?? maybeEsp32.fan_speed ?? maybeEsp32.device?.fanSpeed) ?? maybeEsp32.fanSpeed,
+      sleepMode: normalizeBooleanState(maybeEsp32.sleepMode ?? maybeEsp32.device?.sleepMode),
+      uvc: normalizeBooleanState(maybeEsp32.uvc ?? maybeEsp32.device?.uvc),
+      upperBedChamber: normalizeChamberState(maybeEsp32.upperBedChamber ?? maybeEsp32.upperChamber ?? maybeEsp32.upper_bed_chamber),
+      lowerBedChamber: normalizeChamberState(maybeEsp32.lowerBedChamber ?? maybeEsp32.lowerChamber ?? maybeEsp32.lower_bed_chamber),
       aqi: maybeEsp32.aqi,
       filterHealth: maybeEsp32.filterHealth,
       remainingLifeDays: maybeEsp32.remainingLifeDays,

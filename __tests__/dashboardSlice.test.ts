@@ -53,7 +53,7 @@ describe('dashboard reducer telemetry updates', () => {
       ],
     }, 'F4:65:0B:49:12:60');
 
-    expect(message.deviceId).toBe('F4:65:0B:49:12:60');
+    expect(message.esp32?.deviceId).toBe('F4:65:0B:49:12:60');
     expect(message.aqi).toBe(40);
     expect(message.sensors?.find(sensor => sensor.id === 'temperature')).toMatchObject({
       value: 22.5,
@@ -75,7 +75,7 @@ describe('dashboard reducer telemetry updates', () => {
       ],
     }, 'AA:BB:CC:DD:EE:FF');
 
-    expect(message.deviceId).toBe('AA:BB:CC:DD:EE:FF');
+    expect(message.esp32?.deviceId).toBe('AA:BB:CC:DD:EE:FF');
     expect(message.connection).toBe('offline');
   });
 
@@ -132,5 +132,47 @@ describe('dashboard reducer telemetry updates', () => {
 
     expect(nextState.device?.fanSpeed).toBe('off');
     expect(nextState.device?.sleepMode).toBe(false);
+  });
+
+  it('maps the device status payload into the dashboard control state', () => {
+    const message = toDashboardTelemetryMessage({
+      id: '44:1D:64:2A:D7:78',
+      NAME: 'MONITOR 3',
+      status: 'online',
+      online: false,
+      power: true,
+      autoMode: false,
+      fanSpeed: 2,
+      sleepMode: false,
+      uvc: false,
+      upperChamber: false,
+      lowerChamber: false,
+      Temperature: 22.5,
+      Humidity: 45,
+      'PM 2.5': 8,
+      IAQ: 52,
+    }, '44:1D:64:2A:D7:78');
+
+    expect(message.esp32?.power).toBe('on');
+    expect(message.esp32?.mode).toBe('manual');
+    expect(message.esp32?.fanSpeed).toBe('2');
+    expect(message.esp32?.sleepMode).toBe(false);
+    expect(message.esp32?.uvc).toBe(false);
+    expect(message.esp32?.deviceName).toBe('MONITOR 3');
+  });
+
+  it('keeps the device online when the status string says online even if the legacy flag is false', () => {
+    const message = toDashboardTelemetryMessage({
+      id: '44:1D:64:2A:D7:78',
+      NAME: 'MONITOR 3',
+      status: 'online',
+      online: false,
+      Temperature: 22.5,
+      Humidity: 45,
+      'PM 2.5': 8,
+      IAQ: 52,
+    }, '44:1D:64:2A:D7:78');
+
+    expect(message.connection).toBe('connected');
   });
 });
