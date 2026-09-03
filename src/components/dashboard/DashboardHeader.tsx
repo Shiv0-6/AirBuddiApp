@@ -32,9 +32,12 @@ function DashboardHeaderComponent({
   onNotificationPress,
   onMenuPress,
 }: DashboardHeaderProps) {
-  const deviceImage = deviceName.trim().toLowerCase() === 'airbuddi max'
+  const normalizedDeviceName = deviceName.trim().toLowerCase();
+  const deviceImage = normalizedDeviceName === 'airbuddi max'
     ? require('../../../assets/Max_l2.png')
-    : require('../../../assets/Mini.png');
+    : normalizedDeviceName === 'airbuddi mini'
+      ? require('../../../assets/Mini.png')
+      : undefined;
 
   return (
     <View style={styles.wrapper}>
@@ -164,14 +167,15 @@ function DashboardHeaderComponent({
 
             <View style={styles.heroDecoration}>
               {/* AirBuddi device */}
-              <View style={styles.airDevice}>
-                <Image
-                  source={deviceImage}
-                  style={styles.heroPurifier}
-                  resizeMode="contain"
-                />
-
-              </View>
+              {deviceImage && (
+                <View style={styles.airDevice}>
+                  <Image
+                    source={deviceImage}
+                    style={styles.heroPurifier}
+                    resizeMode="contain"
+                  />
+                </View>
+              )}
             </View>
 
           </View>
@@ -319,18 +323,15 @@ const styles = StyleSheet.create({
   },
 
   heroTextContent: {
-  width: '65%',
-  zIndex: 2,
-},
+    flex: 1,
+    width: '65%',
+    paddingRight: 8,
+    zIndex: 2,
+  },
 
   /* --------------------------------------------------------------
      HERO TEXT
   -------------------------------------------------------------- */
-
-  heroTextContent: {
-    flex: 1,
-    paddingRight: 8,
-  },
 
   titleRow: {
     flexDirection: 'row',
@@ -380,6 +381,17 @@ const styles = StyleSheet.create({
      AIRBUDDI VISUAL
   -------------------------------------------------------------- */
 
+  heroDecoration: {
+    flex: 1,
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  airDevice: {
+    width: '100%',
+    height: '100%',
+  },
 
   heroPurifier: {
   position: 'absolute',

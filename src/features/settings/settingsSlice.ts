@@ -20,6 +20,8 @@ export interface SettingsState {
     aqiAlerts: boolean;
     deviceOffline: boolean;
     filterReminder: boolean;
+    appUpdates: boolean;
+    deviceUpdates: boolean;
   };
   preferences: {
     theme: 'light' | 'dark' | 'system';
@@ -47,6 +49,8 @@ const initialState: SettingsState = {
     aqiAlerts: true,
     deviceOffline: true,
     filterReminder: true,
+    appUpdates: true,
+    deviceUpdates: true,
   },
   preferences: {
     theme: 'system',

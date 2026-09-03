@@ -582,7 +582,9 @@ export function SettingsScreen({ onSignOut, onExplorePress, modalsOnly = false }
               <ToggleRow label="Push Notifications" sub="Enable all notifications" value={notifications.push} onChange={v => dispatch(setNotifications({ push: v }))} />
               <ToggleRow label="AQI Alerts" sub="Warn when air quality drops" value={notifications.aqiAlerts} onChange={v => dispatch(setNotifications({ aqiAlerts: v }))} />
               <ToggleRow label="Device Offline" sub="Alert when device goes offline" value={notifications.deviceOffline} onChange={v => dispatch(setNotifications({ deviceOffline: v }))} />
-              <ToggleRow label="Filter Replacement" sub="Remind when filter needs replacing" value={notifications.filterReminder} onChange={v => dispatch(setNotifications({ filterReminder: v }))} last />
+              <ToggleRow label="Filter Replacement" sub="Remind when filter needs replacing" value={notifications.filterReminder} onChange={v => dispatch(setNotifications({ filterReminder: v }))} />
+              <ToggleRow label="App Updates" sub="Notify about new app versions" value={notifications.appUpdates} onChange={v => dispatch(setNotifications({ appUpdates: v }))} />
+              <ToggleRow label="Device Updates" sub="Notify about device software updates" value={notifications.deviceUpdates} onChange={v => dispatch(setNotifications({ deviceUpdates: v }))} last />
             </>
           )}
 

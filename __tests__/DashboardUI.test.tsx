@@ -1,10 +1,41 @@
 import React from 'react';
 import renderer, { act } from 'react-test-renderer';
-import { Text, TouchableOpacity } from 'react-native';
+import { Image, Text, TouchableOpacity } from 'react-native';
 
 import { QuickControls } from '../src/components/dashboard/QuickControls';
 import { LightControlPanel } from '../src/components/dashboard/LightControlPanel';
 import { RootPurificationCard } from '../src/components/dashboard/RootPurificationCard';
+import { DashboardHeader } from '../src/components/dashboard/DashboardHeader';
+
+describe('DashboardHeader device image', () => {
+  const renderHeader = (deviceName: string) => renderer.create(
+    <DashboardHeader
+      title="Good Morning"
+      subtitle="Your air is clean"
+      deviceName={deviceName}
+      onProfilePress={() => {}}
+      onRefreshPress={() => {}}
+      onNotificationPress={() => {}}
+      onMenuPress={() => {}}
+    />,
+  );
+
+  it('shows images only for supported device names', () => {
+    let maxTree: renderer.ReactTestRenderer;
+    let miniTree: renderer.ReactTestRenderer;
+    let unknownTree: renderer.ReactTestRenderer;
+
+    act(() => {
+      maxTree = renderHeader('AirBuddi Max');
+      miniTree = renderHeader('AirBuddi Mini');
+      unknownTree = renderHeader('AirBuddi Pure X');
+    });
+
+    expect(maxTree!.root.findAllByType(Image)).toHaveLength(2);
+    expect(miniTree!.root.findAllByType(Image)).toHaveLength(2);
+    expect(unknownTree!.root.findAllByType(Image)).toHaveLength(1);
+  });
+});
 
 describe('QuickControls UI', () => {
   it('shows modern focus presets for a polished experience', () => {
