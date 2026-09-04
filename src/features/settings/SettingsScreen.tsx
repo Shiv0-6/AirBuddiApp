@@ -790,6 +790,11 @@ export function SettingsScreen({ onSignOut, onExplorePress, modalsOnly = false }
                 <Text style={styles.pageSectionTitle}>Edit Device</Text>
                 <Text style={styles.pageSectionSubtitle}>Update your device details.</Text>
               </View>
+              <Text style={styles.inputLabel}>DEVICE MAC ADDRESS</Text>
+              <View style={styles.readOnlyDeviceId}>
+                <MaterialCommunityIcons name="bluetooth-connect" size={18} color={dashboardTheme.colors.textSecondary} />
+                <Text style={styles.readOnlyDeviceIdText}>{editingDeviceId}</Text>
+              </View>
               <TextInput value={editingDeviceName} onChangeText={setEditingDeviceName} style={styles.textInput} placeholder="Device Name" />
               <TextInput value={editingDeviceRoom} onChangeText={setEditingDeviceRoom} style={[styles.textInput, { marginTop: 12 }]} placeholder="Room" />
               <TouchableOpacity style={styles.primarySheetButtonRefined} onPress={saveEditedDevice}><Text style={styles.primarySheetButtonText}>Save</Text></TouchableOpacity>
@@ -902,6 +907,8 @@ const styles = StyleSheet.create({
   profileEmail: { color: dashboardTheme.colors.textMuted, fontSize: 13, marginTop: 2 },
   inputLabel: { color: dashboardTheme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 0.8, marginBottom: 7, marginTop: 14 },
   textInput: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: dashboardTheme.colors.border, backgroundColor: dashboardTheme.colors.surfaceTint, paddingHorizontal: 13, color: dashboardTheme.colors.textPrimary, fontSize: 15 },
+  readOnlyDeviceId: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: dashboardTheme.colors.border, backgroundColor: dashboardTheme.colors.surfaceTint, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  readOnlyDeviceIdText: { color: dashboardTheme.colors.textSecondary, fontSize: 15, fontWeight: '600', letterSpacing: 0.4 },
   inputError: { marginTop: 8, color: '#DC2626', fontSize: 13, fontWeight: '500' },
   primarySheetButton: { marginTop: 24, height: 50, borderRadius: 14, backgroundColor: dashboardTheme.colors.primaryDark, alignItems: 'center', justifyContent: 'center' },
   primarySheetButtonDisabled: { opacity: 0.6 },
