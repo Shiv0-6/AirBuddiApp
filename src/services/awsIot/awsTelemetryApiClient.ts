@@ -17,17 +17,18 @@ function asString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function resolveConnectionState(entry: Record<string, unknown>): 'connected' | 'offline' {
-  const explicitStatus = asString(entry.status ?? entry.connection ?? entry.state ?? entry.deviceStatus).toLowerCase();
-  if (explicitStatus === 'online' || explicitStatus === 'connected' || explicitStatus === 'active') {
-    return 'connected';
-  }
-  if (explicitStatus === 'offline' || explicitStatus === 'disconnected' || explicitStatus === 'inactive') {
-    return 'offline';
-  }
+function normalizeDeviceId(deviceId: string): string {
+  return deviceId.trim().toUpperCase();
+}
 
+function resolveConnectionState(entry: Record<string, unknown>): 'connected' | 'offline' {
   const onlineValue = entry.online;
   if (typeof onlineValue === 'boolean') {
+    const status = asString(entry.status ?? entry.connection ?? entry.state ?? entry.deviceStatus).toLowerCase();
+    const hasLastSeenValue = entry.seconds_since_last_seen !== null && entry.seconds_since_last_seen !== undefined;
+    if (onlineValue === false && status === 'online' && !hasLastSeenValue) {
+      return 'connected';
+    }
     return onlineValue ? 'connected' : 'offline';
   }
 
@@ -39,6 +40,14 @@ function resolveConnectionState(entry: Record<string, unknown>): 'connected' | '
     if (normalized === 'false' || normalized === 'offline' || normalized === 'disconnected') {
       return 'offline';
     }
+  }
+
+  const explicitStatus = asString(entry.status ?? entry.connection ?? entry.state ?? entry.deviceStatus).toLowerCase();
+  if (explicitStatus === 'online' || explicitStatus === 'connected' || explicitStatus === 'active') {
+    return 'connected';
+  }
+  if (explicitStatus === 'offline' || explicitStatus === 'disconnected' || explicitStatus === 'inactive') {
+    return 'offline';
   }
 
   return 'connected';
@@ -171,6 +180,7 @@ export function toDashboardTelemetryMessage(payload: unknown, fallbackDeviceId: 
       connection: resolveConnectionState(deviceEntry),
       online: deviceEntry.online,
       status: deviceEntry.status,
+      seconds_since_last_seen: deviceEntry.seconds_since_last_seen,
       power: deviceEntry.power,
       mode: deviceEntry.mode ?? (deviceEntry.autoMode === true ? 'auto' : deviceEntry.autoMode === false ? 'manual' : undefined),
       autoMode: deviceEntry.autoMode,
@@ -220,7 +230,7 @@ async function responseBody(response: Response) {
 
 /** Reads the newest persisted device telemetry from API Gateway. */
 export async function fetchLatestTelemetry(deviceId: string): Promise<DashboardTelemetryMessage> {
-  const normalizedDeviceId = deviceId.trim();
+  const normalizedDeviceId = normalizeDeviceId(deviceId);
   if (!normalizedDeviceId) {
     throw new Error('A device ID is required to fetch telemetry.');
   }
@@ -246,7 +256,12 @@ export async function fetchLatestTelemetry(deviceId: string): Promise<DashboardT
 
 export async function postEspCommand(deviceId: string, command: string) {
   // This builds exactly what you tested in Postman
-  const url = `${telemetryApiConfig.baseUrl}/devices/${encodeURIComponent(deviceId)}`;
+  const normalizedDeviceId = normalizeDeviceId(deviceId);
+  if (!normalizedDeviceId) {
+    throw new Error('A device ID is required to send an ESP command.');
+  }
+
+  const url = `${telemetryApiConfig.baseUrl.replace(/\/$/, '')}/devices/${encodeURIComponent(normalizedDeviceId)}`;
   
   const response = await fetch(url, {
     method: 'POST',

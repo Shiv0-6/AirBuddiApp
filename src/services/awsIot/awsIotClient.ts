@@ -36,6 +36,7 @@ type FlatEsp32Telemetry = DashboardTelemetryMessage & {
   filterHealth?: any;
   remainingLifeDays?: any;
   timestamp?: string;
+  seconds_since_last_seen?: number | null;
 };
 
 type RawMqttClient = {
@@ -300,17 +301,12 @@ function normalizeChamberState(value: unknown): 'Active' | 'Standby' | undefined
 }
 
 function resolveConnectionStateFromMessage(message: any): 'connected' | 'offline' {
-  const statusValue = message?.status ?? message?.connection ?? message?.state ?? message?.deviceStatus;
-  const statusText = typeof statusValue === 'string' ? statusValue.trim().toLowerCase() : '';
-
-  if (statusText === 'online' || statusText === 'connected' || statusText === 'active') {
-    return 'connected';
-  }
-  if (statusText === 'offline' || statusText === 'disconnected' || statusText === 'inactive') {
-    return 'offline';
-  }
-
   if (typeof message?.online === 'boolean') {
+    const statusText = typeof message?.status === 'string' ? message.status.trim().toLowerCase() : '';
+    const hasLastSeenValue = message?.seconds_since_last_seen !== null && message?.seconds_since_last_seen !== undefined;
+    if (message.online === false && statusText === 'online' && !hasLastSeenValue) {
+      return 'connected';
+    }
     return message.online ? 'connected' : 'offline';
   }
 
@@ -324,6 +320,16 @@ function resolveConnectionStateFromMessage(message: any): 'connected' | 'offline
     }
   }
 
+  const statusValue = message?.status ?? message?.connection ?? message?.state ?? message?.deviceStatus;
+  const statusText = typeof statusValue === 'string' ? statusValue.trim().toLowerCase() : '';
+
+  if (statusText === 'online' || statusText === 'connected' || statusText === 'active') {
+    return 'connected';
+  }
+  if (statusText === 'offline' || statusText === 'disconnected' || statusText === 'inactive') {
+    return 'offline';
+  }
+
   return 'connected';
 }
 
@@ -333,7 +339,10 @@ export function normalizeTelemetryMessage(message: any, defaultDeviceId: string)
   }
 
   const maybeEsp32 = message as FlatEsp32Telemetry;
-  const flatConnection = maybeEsp32.connection ?? resolveConnectionStateFromMessage(maybeEsp32);
+  const hasOnlineValue = typeof maybeEsp32.online === 'boolean' || typeof maybeEsp32.online === 'string';
+  const flatConnection = hasOnlineValue
+    ? resolveConnectionStateFromMessage(maybeEsp32)
+    : maybeEsp32.connection ?? resolveConnectionStateFromMessage(maybeEsp32);
 
   return {
     ...message,

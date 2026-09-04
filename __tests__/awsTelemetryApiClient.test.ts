@@ -9,10 +9,10 @@ describe('postEspCommand', () => {
   });
 
   it('posts an arbitrary command message to the devices endpoint', async () => {
-    await postEspCommand('dummy-id', 'fan_high');
+    await postEspCommand('d4:e9:f4:bc:ee:24', 'fan_high');
 
     expect((globalThis as any).fetch).toHaveBeenCalledWith(
-      expect.stringContaining('/devices'),
+      expect.stringMatching(/\/devices\/D4%3AE9%3AF4%3ABC%3AEE%3A24$/),
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ command: 'fan_high' }),
@@ -50,6 +50,20 @@ describe('postEspCommand', () => {
 
     expect((globalThis as any).fetch).toHaveBeenCalledWith(
       expect.stringMatching(/\/devices\/F4%3A65%3A0B%3A49%3A12%3A60$/),
+      expect.any(Object),
+    );
+  });
+
+  it('uses the entered MAC address for both command and telemetry routes', async () => {
+    (globalThis as any).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({ id: 'D4:E9:F4:BC:EE:24', online: true }),
+    });
+
+    await fetchLatestTelemetry(' d4:e9:f4:bc:ee:24 ');
+
+    expect((globalThis as any).fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/devices\/D4%3AE9%3AF4%3ABC%3AEE%3A24$/),
       expect.any(Object),
     );
   });

@@ -161,17 +161,30 @@ describe('dashboard reducer telemetry updates', () => {
     expect(message.esp32?.deviceName).toBe('MONITOR 3');
   });
 
-  it('keeps the device online when the status string says online even if the legacy flag is false', () => {
+  it('uses online as authoritative when status and online disagree', () => {
     const message = toDashboardTelemetryMessage({
       id: '44:1D:64:2A:D7:78',
       NAME: 'MONITOR 3',
       status: 'online',
       online: false,
+      seconds_since_last_seen: 887,
       Temperature: 22.5,
       Humidity: 45,
       'PM 2.5': 8,
       IAQ: 52,
     }, '44:1D:64:2A:D7:78');
+
+    expect(message.connection).toBe('offline');
+  });
+
+  it('accepts online status when the API has no last-seen value', () => {
+    const message = toDashboardTelemetryMessage({
+      id: 'D4:E9:F4:BC:EE:24',
+      status: 'online',
+      online: false,
+      power: true,
+      seconds_since_last_seen: null,
+    }, 'D4:E9:F4:BC:EE:24');
 
     expect(message.connection).toBe('connected');
   });
