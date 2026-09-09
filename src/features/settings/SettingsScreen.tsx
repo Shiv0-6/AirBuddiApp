@@ -563,11 +563,11 @@ export function SettingsScreen({ onSignOut, onExplorePress, modalsOnly = false }
             <>
               <View style={styles.pageIntroSection}>
                 <Text style={styles.pageSectionTitle}>Check for Updates</Text>
-                <Text style={styles.pageSectionSubtitle}>Manage update notifications for your app and devices.</Text>
+                <Text style={styles.pageSectionSubtitle}>Check the latest software for your app and devices.</Text>
               </View>
               <View style={styles.settingsCard}>
-                <ToggleRow label="App Updates" sub="Notify about new app versions" value={notifications.appUpdates} onChange={v => dispatch(setNotifications({ appUpdates: v }))} />
-                <ToggleRow label="Device Updates" sub="Notify about device software updates" value={notifications.deviceUpdates} onChange={v => dispatch(setNotifications({ deviceUpdates: v }))} last />
+                <SettingsRow icon="cellphone-arrow-down" title="App Update" subtitle="Check for the latest app version" onPress={() => Alert.alert('App Update', 'App update checking will be connected later.')} />
+                <SettingsRow icon="air-filter" title="Device Update" subtitle="Check for the latest device software" onPress={() => Alert.alert('Device Update', 'Device update checking will be connected later.')} last />
               </View>
             </>
           )}

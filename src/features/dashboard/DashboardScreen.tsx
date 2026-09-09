@@ -119,7 +119,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     push: notifPush,
     aqiAlerts: notifAqiAlerts,
     deviceOffline: notifDeviceOffline,
-    filterReminder: notifFilterReminder
+    filterReminder: notifFilterReminder,
   } = notifications;
 
   const {
@@ -922,6 +922,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <SettingsCategoryRow icon="account-circle-outline" title="Account" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} />
                 <SettingsCategoryRow icon="air-filter" title="Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} />
                 <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
+                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => dispatch(setActiveSheet('check-updates'))} />
                 <SettingsCategoryRow icon="tune-variant" title="Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
                 <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
                 <SettingsCategoryRow icon="leaf-circle-outline" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} />
@@ -957,6 +958,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                activeSheet === 'account' ? 'Account' :
                activeSheet === 'devices' ? 'Devices' :
                activeSheet === 'notification-settings' ? 'Notifications' :
+               activeSheet === 'check-updates' ? 'Check for Updates' :
                activeSheet === 'preferences' ? 'Preferences' :
                activeSheet === 'support' ? 'Support' :
                activeSheet === 'add-device' ? 'Add Device' :
@@ -972,6 +974,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <SettingsCategoryRow icon="account-circle-outline" title="Account" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} />
                 <SettingsCategoryRow icon="air-filter" title="Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} />
                 <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
+                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => dispatch(setActiveSheet('check-updates'))} />
                 <SettingsCategoryRow icon="tune-variant" title="Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
                 <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
                 <SettingsCategoryRow icon="leaf-circle-outline" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} />
@@ -1009,6 +1012,17 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               <View style={styles.settingsCard}>
                 <SettingsRow icon="bell-outline" title="Notification Preferences" subtitle="Choose which alerts you receive" onPress={() => dispatch(setActiveSheet('notifications'))} />
                 <SettingsRow icon="alert-circle-outline" title="Alert Thresholds" subtitle="Set AQI warning levels" onPress={() => dispatch(setActiveSheet('alert-thresholds'))} last />
+              </View>
+            </>}
+
+            {activeSheet === 'check-updates' && <>
+              <View style={styles.pageIntroSection}>
+                <Text style={styles.pageSectionTitle}>Check for Updates</Text>
+                <Text style={styles.pageSectionSubtitle}>Check the latest software for your app and devices.</Text>
+              </View>
+              <View style={styles.settingsCard}>
+                <SettingsRow icon="cellphone-arrow-down" title="App Update" subtitle="Check for the latest app version" onPress={() => Alert.alert('App Update', 'App update checking will be connected later.')} />
+                <SettingsRow icon="air-filter" title="Device Update" subtitle="Check for the latest device software" onPress={() => Alert.alert('Device Update', 'Device update checking will be connected later.')} last />
               </View>
             </>}
 
