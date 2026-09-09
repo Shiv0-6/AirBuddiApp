@@ -1,6 +1,7 @@
 import React, { useCallback, useState, useEffect } from 'react';
 import {
   ScrollView,
+  KeyboardAvoidingView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -478,7 +479,18 @@ export function SettingsScreen({ onSignOut, onExplorePress, modalsOnly = false }
           <View style={styles.pageHeaderPlaceholder} />
         </View>
 
-        <ScrollView style={styles.pageContent} contentContainerStyle={styles.pageContentScroll} showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView
+          style={styles.keyboardAvoidingView}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+        >
+        <ScrollView
+          style={styles.pageContent}
+          contentContainerStyle={styles.pageContentScroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        >
           {id === 'settings-main' && (
             <>
               <View style={styles.pageIntroSection}>
@@ -803,6 +815,7 @@ export function SettingsScreen({ onSignOut, onExplorePress, modalsOnly = false }
           )}
           <View style={styles.bottomSpaceLarge} />
         </ScrollView>
+        </KeyboardAvoidingView>
       </View>
     );
   };
@@ -945,6 +958,7 @@ const styles = StyleSheet.create({
   successMessageText: { color: '#15803D', fontSize: 13, fontWeight: '600' },
   fullPageContainer: { flex: 1, backgroundColor: dashboardTheme.colors.background },
   pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 60 : 20, paddingBottom: 16, backgroundColor: dashboardTheme.colors.surface, borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
+  keyboardAvoidingView: { flex: 1 },
   pageBackButton: { padding: 8, marginLeft: -8 },
   pageTitle: { fontSize: 20, fontWeight: '800', color: dashboardTheme.colors.textPrimary },
   pageHeaderPlaceholder: { width: 42 },
