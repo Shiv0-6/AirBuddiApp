@@ -394,11 +394,11 @@ const styles = StyleSheet.create({
   },
 
   heroPurifier: {
-  position: 'absolute',
-  width: 175,
-  height: 175,
-  right: -25,
-  bottom: -70,
-  zIndex: 1,
-},
+    position: 'absolute',
+    width: 175,
+    height: 175,
+    right: -25,
+    bottom: -20,
+    zIndex: 1,
+  },
 });
