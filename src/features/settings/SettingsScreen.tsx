@@ -37,7 +37,7 @@ import {
 import { fetchLatestTelemetry } from '../../services/awsIot/awsTelemetryApiClient';
 import { LegalScreen } from './LegalScreen';
 
-type SheetId = 'account' | 'devices' | 'notification-settings' | 'preferences' | 'support' | 'profile' | 'add-device' | 'edit-device' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | 'legal' | null;
+type SheetId = 'settings-main' | 'account' | 'devices' | 'notification-settings' | 'check-updates' | 'preferences' | 'support' | 'profile' | 'add-device' | 'edit-device' | 'about' | 'linked-accounts' | 'notifications' | 'alert-thresholds' | 'appearance' | 'units' | 'data-privacy' | 'help' | 'contact-support' | 'legal' | null;
 
 const PROFILE_STORAGE_KEY = '@airbuddi_profile';
 const DEVICES_STORAGE_KEY = '@airbuddi_devices';
@@ -468,6 +468,7 @@ export function SettingsScreen({ onSignOut, onExplorePress, modalsOnly = false }
             id === 'settings-main' ? 'Settings' :
             id === 'account' ? 'Account' :
             id === 'notification-settings' ? 'Notifications' :
+            id === 'check-updates' ? 'Check for Updates' :
             id === 'preferences' ? 'Preferences' :
             id === 'support' ? 'Support' :
             id === 'devices' ? 'Devices' :
@@ -501,6 +502,7 @@ export function SettingsScreen({ onSignOut, onExplorePress, modalsOnly = false }
                 <SettingsCategoryRow icon="account-circle-outline" title="Account" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} />
                 <SettingsCategoryRow icon="air-filter" title="Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} />
                 <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
+                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => dispatch(setActiveSheet('check-updates'))} />
                 <SettingsCategoryRow icon="tune-variant" title="Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
                 <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
                 <SettingsCategoryRow icon="leaf-circle-outline" title="Explore Products" subtitle="Explore other products" onPress={onExplorePress} />
@@ -554,7 +556,15 @@ export function SettingsScreen({ onSignOut, onExplorePress, modalsOnly = false }
                 <SettingsRow icon="bell-outline" title="Notification Preferences" subtitle="Choose which alerts you receive" onPress={() => dispatch(setActiveSheet('notifications'))} />
                 <SettingsRow icon="alert-circle-outline" title="Alert Thresholds" subtitle="Set AQI warning levels" onPress={() => dispatch(setActiveSheet('alert-thresholds'))} last />
               </View>
-              <Text style={styles.settingsSectionLabel}>UPDATES</Text>
+            </>
+          )}
+
+          {id === 'check-updates' && (
+            <>
+              <View style={styles.pageIntroSection}>
+                <Text style={styles.pageSectionTitle}>Check for Updates</Text>
+                <Text style={styles.pageSectionSubtitle}>Manage update notifications for your app and devices.</Text>
+              </View>
               <View style={styles.settingsCard}>
                 <ToggleRow label="App Updates" sub="Notify about new app versions" value={notifications.appUpdates} onChange={v => dispatch(setNotifications({ appUpdates: v }))} />
                 <ToggleRow label="Device Updates" sub="Notify about device software updates" value={notifications.deviceUpdates} onChange={v => dispatch(setNotifications({ deviceUpdates: v }))} last />
@@ -841,6 +851,7 @@ export function SettingsScreen({ onSignOut, onExplorePress, modalsOnly = false }
           <SettingsCategoryRow icon="account-circle-outline" title="Account" subtitle="Profile and linked accounts" onPress={() => setActiveSheet('account')} />
           <SettingsCategoryRow icon="air-filter" title="Devices" subtitle="Manage your AirBuddi devices" onPress={() => setActiveSheet('devices')} />
           <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => setActiveSheet('notification-settings')} />
+          <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => setActiveSheet('check-updates')} />
           <SettingsCategoryRow icon="tune-variant" title="Preferences" subtitle="Appearance, units, and privacy" onPress={() => setActiveSheet('preferences')} />
           <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => setActiveSheet('support')} />
           <SettingsCategoryRow icon="gavel" title="Legal" subtitle="Privacy Policy and Terms of Service" onPress={() => setActiveSheet('legal')} />
@@ -876,7 +887,7 @@ function SettingsCategoryRow({ icon, title, subtitle, onPress, last = false }: a
   );
 }
 
-function ToggleRow({ label, sub, value, onChange, last }: any) {
+function ToggleRow({ label, sub, value, onChange, last }: { label: string; sub: string; value: boolean; onChange: (value: boolean) => void; last?: boolean }) {
   return (
     <View style={[styles.settingsToggleRow, last && styles.settingsToggleRowLast]}>
       <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>{label}</Text><Text style={styles.settingsToggleSublabel}>{sub}</Text></View>
