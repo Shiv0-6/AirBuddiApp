@@ -302,11 +302,6 @@ function normalizeChamberState(value: unknown): 'Active' | 'Standby' | undefined
 
 function resolveConnectionStateFromMessage(message: any): 'connected' | 'offline' {
   if (typeof message?.online === 'boolean') {
-    const statusText = typeof message?.status === 'string' ? message.status.trim().toLowerCase() : '';
-    const hasLastSeenValue = message?.seconds_since_last_seen !== null && message?.seconds_since_last_seen !== undefined;
-    if (message.online === false && statusText === 'online' && !hasLastSeenValue) {
-      return 'connected';
-    }
     return message.online ? 'connected' : 'offline';
   }
 
@@ -320,17 +315,7 @@ function resolveConnectionStateFromMessage(message: any): 'connected' | 'offline
     }
   }
 
-  const statusValue = message?.status ?? message?.connection ?? message?.state ?? message?.deviceStatus;
-  const statusText = typeof statusValue === 'string' ? statusValue.trim().toLowerCase() : '';
-
-  if (statusText === 'online' || statusText === 'connected' || statusText === 'active') {
-    return 'connected';
-  }
-  if (statusText === 'offline' || statusText === 'disconnected' || statusText === 'inactive') {
-    return 'offline';
-  }
-
-  return 'connected';
+  return 'offline';
 }
 
 export function normalizeTelemetryMessage(message: any, defaultDeviceId: string): DashboardTelemetryMessage {

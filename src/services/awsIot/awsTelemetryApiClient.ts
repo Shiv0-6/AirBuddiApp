@@ -24,11 +24,6 @@ function normalizeDeviceId(deviceId: string): string {
 function resolveConnectionState(entry: Record<string, unknown>): 'connected' | 'offline' {
   const onlineValue = entry.online;
   if (typeof onlineValue === 'boolean') {
-    const status = asString(entry.status ?? entry.connection ?? entry.state ?? entry.deviceStatus).toLowerCase();
-    const hasLastSeenValue = entry.seconds_since_last_seen !== null && entry.seconds_since_last_seen !== undefined;
-    if (onlineValue === false && status === 'online' && !hasLastSeenValue) {
-      return 'connected';
-    }
     return onlineValue ? 'connected' : 'offline';
   }
 
@@ -42,15 +37,7 @@ function resolveConnectionState(entry: Record<string, unknown>): 'connected' | '
     }
   }
 
-  const explicitStatus = asString(entry.status ?? entry.connection ?? entry.state ?? entry.deviceStatus).toLowerCase();
-  if (explicitStatus === 'online' || explicitStatus === 'connected' || explicitStatus === 'active') {
-    return 'connected';
-  }
-  if (explicitStatus === 'offline' || explicitStatus === 'disconnected' || explicitStatus === 'inactive') {
-    return 'offline';
-  }
-
-  return 'connected';
+  return 'offline';
 }
 
 function findMatchingDeviceEntry(payload: unknown, fallbackDeviceId: string) {

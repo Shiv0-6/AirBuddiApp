@@ -177,7 +177,7 @@ describe('dashboard reducer telemetry updates', () => {
     expect(message.connection).toBe('offline');
   });
 
-  it('accepts online status when the API has no last-seen value', () => {
+  it('ignores status even when it says online and online is false', () => {
     const message = toDashboardTelemetryMessage({
       id: 'D4:E9:F4:BC:EE:24',
       status: 'online',
@@ -186,6 +186,6 @@ describe('dashboard reducer telemetry updates', () => {
       seconds_since_last_seen: null,
     }, 'D4:E9:F4:BC:EE:24');
 
-    expect(message.connection).toBe('connected');
+    expect(message.connection).toBe('offline');
   });
 });
