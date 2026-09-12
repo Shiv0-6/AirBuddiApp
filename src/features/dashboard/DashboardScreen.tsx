@@ -69,6 +69,60 @@ const DEVICES_STORAGE_KEY = '@airbuddi_devices';
 const NOTIFICATIONS_STORAGE_KEY = '@airbuddi_notifications';
 const PREFERENCES_STORAGE_KEY = '@airbuddi_preferences';
 
+const MAC_ADDRESS_PATTERN = /(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}/i;
+const COMPACT_MAC_PATTERN = /\b[0-9A-F]{12}\b/i;
+
+function findMacAddress(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const decodedValue = value.replace(/%3A/gi, ':').replace(/%2D/gi, '-');
+  const separatedMac = decodedValue.match(MAC_ADDRESS_PATTERN)?.[0];
+  if (separatedMac) {
+    return separatedMac.replace(/-/g, ':').toUpperCase();
+  }
+
+  const compactMac = decodedValue.match(COMPACT_MAC_PATTERN)?.[0];
+  return compactMac?.match(/../g)?.join(':').toUpperCase() ?? null;
+}
+
+function extractDeviceMacFromQrData(rawValue: string): string | null {
+  const directMac = findMacAddress(rawValue);
+  if (directMac) {
+    return directMac;
+  }
+
+  try {
+    const parsedValue: unknown = JSON.parse(decodeURIComponent(rawValue));
+    const queue: unknown[] = [parsedValue];
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (typeof current === 'string') {
+        const nestedMac = findMacAddress(current);
+        if (nestedMac) {
+          return nestedMac;
+        }
+      } else if (current && typeof current === 'object') {
+        Object.entries(current).forEach(([key, value]) => {
+          if (/mac|device.?id|serial/i.test(key)) {
+            const keyedMac = findMacAddress(String(value));
+            if (keyedMac) {
+              queue.unshift(keyedMac);
+            }
+          }
+          queue.push(value);
+        });
+      }
+    }
+  } catch {
+    // QR data can be plain text or a URL rather than JSON.
+  }
+
+  const parameterMatch = rawValue.match(/[?&#](?:mac|device[_-]?id|serial)=([^&#]+)/i);
+  return parameterMatch ? findMacAddress(decodeURIComponent(parameterMatch[1])) : null;
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
@@ -417,40 +471,19 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
   const applyScannedQrValue = useCallback((value: string) => {
     const scannedValue = value.trim();
-
-    // 1. Try to find a MAC address
-    const macMatch = scannedValue.match(/(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}/i);
-    const scannedMac = macMatch?.[0].replace(/-/g, ':').toUpperCase() ?? '';
-
-    // 2. Try to extract ID from a URL if the scanned value is a link
-    let extractedId = scannedMac;
-    if (!extractedId && (scannedValue.startsWith('http') || scannedValue.includes('/'))) {
-      try {
-        const urlMatch = scannedValue.match(/[?&](?:id|mac)=([^&]+)/i) || scannedValue.match(/\/([^/?#]+)$/);
-        if (urlMatch) {
-          extractedId = urlMatch[1].toUpperCase();
-        }
-      } catch (e) {
-        // Fallback to raw value if URL parsing fails
-      }
-    }
-
-    // 3. If still no ID, use the raw trimmed value if it looks like a valid ID
-    if (!extractedId && scannedValue.length > 0) {
-      extractedId = scannedValue.toUpperCase();
-    }
+    const scannedMac = extractDeviceMacFromQrData(scannedValue);
 
     setScannedQrValue(scannedValue);
     setIsQrScannerVisible(false);
     setIsScanningQr(false);
 
-    if (extractedId) {
+    if (scannedMac) {
       setAddDeviceError('');
-      setNewDeviceId(extractedId);
+      setNewDeviceId(scannedMac);
       setNewDeviceName(prev => prev || 'AirBuddi Purifier');
       setNewDeviceRoom(prev => prev || 'Living Room');
     } else {
-      setAddDeviceError('The QR code was read, but it appears to be empty or invalid.');
+      setAddDeviceError('QR data captured, but no device MAC address was found.');
     }
   }, []);
 
@@ -474,7 +507,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           setAddDeviceError('Camera permission is required to scan QR codes.');
           return;
         }
-      } catch (err) {
+      } catch {
         setAddDeviceError('Failed to request camera permission.');
         return;
       }
@@ -1110,8 +1143,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                       <Text style={styles.qrSuccessBadgeText}>Scanned: {newDeviceId}</Text>
                     </View>
                   ) : null}
-                  {scannedQrValue && !newDeviceId ? (
-                    <Text style={styles.qrScanText}>Read: {scannedQrValue}</Text>
+                  {scannedQrValue ? (
+                    <Text style={styles.qrScanText} numberOfLines={3}>Read: {scannedQrValue}</Text>
                   ) : null}
 
                   <View style={styles.qrActionsRow}>
