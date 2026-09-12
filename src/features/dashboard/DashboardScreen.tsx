@@ -155,6 +155,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const [isScanningQr, setIsScanningQr] = useState(false);
   const [isQrScannerVisible, setIsQrScannerVisible] = useState(false);
   const [scannedQrValue, setScannedQrValue] = useState('');
+  const [qrZoom, setQrZoom] = useState(0);
   const [newDeviceName, setNewDeviceName] = useState('');
   const [newDeviceRoom, setNewDeviceRoom] = useState('');
   const [newDeviceId, setNewDeviceId] = useState('');
@@ -514,8 +515,17 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     }
 
     setIsScanningQr(true);
+    setQrZoom(0);
     setIsQrScannerVisible(true);
   }, []);
+
+  const openQrScanner = useCallback(() => {
+    setAddDeviceMode('qr');
+    setNewDeviceId('');
+    setScannedQrValue('');
+    dispatch(setActiveSheet('add-device'));
+    void handleScanQr();
+  }, [dispatch, handleScanQr]);
 
   const handlePickQrFromLibrary = useCallback(async () => {
     setIsScanningQr(true);
@@ -743,7 +753,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                     accessibilityLabel="Add device"
                     style={styles.addDeviceHeaderButton}
                     activeOpacity={0.8}
-                    onPress={() => dispatch(setActiveSheet('add-device'))}
+                    onPress={openQrScanner}
                   >
                     <MaterialCommunityIcons
                       name="plus"
@@ -790,7 +800,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                     accessibilityLabel="Add a device"
                     style={styles.emptyDeviceButton}
                     activeOpacity={0.8}
-                    onPress={() => dispatch(setActiveSheet('add-device'))}
+                    onPress={openQrScanner}
                   >
                     <MaterialCommunityIcons
                       name="plus"
@@ -995,7 +1005,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         <View style={activeSheet === 'add-device' ? styles.addDeviceSheetBackdrop : styles.fullPageContainer}>
           <View style={[styles.fullPageContainer, activeSheet === 'add-device' && styles.addDeviceSheet]}>
           {activeSheet === 'add-device' && <View style={styles.sheetHandle} />}
-          <View style={[styles.pageHeader, activeSheet === 'add-device' && styles.addDeviceSheetHeader]}>
+          {activeSheet !== 'add-device' && <View style={styles.pageHeader}>
             <TouchableOpacity onPress={() => {
               if (activeSheet === 'settings-main' || activeTab === 'settings') {
                 dispatch(setActiveSheet(null));
@@ -1018,7 +1028,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                activeSheet === 'about' ? 'About' : 'Settings'
             }</Text>
             <View style={styles.pageHeaderPlaceholder} />
-          </View>
+          </View>}
 
           <ScrollView style={styles.pageContent} contentContainerStyle={styles.pageContentScroll} showsVerticalScrollIndicator={false}>
             {activeSheet === 'settings-main' && <>
@@ -1052,7 +1062,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               </View>
               <View style={styles.settingsCard}>
                 <SettingsRow icon="air-filter" title="My Devices" subtitle={devices.length > 0 ? `${devices.length} device${devices.length === 1 ? '' : 's'} added` : 'No device connected'} onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('home'); }} />
-                <SettingsRow icon="plus-circle-outline" title="Add New Device" subtitle="Pair a new AirBuddi" onPress={() => dispatch(setActiveSheet('add-device'))} last />
+                <SettingsRow icon="plus-circle-outline" title="Add New Device" subtitle="Pair a new AirBuddi" onPress={openQrScanner} last />
               </View>
             </>}
 
@@ -1113,7 +1123,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <TouchableOpacity
                   activeOpacity={0.8}
                   style={[styles.modeToggleButton, addDeviceMode === 'qr' && styles.modeToggleButtonActive]}
-                  onPress={() => { setAddDeviceMode('qr'); setAddDeviceError(''); }}
+                  onPress={openQrScanner}
                 >
                   <MaterialCommunityIcons name="qrcode-scan" size={18} color={addDeviceMode === 'qr' ? '#FFFFFF' : dashboardTheme.colors.textSecondary} />
                   <Text style={[styles.modeToggleText, addDeviceMode === 'qr' && styles.modeToggleTextActive]}>Scan QR Code</Text>
@@ -1489,12 +1499,15 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         onRequestClose={() => {
           setIsQrScannerVisible(false);
           setIsScanningQr(false);
+          dispatch(setActiveSheet(null));
         }}
       >
         <View style={styles.qrScannerScreen}>
           <Camera
             style={StyleSheet.absoluteFill}
             cameraType={CameraType.Back}
+            zoomMode="on"
+            zoom={qrZoom}
             scanBarcode
             showFrame
             barcodeFrameSize={{ width: 260, height: 260 }}
@@ -1510,17 +1523,56 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             }}
           />
           <View style={styles.qrScannerOverlay}>
-            <Text style={styles.qrScannerTitle}>Scan any QR code</Text>
-            <Text style={styles.qrScannerHint}>Align the QR code inside the square frame</Text>
-            <TouchableOpacity
-              style={styles.qrScannerCloseButton}
-              onPress={() => {
-                setIsQrScannerVisible(false);
-                setIsScanningQr(false);
-              }}
-            >
-              <Text style={styles.qrScannerCloseText}>Cancel</Text>
-            </TouchableOpacity>
+            <View style={styles.qrScannerTopBar}>
+              <TouchableOpacity
+                accessibilityLabel="Close QR scanner"
+                style={styles.qrScannerBackButton}
+                onPress={() => {
+                  setIsQrScannerVisible(false);
+                  setIsScanningQr(false);
+                  dispatch(setActiveSheet(null));
+                }}
+              >
+                <MaterialCommunityIcons name="arrow-left" size={28} color="#FFFFFF" />
+              </TouchableOpacity>
+              <View style={styles.qrScannerHeading}>
+                <Text style={styles.qrScannerTitle}>Scan any QR code</Text>
+                <Text style={styles.qrScannerHint}>Place the code inside the frame</Text>
+              </View>
+            </View>
+
+            <View style={styles.qrScannerBottomArea}>
+              <View style={styles.qrScannerActions}>
+                <TouchableOpacity
+                  style={styles.qrScannerAction}
+                  onPress={() => {
+                    setIsQrScannerVisible(false);
+                    setIsScanningQr(false);
+                    setAddDeviceMode('manual');
+                    setAddDeviceError('');
+                  }}
+                >
+                  <View style={styles.qrScannerActionIcon}>
+                    <MaterialCommunityIcons name="keyboard-outline" size={25} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.qrScannerActionLabel}>Manual</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.qrScannerAction} onPress={handlePickQrFromLibrary}>
+                  <View style={styles.qrScannerActionIcon}>
+                    <MaterialCommunityIcons name="image-outline" size={25} color="#FFFFFF" />
+                  </View>
+                  <Text style={styles.qrScannerActionLabel}>Gallery</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.qrScannerAction} onPress={() => setQrZoom(value => value === 0 ? 0.5 : 0)}>
+                  <View style={styles.qrScannerActionIcon}>
+                    <Text style={styles.qrScannerZoomValue}>{qrZoom === 0 ? '1x' : '2x'}</Text>
+                  </View>
+                  <Text style={styles.qrScannerActionLabel}>Zoom</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
         </View>
       </Modal>
@@ -2568,31 +2620,76 @@ settingsSubtitle: {
   },
   qrScannerOverlay: {
     ...StyleSheet.absoluteFill,
+    justifyContent: 'space-between',
+    paddingTop: 34,
+    paddingBottom: 42,
+    paddingHorizontal: 20,
+  },
+  qrScannerTopBar: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  qrScannerBackButton: {
+    width: 44,
+    height: 44,
     alignItems: 'center',
-    paddingTop: 72,
+    justifyContent: 'center',
+  },
+  qrScannerHeading: {
+    flex: 1,
+    alignItems: 'center',
+    paddingRight: 44,
   },
   qrScannerTitle: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 21,
     fontWeight: '800',
   },
   qrScannerHint: {
     color: '#E2E8F0',
-    fontSize: 14,
+    fontSize: 13,
     marginTop: 8,
   },
-  qrScannerCloseButton: {
-    position: 'absolute',
-    bottom: 48,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.65)',
+  qrScannerBottomArea: {
+    width: '100%',
+    alignItems: 'center',
   },
-  qrScannerCloseText: {
+  qrScannerActions: {
+    width: '100%',
+    maxWidth: 390,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: 28,
+    backgroundColor: 'rgba(15, 23, 42, 0.72)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+  },
+  qrScannerAction: {
+    minWidth: 62,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  qrScannerActionIcon: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.14)',
+  },
+  qrScannerActionLabel: {
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  qrScannerZoomValue: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
   },
   qrScanText: {
     fontSize: 12,
