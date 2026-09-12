@@ -1497,6 +1497,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             cameraType={CameraType.Back}
             scanBarcode
             showFrame
+            barcodeFrameSize={{ width: 260, height: 260 }}
+            scanThrottleDelay={300}
             laserColor="#22C55E"
             frameColor="#FFFFFF"
             allowedBarcodeTypes={['qr']}
@@ -1508,8 +1510,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             }}
           />
           <View style={styles.qrScannerOverlay}>
-            <Text style={styles.qrScannerTitle}>Scan device QR code</Text>
-            <Text style={styles.qrScannerHint}>Align the code inside the frame</Text>
+            <Text style={styles.qrScannerTitle}>Scan any QR code</Text>
+            <Text style={styles.qrScannerHint}>Align the QR code inside the square frame</Text>
             <TouchableOpacity
               style={styles.qrScannerCloseButton}
               onPress={() => {
