@@ -7,6 +7,7 @@ import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
 type RootPurificationCardProps = {
   upperBedChamber?: 'Active' | 'Standby';
   lowerBedChamber?: 'Active' | 'Standby';
+  showLowerChamber?: boolean;
   onUpperPress?: () => void;
   onLowerPress?: () => void;
   disabled?: boolean;
@@ -15,12 +16,13 @@ type RootPurificationCardProps = {
 export function RootPurificationCard({
   upperBedChamber = 'Standby',
   lowerBedChamber = 'Standby',
+  showLowerChamber = true,
   onUpperPress,
   onLowerPress,
   disabled = false,
 }: RootPurificationCardProps) {
   const isUpperActive = upperBedChamber === 'Active';
-  const isLowerActive = lowerBedChamber === 'Active';
+  const isLowerActive = showLowerChamber && lowerBedChamber === 'Active';
   const activeCount = (isUpperActive ? 1 : 0) + (isLowerActive ? 1 : 0);
 
   return (
@@ -55,14 +57,16 @@ export function RootPurificationCard({
         />
 
         {/* Lower Bed Chamber Tile */}
-        <ChamberGridTile
-          label="Lower Chamber"
-          subtitle="Sub-root bio-bed"
-          icon="layers-triple-outline"
-          isActive={isLowerActive}
-          onPress={onLowerPress}
-          disabled={disabled}
-        />
+        {showLowerChamber && (
+          <ChamberGridTile
+            label="Lower Chamber"
+            subtitle="Sub-root bio-bed"
+            icon="layers-triple-outline"
+            isActive={isLowerActive}
+            onPress={onLowerPress}
+            disabled={disabled}
+          />
+        )}
       </View>
 
       {/* ── Footer Quick Status Bar ──────────────────────────────────────── */}

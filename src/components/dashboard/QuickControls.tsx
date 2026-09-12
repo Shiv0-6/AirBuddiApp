@@ -23,6 +23,7 @@ type QuickControlsProps = {
   isAutoMode: boolean;
   isSleepMode: boolean;
   isUvc: boolean;
+  showPresets?: boolean;
   fanSpeed?: 'off' | '1' | '2' | '3';
   onTogglePower: () => void;
   onToggleAutoMode: (value: boolean) => void;
@@ -81,6 +82,7 @@ function QuickControlsComponent({
   isAutoMode,
   isSleepMode,
   isUvc,
+  showPresets = true,
   fanSpeed = '2',
   onTogglePower,
   onToggleAutoMode,
@@ -214,32 +216,36 @@ function QuickControlsComponent({
 
       {/* ── Focus Presets & UV-C ───────────────────────────────── */}
       <View style={[styles.section, styles.controlCard]}>
-        <Text style={styles.sectionTitle}>Presets</Text>
+        <Text style={styles.sectionTitle}>{showPresets ? 'Presets' : 'UV-C'}</Text>
+        {showPresets && (
+          <View style={styles.presetGrid}>
+            {PRESETS.map(preset => {
+              const isActive = preset.id === activePresetId;
+              return (
+                <TouchableOpacity
+                  key={preset.id}
+                  activeOpacity={0.8}
+                  disabled={presetControlsDisabled}
+                  onPress={() => handlePresetPress(preset)}
+                  style={[styles.presetCard, presetControlsDisabled && styles.controlDisabled, isActive && styles.presetCardActive]}
+                >
+                  <MaterialCommunityIcons
+                    name={preset.icon}
+                    size={24}
+                    color={isActive ? '#FFFFFF' : dashboardTheme.colors.primary}
+                  />
+                  <Text style={[styles.presetLabel, isActive && styles.presetLabelActive]} numberOfLines={1}>
+                    {preset.label}
+                  </Text>
+                  <Text style={[styles.presetHintText, isActive && styles.presetHintTextActive]} numberOfLines={1}>
+                    {preset.hint}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
         <View style={styles.presetGrid}>
-          {PRESETS.map(preset => {
-            const isActive = preset.id === activePresetId;
-            return (
-              <TouchableOpacity
-                key={preset.id}
-                activeOpacity={0.8}
-                disabled={presetControlsDisabled}
-                onPress={() => handlePresetPress(preset)}
-                style={[styles.presetCard, presetControlsDisabled && styles.controlDisabled, isActive && styles.presetCardActive]}
-              >
-                <MaterialCommunityIcons
-                  name={preset.icon}
-                  size={24}
-                  color={isActive ? '#FFFFFF' : dashboardTheme.colors.primary}
-                />
-                <Text style={[styles.presetLabel, isActive && styles.presetLabelActive]} numberOfLines={1}>
-                  {preset.label}
-                </Text>
-                <Text style={[styles.presetHintText, isActive && styles.presetHintTextActive]} numberOfLines={1}>
-                  {preset.hint}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
           <TouchableOpacity
             activeOpacity={0.8}
             disabled={manualControlsDisabled}

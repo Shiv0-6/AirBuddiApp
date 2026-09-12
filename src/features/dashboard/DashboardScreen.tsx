@@ -523,6 +523,20 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const selectedDevice = devices.find(item => item.id === selectedDeviceId) ?? null;
   const deviceTitle = selectedDevice?.room ?? 'Add a device';
   const displayDeviceName = selectedDevice?.name ?? 'No device connected';
+  const isMiniDevice = displayDeviceName.trim().toLowerCase() === 'airbuddi mini';
+  const visibleSensors = isMiniDevice
+    ? sensors.filter(sensor => {
+      const sensorId = sensor.id.toLowerCase();
+      const sensorName = sensor.name.toLowerCase();
+      return sensorId === 'pm25'
+        || sensorId === 'pm10'
+        || sensorId === 'pm2_5'
+        || sensorId === 'pm2_10'
+        || sensorName.includes('pm2.5')
+        || sensorName.includes('pm2.10')
+        || sensorName === 'pm10';
+    })
+    : sensors;
   const addDevice = useCallback(async () => {
     const name = newDeviceName.trim() || 'AirBuddi Device';
     const room = newDeviceRoom.trim() || 'New Room';
@@ -869,7 +883,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             <View style={styles.tabPad}>
               <AirQualityCard aqi={pm25Value} />
               <View style={styles.gap}>
-                <SensorGrid sensors={sensors} />
+                <SensorGrid sensors={visibleSensors} />
               </View>
             </View>
           </Animated.View>
@@ -883,6 +897,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               isAutoMode={device?.mode === 'auto'}
               isSleepMode={device?.sleepMode ?? false}
               isUvc={device?.uvc ?? true}
+              showPresets={!isMiniDevice}
               fanSpeed={controlFanSpeed}
               onTogglePower={handleTogglePower}
               onToggleAutoMode={handleToggleAutoMode}
@@ -894,6 +909,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               <RootPurificationCard
                 upperBedChamber={device?.upperBedChamber ?? 'Standby'}
                 lowerBedChamber={device?.lowerBedChamber ?? 'Standby'}
+                showLowerChamber={!isMiniDevice}
                 onUpperPress={() => {
                   const currentVal = device?.upperBedChamber ?? 'Standby';
                   setUpperBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
