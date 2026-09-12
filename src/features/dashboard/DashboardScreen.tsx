@@ -938,12 +938,15 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
       {/* ── Account, device, and overflow sheets ───────────────────── */}
       <Modal
-        animationType="slide"
+        animationType={activeSheet === 'add-device' ? 'slide' : 'none'}
+        transparent={activeSheet === 'add-device'}
         visible={activeSheet !== null && activeSheet !== 'menu' && activeSheet !== 'profile'}
         onRequestClose={() => dispatch(setActiveSheet(null))}
       >
-        <View style={styles.fullPageContainer}>
-          <View style={styles.pageHeader}>
+        <View style={activeSheet === 'add-device' ? styles.addDeviceSheetBackdrop : styles.fullPageContainer}>
+          <View style={[styles.fullPageContainer, activeSheet === 'add-device' && styles.addDeviceSheet]}>
+          {activeSheet === 'add-device' && <View style={styles.sheetHandle} />}
+          <View style={[styles.pageHeader, activeSheet === 'add-device' && styles.addDeviceSheetHeader]}>
             <TouchableOpacity onPress={() => {
               if (activeSheet === 'settings-main' || activeTab === 'settings') {
                 dispatch(setActiveSheet(null));
@@ -1339,6 +1342,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             </>}
             <View style={styles.bottomSpaceLarge} />
           </ScrollView>
+          </View>
         </View>
       </Modal>
 
@@ -2628,6 +2632,9 @@ settingsSubtitle: {
   sheetScroll: { maxHeight: 500 },
   bottomSheetGap: { height: 20 },
   fullPageContainer: { flex: 1, backgroundColor: dashboardTheme.colors.background },
+  addDeviceSheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(15, 23, 42, 0.35)' },
+  addDeviceSheet: { flex: 0, height: '92%', borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
+  addDeviceSheetHeader: { paddingTop: 8, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
   pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 60 : 20, paddingBottom: 16, backgroundColor: dashboardTheme.colors.surface, borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
   pageBackButton: { padding: 8, marginLeft: -8 },
   pageTitle: { fontSize: 20, fontWeight: '800', color: dashboardTheme.colors.textPrimary },
