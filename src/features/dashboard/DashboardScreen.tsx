@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ScrollView,
   StyleSheet,
+  StatusBar,
   Text,
   TouchableOpacity,
   View,
@@ -1002,6 +1003,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         visible={activeSheet !== null && activeSheet !== 'menu' && activeSheet !== 'profile'}
         onRequestClose={() => dispatch(setActiveSheet(null))}
       >
+        <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
         <View style={activeSheet === 'add-device' ? styles.addDeviceSheetBackdrop : styles.fullPageContainer}>
           <View style={[styles.fullPageContainer, activeSheet === 'add-device' && styles.addDeviceSheet]}>
           {activeSheet === 'add-device' && <View style={styles.sheetHandle} />}
