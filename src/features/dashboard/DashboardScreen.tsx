@@ -962,7 +962,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   const currentVal = device?.lowerBedChamber ?? 'Standby';
                   setLowerBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
                 }}
-                disabled={device?.power !== 'on' || device?.mode === 'auto'}
+                disabled={device?.power !== 'on' || device?.mode === 'auto' || device?.sleepMode === true}
               />
             </View>
           </Animated.View>

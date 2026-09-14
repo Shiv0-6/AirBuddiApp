@@ -124,8 +124,8 @@ function QuickControlsComponent({
   }));
 
   const activeSpeedLabel = SPEED_REVERSE_MAP[effectiveFanSpeed] ?? 'Medium';
-  const presetControlsDisabled = !isPoweredOn;
-  const manualControlsDisabled = !isPoweredOn || isAutoMode;
+  const presetControlsDisabled = !isPoweredOn || isSleepMode;
+  const manualControlsDisabled = !isPoweredOn || isAutoMode || isSleepMode;
 
   const handleSpeedPress = useCallback((label: string) => {
     const mapped = SPEED_MAP[label];
@@ -143,7 +143,11 @@ function QuickControlsComponent({
     onSelectFanSpeed(preset.speed);
   }, [onSelectFanSpeed, onToggleAutoMode, onToggleUvc]);
 
-  const fanSpeedText = !isPoweredOn || effectiveFanSpeed === 'off'
+  const fanSpeedText = !isPoweredOn
+    ? 'Off'
+    : isSleepMode
+    ? 'Sleep'
+    : effectiveFanSpeed === 'off'
     ? 'Off'
     : isAutoMode
     ? 'Auto'
@@ -174,7 +178,7 @@ function QuickControlsComponent({
           </TouchableOpacity>
         </View>
         <Text style={[styles.statusText, isPoweredOn && styles.statusTextOn]}>
-          {isPoweredOn ? 'Active' : 'Standby'}
+          {!isPoweredOn ? 'Standby' : isSleepMode ? 'Sleep mode' : 'Active'}
         </Text>
       </View>
 
@@ -205,6 +209,10 @@ function QuickControlsComponent({
             label="Sleep"
             value={isSleepMode && isPoweredOn}
             disabled={!isPoweredOn}
+            activeStyle={modeStyles.cardSleepActive}
+            activeIconStyle={modeStyles.iconWrapSleepActive}
+            activeLabelStyle={modeStyles.labelSleepActive}
+            activeIndicatorStyle={modeStyles.indicatorSleepActive}
             onToggle={() => {
               setActivePresetId(null);
               onToggleAutoMode(false);
@@ -290,7 +298,7 @@ function QuickControlsComponent({
           <View style={[styles.fanStatePill, isPoweredOn && styles.fanStatePillActive]}>
             <View style={[styles.fanStateDot, isPoweredOn && styles.fanStateDotActive]} />
             <Text style={[styles.fanStateText, isPoweredOn && styles.fanStateTextActive]}>
-              {isAutoMode ? 'AUTO' : fanSpeedText.toUpperCase()}
+              {isSleepMode ? 'SLEEP' : isAutoMode ? 'AUTO' : fanSpeedText.toUpperCase()}
             </Text>
           </View>
         </View>
@@ -331,10 +339,14 @@ type ModeCardProps = {
   label: string;
   value: boolean;
   disabled?: boolean;
+  activeStyle?: object;
+  activeIconStyle?: object;
+  activeLabelStyle?: object;
+  activeIndicatorStyle?: object;
   onToggle: () => void;
 };
 
-function ModeCard({ iconName, label, value, disabled = false, onToggle }: ModeCardProps) {
+function ModeCard({ iconName, label, value, disabled = false, activeStyle, activeIconStyle, activeLabelStyle, activeIndicatorStyle, onToggle }: ModeCardProps) {
   return (
     <TouchableOpacity
       activeOpacity={0.75}
@@ -342,17 +354,17 @@ function ModeCard({ iconName, label, value, disabled = false, onToggle }: ModeCa
       accessibilityRole="button"
       accessibilityState={{ disabled, selected: value }}
       onPress={onToggle}
-      style={[modeStyles.card, disabled && modeStyles.cardDisabled, value && modeStyles.cardActive]}
+      style={[modeStyles.card, disabled && modeStyles.cardDisabled, value && modeStyles.cardActive, value && activeStyle]}
     >
-      <View style={[modeStyles.iconWrap, value && modeStyles.iconWrapActive]}>
+      <View style={[modeStyles.iconWrap, value && modeStyles.iconWrapActive, value && activeIconStyle]}>
         <MaterialCommunityIcons
           name={iconName}
           size={22}
           color={value ? '#FFFFFF' : dashboardTheme.colors.textMuted}
         />
       </View>
-      <Text style={[modeStyles.label, value && modeStyles.labelActive]}>{label}</Text>
-      <View style={[modeStyles.indicator, value && modeStyles.indicatorActive]} />
+      <Text style={[modeStyles.label, value && modeStyles.labelActive, value && activeLabelStyle]}>{label}</Text>
+      <View style={[modeStyles.indicator, value && modeStyles.indicatorActive, value && activeIndicatorStyle]} />
     </TouchableOpacity>
   );
 }
@@ -620,6 +632,10 @@ const modeStyles = StyleSheet.create({
     borderColor: dashboardTheme.colors.primary,
     backgroundColor: dashboardTheme.colors.primarySoft,
   },
+  cardSleepActive: {
+    borderColor: '#C98A2E',
+    backgroundColor: '#FFF7E6',
+  },
   cardDisabled: { opacity: 0.45 },
   iconWrap: {
     width: 34,
@@ -632,6 +648,9 @@ const modeStyles = StyleSheet.create({
   iconWrapActive: {
     backgroundColor: dashboardTheme.colors.primary,
   },
+  iconWrapSleepActive: {
+    backgroundColor: '#C98A2E',
+  },
   label: {
     fontSize: 12,
     fontWeight: '700',
@@ -641,6 +660,9 @@ const modeStyles = StyleSheet.create({
   labelActive: {
     color: dashboardTheme.colors.primaryDark,
   },
+  labelSleepActive: {
+    color: '#8A5A12',
+  },
   indicator: {
     width: 4,
     height: 4,
@@ -649,5 +671,8 @@ const modeStyles = StyleSheet.create({
   },
   indicatorActive: {
     backgroundColor: dashboardTheme.colors.primary,
+  },
+  indicatorSleepActive: {
+    backgroundColor: '#C98A2E',
   },
 });
