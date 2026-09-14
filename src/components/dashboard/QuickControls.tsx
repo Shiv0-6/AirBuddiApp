@@ -421,6 +421,9 @@ const styles = StyleSheet.create({
   powerBtnOn: {
     backgroundColor: dashboardTheme.colors.primary,
   },
+  powerBtnPending: {
+    opacity: 0.55,
+  },
 
   // Section
   section: {

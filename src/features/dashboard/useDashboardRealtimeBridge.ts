@@ -29,6 +29,7 @@ import {
 export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
   const dispatch = useAppDispatch();
   const clientRef = useRef<AwsIotClient | null>(null);
+  const pendingControlsRef = useRef(new Map<string, unknown>());
   const deviceId = selectedDeviceId?.trim() ?? '';
 
   const deviceConfig = useMemo(() => ({
@@ -61,11 +62,35 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
 
     let active = true;
 
+    const applyRealtimePayload = (payload: DashboardTelemetryMessage) => {
+      if (!payload.esp32 || pendingControlsRef.current.size === 0) {
+        dispatch(applyTelemetry(payload));
+        return;
+      }
+
+      const nextEsp32 = { ...payload.esp32 } as Record<string, unknown>;
+      const controlFields = ['power', 'mode', 'fanSpeed', 'sleepMode', 'uvc', 'upperBedChamber', 'lowerBedChamber'];
+
+      for (const field of controlFields) {
+        const pendingValue = pendingControlsRef.current.get(field);
+        if (pendingValue === undefined) continue;
+
+        if (nextEsp32[field] === pendingValue) {
+          pendingControlsRef.current.delete(field);
+        } else {
+          // Ignore stale control state, but keep applying sensors and telemetry.
+          delete nextEsp32[field];
+        }
+      }
+
+      dispatch(applyTelemetry({ ...payload, esp32: nextEsp32 as DashboardTelemetryMessage['esp32'] }));
+    };
+
     // 1. Fetch initial state from API Gateway (Fast initial load)
     client.fetchInitialState(deviceConfig).then(initialData => {
       if (active && initialData) {
         console.log('[AirBuddi] Applied initial state from API Gateway');
-        dispatch(applyTelemetry(initialData));
+        applyRealtimePayload(initialData);
       }
     });
 
@@ -80,7 +105,7 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
         onTelemetry: (topic: string, payload: DashboardTelemetryMessage) => {
           if (active) {
             console.log('[AirBuddi] Real-time telemetry received', { topic, payload });
-            dispatch(applyTelemetry(payload));
+            applyRealtimePayload(payload);
           }
         },
         onError: error => {
@@ -100,20 +125,19 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
     return () => {
       active = false;
       client.disconnect();
+      pendingControlsRef.current.clear();
     };
   }, [deviceConfig, deviceId, dispatch]);
 
-  // Helper to publish commands to the legacy 'esp32/control' topic
-  const sendLegacyCommand = async (commandName: string, value: any) => {
+  const sendControlCommand = async (field: string, expectedValue: unknown, command: string) => {
+    pendingControlsRef.current.set(field, expectedValue);
+
     try {
-      await clientRef.current?.publishCommand('esp32/control', {
-        deviceId,
-        command: commandName,
-        value: value,
-        ts: new Date().toISOString(),
-      });
+      await postEspCommand(deviceId, command);
     } catch (error) {
+      pendingControlsRef.current.delete(field);
       dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
+      throw error;
     }
   };
 
@@ -148,47 +172,35 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
     setPowerState: async (nextPower: boolean) => {
       const power: PowerState = nextPower ? 'on' : 'off';
       dispatch(setDevicePower(power));
-      await sendLegacyCommand('power', power);
-      // EDIT THIS ARRAY for the power button.
-      // Each string becomes a separate POST to /devices with { "command": "..." }.
-      await sendEspCommands([nextPower ? 'power_on' : 'power_off']);
+      await sendControlCommand('power', power, nextPower ? 'power_on' : 'power_off');
     },
 
     setAutoMode: async (nextAutoMode: boolean) => {
       const mode: DeviceMode = nextAutoMode ? 'auto' : 'manual';
       dispatch(setDeviceMode(mode));
-      await sendLegacyCommand('autoMode', mode);
-      // EDIT THIS ARRAY for the auto/manual button.
-      await sendEspCommands([nextAutoMode ? 'auto_on' : 'auto_off']);
+      await sendControlCommand('mode', mode, nextAutoMode ? 'auto_on' : 'auto_off');
     },
 
     setSleepModeState: async (nextSleepMode: boolean) => {
       dispatch(setSleepMode(nextSleepMode));
-      await sendLegacyCommand('autoMode', nextSleepMode ? 'sleep' : 'off');
-      // Sends speed_on / speed_off for fan power control
-      await sendEspCommands([nextSleepMode ? 'sleep_on' : 'sleep_off']);
+      await sendControlCommand('sleepMode', nextSleepMode, nextSleepMode ? 'sleep_on' : 'sleep_off');
     },
 
     setUvcModeState: async (nextUvc: boolean) => {
       dispatch(setUvcState(nextUvc));
-      await sendLegacyCommand('autoMode', nextUvc ? 'uvc_on' : 'uvc_off');
-      // EDIT THIS ARRAY for the UV/C button.
-      await sendEspCommands([nextUvc ? 'uvc_on' : 'uvc_off']);
+      await sendControlCommand('uvc', nextUvc, nextUvc ? 'uvc_on' : 'uvc_off');
     },
 
     setFanSpeedState: async (speed: 'off' | '1' | '2' | '3') => {
       dispatch(setFanSpeed(speed));
-      await sendLegacyCommand('fanSpeed', speed);
-      // EDIT THIS ARRAY for the fan speed button.
-      // Example: ['fan_off'], ['fan_1'], ['fan_2'], ['fan_3'], ['fan_turbo'], or multiple messages.
-      await sendEspCommands([`fan_${speed}`]);
+      await sendControlCommand('fanSpeed', speed, `fan_${speed}`);
     },
     
     setUpperBedChamberStateState: async (nextVal: 'Active' | 'Standby') => {
       const currentVal = nextVal === 'Active' ? 'Standby' : 'Active';
       dispatch(setUpperBedChamberState(nextVal));
       try {
-        await sendEspCommands([nextVal === 'Active' ? 'upper_on' : 'upper_off']);
+        await sendControlCommand('upperBedChamber', nextVal, nextVal === 'Active' ? 'upper_on' : 'upper_off');
       } catch (error) {
         console.error('[AirBuddi] Upper bed chamber command failed:', error);
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
@@ -201,7 +213,7 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
       const currentVal = nextVal === 'Active' ? 'Standby' : 'Active';
       dispatch(setLowerBedChamberState(nextVal));
       try {
-        await sendEspCommands([nextVal === 'Active' ? 'lower_on' : 'lower_off']);
+        await sendControlCommand('lowerBedChamber', nextVal, nextVal === 'Active' ? 'lower_on' : 'lower_off');
       } catch (error) {
         console.error('[AirBuddi] Lower bed chamber command failed:', error);
         dispatch(setErrorMessage(error instanceof Error ? error.message : String(error)));
@@ -212,7 +224,7 @@ export function useDashboardRealtimeBridge(selectedDeviceId?: string | null) {
 
     cycleFanSpeed: async () => {
       dispatch(cycleLocalFanSpeed(undefined));
-      await sendLegacyCommand('fanSpeed', 'cycle');
+      await sendControlCommand('fanSpeed', 'cycle', 'fan_cycle');
     },
 
     refreshData: async () => {
