@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ScrollView,
   StyleSheet,
-  StatusBar,
   Text,
   TouchableOpacity,
   View,
@@ -70,60 +69,6 @@ const DEVICES_STORAGE_KEY = '@airbuddi_devices';
 const NOTIFICATIONS_STORAGE_KEY = '@airbuddi_notifications';
 const PREFERENCES_STORAGE_KEY = '@airbuddi_preferences';
 
-const MAC_ADDRESS_PATTERN = /(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}/i;
-const COMPACT_MAC_PATTERN = /\b[0-9A-F]{12}\b/i;
-
-function findMacAddress(value: unknown): string | null {
-  if (typeof value !== 'string') {
-    return null;
-  }
-
-  const decodedValue = value.replace(/%3A/gi, ':').replace(/%2D/gi, '-');
-  const separatedMac = decodedValue.match(MAC_ADDRESS_PATTERN)?.[0];
-  if (separatedMac) {
-    return separatedMac.replace(/-/g, ':').toUpperCase();
-  }
-
-  const compactMac = decodedValue.match(COMPACT_MAC_PATTERN)?.[0];
-  return compactMac?.match(/../g)?.join(':').toUpperCase() ?? null;
-}
-
-function extractDeviceMacFromQrData(rawValue: string): string | null {
-  const directMac = findMacAddress(rawValue);
-  if (directMac) {
-    return directMac;
-  }
-
-  try {
-    const parsedValue: unknown = JSON.parse(decodeURIComponent(rawValue));
-    const queue: unknown[] = [parsedValue];
-    while (queue.length > 0) {
-      const current = queue.shift();
-      if (typeof current === 'string') {
-        const nestedMac = findMacAddress(current);
-        if (nestedMac) {
-          return nestedMac;
-        }
-      } else if (current && typeof current === 'object') {
-        Object.entries(current).forEach(([key, value]) => {
-          if (/mac|device.?id|serial/i.test(key)) {
-            const keyedMac = findMacAddress(String(value));
-            if (keyedMac) {
-              queue.unshift(keyedMac);
-            }
-          }
-          queue.push(value);
-        });
-      }
-    }
-  } catch {
-    // QR data can be plain text or a URL rather than JSON.
-  }
-
-  const parameterMatch = rawValue.match(/[?&#](?:mac|device[_-]?id|serial)=([^&#]+)/i);
-  return parameterMatch ? findMacAddress(decodeURIComponent(parameterMatch[1])) : null;
-}
-
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
@@ -156,7 +101,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const [isScanningQr, setIsScanningQr] = useState(false);
   const [isQrScannerVisible, setIsQrScannerVisible] = useState(false);
   const [scannedQrValue, setScannedQrValue] = useState('');
-  const [qrZoom, setQrZoom] = useState(0);
   const [newDeviceName, setNewDeviceName] = useState('');
   const [newDeviceRoom, setNewDeviceRoom] = useState('');
   const [newDeviceId, setNewDeviceId] = useState('');
@@ -175,7 +119,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     push: notifPush,
     aqiAlerts: notifAqiAlerts,
     deviceOffline: notifDeviceOffline,
-    filterReminder: notifFilterReminder,
+    filterReminder: notifFilterReminder
   } = notifications;
 
   const {
@@ -473,19 +417,40 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
   const applyScannedQrValue = useCallback((value: string) => {
     const scannedValue = value.trim();
-    const scannedMac = extractDeviceMacFromQrData(scannedValue);
+
+    // 1. Try to find a MAC address
+    const macMatch = scannedValue.match(/(?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2}/i);
+    const scannedMac = macMatch?.[0].replace(/-/g, ':').toUpperCase() ?? '';
+
+    // 2. Try to extract ID from a URL if the scanned value is a link
+    let extractedId = scannedMac;
+    if (!extractedId && (scannedValue.startsWith('http') || scannedValue.includes('/'))) {
+      try {
+        const urlMatch = scannedValue.match(/[?&](?:id|mac)=([^&]+)/i) || scannedValue.match(/\/([^/?#]+)$/);
+        if (urlMatch) {
+          extractedId = urlMatch[1].toUpperCase();
+        }
+      } catch (e) {
+        // Fallback to raw value if URL parsing fails
+      }
+    }
+
+    // 3. If still no ID, use the raw trimmed value if it looks like a valid ID
+    if (!extractedId && scannedValue.length > 0) {
+      extractedId = scannedValue.toUpperCase();
+    }
 
     setScannedQrValue(scannedValue);
     setIsQrScannerVisible(false);
     setIsScanningQr(false);
 
-    if (scannedMac) {
+    if (extractedId) {
       setAddDeviceError('');
-      setNewDeviceId(scannedMac);
+      setNewDeviceId(extractedId);
       setNewDeviceName(prev => prev || 'AirBuddi Purifier');
       setNewDeviceRoom(prev => prev || 'Living Room');
     } else {
-      setAddDeviceError('QR data captured, but no device MAC address was found.');
+      setAddDeviceError('The QR code was read, but it appears to be empty or invalid.');
     }
   }, []);
 
@@ -509,24 +474,15 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           setAddDeviceError('Camera permission is required to scan QR codes.');
           return;
         }
-      } catch {
+      } catch (err) {
         setAddDeviceError('Failed to request camera permission.');
         return;
       }
     }
 
     setIsScanningQr(true);
-    setQrZoom(0);
     setIsQrScannerVisible(true);
   }, []);
-
-  const openQrScanner = useCallback(() => {
-    setAddDeviceMode('qr');
-    setNewDeviceId('');
-    setScannedQrValue('');
-    dispatch(setActiveSheet('add-device'));
-    void handleScanQr();
-  }, [dispatch, handleScanQr]);
 
   const handlePickQrFromLibrary = useCallback(async () => {
     setIsScanningQr(true);
@@ -567,20 +523,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const selectedDevice = devices.find(item => item.id === selectedDeviceId) ?? null;
   const deviceTitle = selectedDevice?.room ?? 'Add a device';
   const displayDeviceName = selectedDevice?.name ?? 'No device connected';
-  const isMiniDevice = displayDeviceName.trim().toLowerCase() === 'airbuddi mini';
-  const visibleSensors = isMiniDevice
-    ? sensors.filter(sensor => {
-      const sensorId = sensor.id.toLowerCase();
-      const sensorName = sensor.name.toLowerCase();
-      return sensorId === 'pm25'
-        || sensorId === 'pm10'
-        || sensorId === 'pm2_5'
-        || sensorId === 'pm2_10'
-        || sensorName.includes('pm2.5')
-        || sensorName.includes('pm2.10')
-        || sensorName === 'pm10';
-    })
-    : sensors;
   const addDevice = useCallback(async () => {
     const name = newDeviceName.trim() || 'AirBuddi Device';
     const room = newDeviceRoom.trim() || 'New Room';
@@ -684,7 +626,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           showDeviceInfo={activeTab === 'monitor' || activeTab === 'control'}
           onProfilePress={() => dispatch(setActiveSheet('profile'))}
           onRefreshPress={handleRefresh}
-          onNotificationPress={() => dispatch(setActiveSheet('notifications'))}
+          onNotificationPress={() => dispatch(setActiveSheet('notification-inbox'))}
           onMenuPress={() => dispatch(setActiveSheet('menu'))}
         />
       )}
@@ -754,7 +696,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                     accessibilityLabel="Add device"
                     style={styles.addDeviceHeaderButton}
                     activeOpacity={0.8}
-                    onPress={openQrScanner}
+                    onPress={() => dispatch(setActiveSheet('add-device'))}
                   >
                     <MaterialCommunityIcons
                       name="plus"
@@ -801,7 +743,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                     accessibilityLabel="Add a device"
                     style={styles.emptyDeviceButton}
                     activeOpacity={0.8}
-                    onPress={openQrScanner}
+                    onPress={() => dispatch(setActiveSheet('add-device'))}
                   >
                     <MaterialCommunityIcons
                       name="plus"
@@ -927,7 +869,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             <View style={styles.tabPad}>
               <AirQualityCard aqi={pm25Value} />
               <View style={styles.gap}>
-                <SensorGrid sensors={visibleSensors} />
+                <SensorGrid sensors={sensors} />
               </View>
             </View>
           </Animated.View>
@@ -941,7 +883,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               isAutoMode={device?.mode === 'auto'}
               isSleepMode={device?.sleepMode ?? false}
               isUvc={device?.uvc ?? true}
-              showPresets={!isMiniDevice}
               fanSpeed={controlFanSpeed}
               onTogglePower={handleTogglePower}
               onToggleAutoMode={handleToggleAutoMode}
@@ -953,7 +894,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               <RootPurificationCard
                 upperBedChamber={device?.upperBedChamber ?? 'Standby'}
                 lowerBedChamber={device?.lowerBedChamber ?? 'Standby'}
-                showLowerChamber={!isMiniDevice}
                 onUpperPress={() => {
                   const currentVal = device?.upperBedChamber ?? 'Standby';
                   setUpperBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
@@ -962,7 +902,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   const currentVal = device?.lowerBedChamber ?? 'Standby';
                   setLowerBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
                 }}
-                disabled={device?.power !== 'on' || device?.mode === 'auto' || device?.sleepMode === true}
+                disabled={device?.power !== 'on' || device?.mode === 'auto'}
               />
             </View>
           </Animated.View>
@@ -982,7 +922,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <SettingsCategoryRow icon="account-circle-outline" title="Account" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} />
                 <SettingsCategoryRow icon="air-filter" title="Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} />
                 <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
-                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => dispatch(setActiveSheet('check-updates'))} />
                 <SettingsCategoryRow icon="tune-variant" title="Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
                 <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
                 <SettingsCategoryRow icon="leaf-circle-outline" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} />
@@ -998,16 +937,20 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
       {/* ── Account, device, and overflow sheets ───────────────────── */}
       <Modal
-        animationType={activeSheet === 'add-device' ? 'slide' : 'none'}
-        transparent={activeSheet === 'add-device'}
+        animationType={activeSheet === 'notification-inbox' ? 'fade' : 'slide'}
+        transparent={activeSheet === 'notification-inbox'}
         visible={activeSheet !== null && activeSheet !== 'menu' && activeSheet !== 'profile'}
         onRequestClose={() => dispatch(setActiveSheet(null))}
       >
-        <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
-        <View style={activeSheet === 'add-device' ? styles.addDeviceSheetBackdrop : styles.fullPageContainer}>
-          <View style={[styles.fullPageContainer, activeSheet === 'add-device' && styles.addDeviceSheet]}>
-          {activeSheet === 'add-device' && <View style={styles.sheetHandle} />}
-          {activeSheet !== 'add-device' && <View style={styles.pageHeader}>
+        <View style={activeSheet === 'notification-inbox' ? styles.notificationOverlay : styles.fullPageContainer}>
+          {activeSheet === 'notification-inbox' && (
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
+              onPress={() => dispatch(setActiveSheet(null))}
+            />
+          )}
+          {activeSheet !== 'notification-inbox' && <View style={styles.pageHeader}>
             <TouchableOpacity onPress={() => {
               if (activeSheet === 'settings-main' || activeTab === 'settings') {
                 dispatch(setActiveSheet(null));
@@ -1022,7 +965,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                activeSheet === 'account' ? 'Account' :
                activeSheet === 'devices' ? 'Devices' :
                activeSheet === 'notification-settings' ? 'Notifications' :
-               activeSheet === 'check-updates' ? 'Check for Updates' :
+               activeSheet === 'notification-inbox' ? 'Notifications' :
                activeSheet === 'preferences' ? 'Preferences' :
                activeSheet === 'support' ? 'Support' :
                activeSheet === 'add-device' ? 'Add Device' :
@@ -1032,13 +975,16 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             <View style={styles.pageHeaderPlaceholder} />
           </View>}
 
-          <ScrollView style={styles.pageContent} contentContainerStyle={styles.pageContentScroll} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={[styles.pageContent, activeSheet === 'notification-inbox' && styles.notificationPanel]}
+            contentContainerStyle={[styles.pageContentScroll, activeSheet === 'notification-inbox' && styles.notificationPanelContent]}
+            showsVerticalScrollIndicator={false}
+          >
             {activeSheet === 'settings-main' && <>
               <View style={styles.settingsCard}>
                 <SettingsCategoryRow icon="account-circle-outline" title="Account" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} />
                 <SettingsCategoryRow icon="air-filter" title="Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} />
                 <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
-                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => dispatch(setActiveSheet('check-updates'))} />
                 <SettingsCategoryRow icon="tune-variant" title="Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
                 <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
                 <SettingsCategoryRow icon="leaf-circle-outline" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} />
@@ -1064,7 +1010,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               </View>
               <View style={styles.settingsCard}>
                 <SettingsRow icon="air-filter" title="My Devices" subtitle={devices.length > 0 ? `${devices.length} device${devices.length === 1 ? '' : 's'} added` : 'No device connected'} onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('home'); }} />
-                <SettingsRow icon="plus-circle-outline" title="Add New Device" subtitle="Pair a new AirBuddi" onPress={openQrScanner} last />
+                <SettingsRow icon="plus-circle-outline" title="Add New Device" subtitle="Pair a new AirBuddi" onPress={() => dispatch(setActiveSheet('add-device'))} last />
               </View>
             </>}
 
@@ -1076,17 +1022,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               <View style={styles.settingsCard}>
                 <SettingsRow icon="bell-outline" title="Notification Preferences" subtitle="Choose which alerts you receive" onPress={() => dispatch(setActiveSheet('notifications'))} />
                 <SettingsRow icon="alert-circle-outline" title="Alert Thresholds" subtitle="Set AQI warning levels" onPress={() => dispatch(setActiveSheet('alert-thresholds'))} last />
-              </View>
-            </>}
-
-            {activeSheet === 'check-updates' && <>
-              <View style={styles.pageIntroSection}>
-                <Text style={styles.pageSectionTitle}>Check for Updates</Text>
-                <Text style={styles.pageSectionSubtitle}>Check the latest software for your app and devices.</Text>
-              </View>
-              <View style={styles.settingsCard}>
-                <SettingsRow icon="cellphone-arrow-down" title="App Update" subtitle="Check for the latest app version" onPress={() => Alert.alert('App Update', 'App update checking will be connected later.')} />
-                <SettingsRow icon="air-filter" title="Device Update" subtitle="Check for the latest device software" onPress={() => Alert.alert('Device Update', 'Device update checking will be connected later.')} last />
               </View>
             </>}
 
@@ -1125,7 +1060,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <TouchableOpacity
                   activeOpacity={0.8}
                   style={[styles.modeToggleButton, addDeviceMode === 'qr' && styles.modeToggleButtonActive]}
-                  onPress={openQrScanner}
+                  onPress={() => { setAddDeviceMode('qr'); setAddDeviceError(''); }}
                 >
                   <MaterialCommunityIcons name="qrcode-scan" size={18} color={addDeviceMode === 'qr' ? '#FFFFFF' : dashboardTheme.colors.textSecondary} />
                   <Text style={[styles.modeToggleText, addDeviceMode === 'qr' && styles.modeToggleTextActive]}>Scan QR Code</Text>
@@ -1155,8 +1090,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                       <Text style={styles.qrSuccessBadgeText}>Scanned: {newDeviceId}</Text>
                     </View>
                   ) : null}
-                  {scannedQrValue ? (
-                    <Text style={styles.qrScanText} numberOfLines={3}>Read: {scannedQrValue}</Text>
+                  {scannedQrValue && !newDeviceId ? (
+                    <Text style={styles.qrScanText}>Read: {scannedQrValue}</Text>
                   ) : null}
 
                   <View style={styles.qrActionsRow}>
@@ -1215,11 +1150,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionTitle}>Edit device</Text>
                 <Text style={styles.pageSectionSubtitle}>Update the display details for this device. The MAC address stays the same.</Text>
               </View>
-              <Text style={styles.inputLabel}>DEVICE MAC ADDRESS</Text>
-              <View style={styles.readOnlyDeviceId}>
-                <MaterialCommunityIcons name="bluetooth-connect" size={18} color={dashboardTheme.colors.textSecondary} />
-                <Text style={styles.readOnlyDeviceIdText}>{editingDeviceId}</Text>
-              </View>
               <Text style={styles.inputLabel}>DEVICE NAME</Text>
               <TextInput value={editingDeviceName} onChangeText={value => { setEditingDeviceName(value); setEditDeviceError(''); }} style={styles.textInput} placeholder="e.g. AirBuddi Mini" placeholderTextColor={dashboardTheme.colors.textMuted} />
               <Text style={styles.inputLabel}>ROOM OR SPACE</Text>
@@ -1257,7 +1187,33 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               </View>
             </>}
 
-            {/* ── Notifications ───────────────────────────────────── */}
+            {activeSheet === 'notification-inbox' && <>
+              <View style={styles.pageIntroSection}>
+                <Text style={styles.pageSectionTitle}>Notifications</Text>
+                <Text style={styles.pageSectionSubtitle}>Your latest AirBuddi updates and alerts.</Text>
+              </View>
+              <View style={styles.settingsCard}>
+                {selectedDevice?.status === 'Offline' ? (
+                  <View style={styles.contactOption}>
+                    <View style={styles.contactIconWrap}><MaterialCommunityIcons name="wifi-off" size={22} color="#DC2626" /></View>
+                    <View style={styles.contactInfo}>
+                      <Text style={styles.contactLabel}>Device offline</Text>
+                      <Text style={styles.contactSub}>{selectedDevice.name} is currently offline.</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.contactOption}>
+                    <View style={styles.contactIconWrap}><MaterialCommunityIcons name="check-circle-outline" size={22} color={dashboardTheme.colors.primaryDark} /></View>
+                    <View style={styles.contactInfo}>
+                      <Text style={styles.contactLabel}>No new notifications</Text>
+                      <Text style={styles.contactSub}>You are all caught up.</Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            </>}
+
+            {/* ── Notification Preferences ────────────────────────── */}
             {activeSheet === 'notifications' && <>
               <View style={styles.pageIntroSection}>
                 <Text style={styles.pageSectionTitle}>Alert Preferences</Text>
@@ -1403,7 +1359,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             </>}
             <View style={styles.bottomSpaceLarge} />
           </ScrollView>
-          </View>
         </View>
       </Modal>
 
@@ -1501,19 +1456,14 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         onRequestClose={() => {
           setIsQrScannerVisible(false);
           setIsScanningQr(false);
-          dispatch(setActiveSheet(null));
         }}
       >
         <View style={styles.qrScannerScreen}>
           <Camera
             style={StyleSheet.absoluteFill}
             cameraType={CameraType.Back}
-            zoomMode="on"
-            zoom={qrZoom}
             scanBarcode
             showFrame
-            barcodeFrameSize={{ width: 260, height: 260 }}
-            scanThrottleDelay={300}
             laserColor="#22C55E"
             frameColor="#FFFFFF"
             allowedBarcodeTypes={['qr']}
@@ -1525,56 +1475,17 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             }}
           />
           <View style={styles.qrScannerOverlay}>
-            <View style={styles.qrScannerTopBar}>
-              <TouchableOpacity
-                accessibilityLabel="Close QR scanner"
-                style={styles.qrScannerBackButton}
-                onPress={() => {
-                  setIsQrScannerVisible(false);
-                  setIsScanningQr(false);
-                  dispatch(setActiveSheet(null));
-                }}
-              >
-                <MaterialCommunityIcons name="arrow-left" size={28} color="#FFFFFF" />
-              </TouchableOpacity>
-              <View style={styles.qrScannerHeading}>
-                <Text style={styles.qrScannerTitle}>Scan any QR code</Text>
-                <Text style={styles.qrScannerHint}>Place the code inside the frame</Text>
-              </View>
-            </View>
-
-            <View style={styles.qrScannerBottomArea}>
-              <View style={styles.qrScannerActions}>
-                <TouchableOpacity
-                  style={styles.qrScannerAction}
-                  onPress={() => {
-                    setIsQrScannerVisible(false);
-                    setIsScanningQr(false);
-                    setAddDeviceMode('manual');
-                    setAddDeviceError('');
-                  }}
-                >
-                  <View style={styles.qrScannerActionIcon}>
-                    <MaterialCommunityIcons name="keyboard-outline" size={25} color="#FFFFFF" />
-                  </View>
-                  <Text style={styles.qrScannerActionLabel}>Manual</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.qrScannerAction} onPress={handlePickQrFromLibrary}>
-                  <View style={styles.qrScannerActionIcon}>
-                    <MaterialCommunityIcons name="image-outline" size={25} color="#FFFFFF" />
-                  </View>
-                  <Text style={styles.qrScannerActionLabel}>Gallery</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.qrScannerAction} onPress={() => setQrZoom(value => value === 0 ? 0.5 : 0)}>
-                  <View style={styles.qrScannerActionIcon}>
-                    <Text style={styles.qrScannerZoomValue}>{qrZoom === 0 ? '1x' : '2x'}</Text>
-                  </View>
-                  <Text style={styles.qrScannerActionLabel}>Zoom</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            <Text style={styles.qrScannerTitle}>Scan device QR code</Text>
+            <Text style={styles.qrScannerHint}>Align the code inside the frame</Text>
+            <TouchableOpacity
+              style={styles.qrScannerCloseButton}
+              onPress={() => {
+                setIsQrScannerVisible(false);
+                setIsScanningQr(false);
+              }}
+            >
+              <Text style={styles.qrScannerCloseText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -2306,8 +2217,6 @@ settingsSubtitle: {
   sheetIntro: { marginTop: 7, marginBottom: 22, color: dashboardTheme.colors.textSecondary, fontSize: 14, lineHeight: 20 },
   inputLabel: { color: dashboardTheme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 0.8, marginBottom: 7, marginTop: 14 },
   textInput: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: dashboardTheme.colors.border, backgroundColor: dashboardTheme.colors.surfaceTint, paddingHorizontal: 13, color: dashboardTheme.colors.textPrimary, fontSize: 15 },
-  readOnlyDeviceId: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: dashboardTheme.colors.border, backgroundColor: dashboardTheme.colors.surfaceTint, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 9 },
-  readOnlyDeviceIdText: { color: dashboardTheme.colors.textSecondary, fontSize: 15, fontWeight: '600', letterSpacing: 0.4 },
   inputError: { marginTop: 8, color: '#DC2626', fontSize: 13, fontWeight: '500' },
   primarySheetButton: { marginTop: 24, height: 50, borderRadius: 14, backgroundColor: dashboardTheme.colors.primaryDark, alignItems: 'center', justifyContent: 'center' },
   primarySheetButtonDisabled: { opacity: 0.6 },
@@ -2622,76 +2531,31 @@ settingsSubtitle: {
   },
   qrScannerOverlay: {
     ...StyleSheet.absoluteFill,
-    justifyContent: 'space-between',
-    paddingTop: 34,
-    paddingBottom: 42,
-    paddingHorizontal: 20,
-  },
-  qrScannerTopBar: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  qrScannerBackButton: {
-    width: 44,
-    height: 44,
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  qrScannerHeading: {
-    flex: 1,
-    alignItems: 'center',
-    paddingRight: 44,
+    paddingTop: 72,
   },
   qrScannerTitle: {
     color: '#FFFFFF',
-    fontSize: 21,
+    fontSize: 22,
     fontWeight: '800',
   },
   qrScannerHint: {
     color: '#E2E8F0',
-    fontSize: 13,
+    fontSize: 14,
     marginTop: 8,
   },
-  qrScannerBottomArea: {
-    width: '100%',
-    alignItems: 'center',
+  qrScannerCloseButton: {
+    position: 'absolute',
+    bottom: 48,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
   },
-  qrScannerActions: {
-    width: '100%',
-    maxWidth: 390,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    borderRadius: 28,
-    backgroundColor: 'rgba(15, 23, 42, 0.72)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.16)',
-  },
-  qrScannerAction: {
-    minWidth: 62,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  qrScannerActionIcon: {
-    width: 42,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 21,
-    backgroundColor: 'rgba(255, 255, 255, 0.14)',
-  },
-  qrScannerActionLabel: {
+  qrScannerCloseText: {
     color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  qrScannerZoomValue: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: '700',
   },
   qrScanText: {
     fontSize: 12,
@@ -2782,9 +2646,20 @@ settingsSubtitle: {
   sheetScroll: { maxHeight: 500 },
   bottomSheetGap: { height: 20 },
   fullPageContainer: { flex: 1, backgroundColor: dashboardTheme.colors.background },
-  addDeviceSheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(15, 23, 42, 0.35)' },
-  addDeviceSheet: { flex: 0, height: '92%', borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
-  addDeviceSheetHeader: { paddingTop: 8, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  notificationOverlay: { flex: 1 },
+  notificationPanel: {
+    position: 'absolute',
+    top: 64,
+    right: 20,
+    width: 320,
+    maxHeight: 380,
+    backgroundColor: dashboardTheme.colors.surface,
+    borderRadius: dashboardTheme.radii.md,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    ...dashboardTheme.shadows.strong,
+  },
+  notificationPanelContent: { padding: 16 },
   pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 60 : 20, paddingBottom: 16, backgroundColor: dashboardTheme.colors.surface, borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
   pageBackButton: { padding: 8, marginLeft: -8 },
   pageTitle: { fontSize: 20, fontWeight: '800', color: dashboardTheme.colors.textPrimary },
