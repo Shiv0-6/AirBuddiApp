@@ -111,6 +111,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const [editingDeviceRoom, setEditingDeviceRoom] = useState('');
   const [editDeviceError, setEditDeviceError] = useState('');
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
+  const [updateDeviceId, setUpdateDeviceId] = useState<string | null>(null);
   const [devices, setDevices] = useState<HomeDevice[]>([]);
   const devicesLoadedRef = useRef(false);
   const prefsLoadedRef = useRef(false);
@@ -922,6 +923,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <SettingsCategoryRow icon="account-circle-outline" title="Account" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} />
                 <SettingsCategoryRow icon="air-filter" title="Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} />
                 <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
+                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); }} />
                 <SettingsCategoryRow icon="tune-variant" title="Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
                 <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
                 <SettingsCategoryRow icon="leaf-circle-outline" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} />
@@ -966,6 +968,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                activeSheet === 'devices' ? 'Devices' :
                activeSheet === 'notification-settings' ? 'Notifications' :
                activeSheet === 'notification-inbox' ? 'Notifications' :
+               activeSheet === 'check-updates' ? 'Check for Updates' :
+               activeSheet === 'device-update' ? 'Device Update' :
                activeSheet === 'preferences' ? 'Preferences' :
                activeSheet === 'support' ? 'Support' :
                activeSheet === 'add-device' ? 'Add Device' :
@@ -985,6 +989,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <SettingsCategoryRow icon="account-circle-outline" title="Account" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} />
                 <SettingsCategoryRow icon="air-filter" title="Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} />
                 <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
+                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); }} />
                 <SettingsCategoryRow icon="tune-variant" title="Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
                 <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
                 <SettingsCategoryRow icon="leaf-circle-outline" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} />
@@ -1023,6 +1028,73 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <SettingsRow icon="bell-outline" title="Notification Preferences" subtitle="Choose which alerts you receive" onPress={() => dispatch(setActiveSheet('notifications'))} />
                 <SettingsRow icon="alert-circle-outline" title="Alert Thresholds" subtitle="Set AQI warning levels" onPress={() => dispatch(setActiveSheet('alert-thresholds'))} last />
               </View>
+            </>}
+
+            {activeSheet === 'check-updates' && <>
+              <View style={styles.pageIntroSection}>
+                <Text style={styles.pageSectionTitle}>Check for Updates</Text>
+                <Text style={styles.pageSectionSubtitle}>Check the latest software for your app and devices.</Text>
+              </View>
+              <View style={styles.settingsCard}>
+                <SettingsRow
+                  icon="cellphone-arrow-down"
+                  title="App Update"
+                  subtitle="Check for the latest app version"
+                  onPress={() => Alert.alert('App Update', 'App update checking will be connected later.')}
+                />
+                <SettingsRow
+                  icon="air-filter"
+                  title="Device Update"
+                  subtitle="Choose a device to update"
+                  onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('device-update')); }}
+                  last
+                />
+              </View>
+            </>}
+
+            {activeSheet === 'device-update' && <>
+              <View style={styles.pageIntroSection}>
+                <Text style={styles.pageSectionTitle}>Select a device</Text>
+                <Text style={styles.pageSectionSubtitle}>Choose which AirBuddi device you want to update.</Text>
+              </View>
+              {devices.length > 0 ? (
+                <View style={styles.updateDeviceList}>
+                  {devices.map(item => {
+                    const isUpdateTarget = item.id === updateDeviceId;
+                    return (
+                      <TouchableOpacity
+                        key={item.id}
+                        activeOpacity={0.75}
+                        onPress={() => setUpdateDeviceId(item.id)}
+                        style={[styles.updateDeviceOption, isUpdateTarget && styles.updateDeviceOptionActive]}
+                      >
+                        <View style={[styles.updateDeviceIcon, isUpdateTarget && styles.updateDeviceIconActive]}>
+                          <MaterialCommunityIcons name="air-filter" size={20} color={isUpdateTarget ? '#FFFFFF' : dashboardTheme.colors.primaryDark} />
+                        </View>
+                        <View style={styles.updateDeviceCopy}>
+                          <Text style={[styles.updateDeviceName, isUpdateTarget && styles.updateDeviceNameActive]}>{item.name}</Text>
+                          <Text style={styles.updateDeviceMeta}>{item.room} · {item.id}</Text>
+                        </View>
+                        <MaterialCommunityIcons name={isUpdateTarget ? 'check-circle' : 'circle-outline'} size={22} color={isUpdateTarget ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted} />
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              ) : (
+                <Text style={styles.emptyUpdateText}>No devices available.</Text>
+              )}
+              <TouchableOpacity
+                style={[styles.primarySheetButtonRefined, (!updateDeviceId || devices.length === 0) && styles.primarySheetButtonDisabled]}
+                disabled={!updateDeviceId || devices.length === 0}
+                onPress={() => {
+                  const target = devices.find(item => item.id === updateDeviceId);
+                  if (target) {
+                    Alert.alert('Device Update', `Checking for updates for ${target.name}.`);
+                  }
+                }}
+              >
+                <Text style={styles.primarySheetButtonText}>Check device update</Text>
+              </TouchableOpacity>
             </>}
 
             {activeSheet === 'preferences' && <>
@@ -1150,6 +1222,13 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionTitle}>Edit device</Text>
                 <Text style={styles.pageSectionSubtitle}>Update the display details for this device. The MAC address stays the same.</Text>
               </View>
+              <Text style={styles.inputLabel}>DEVICE ID (MAC ADDRESS)</Text>
+              <TextInput
+                value={editingDeviceId ?? ''}
+                style={[styles.textInput, styles.readOnlyTextInput]}
+                editable={false}
+                selectTextOnFocus={false}
+              />
               <Text style={styles.inputLabel}>DEVICE NAME</Text>
               <TextInput value={editingDeviceName} onChangeText={value => { setEditingDeviceName(value); setEditDeviceError(''); }} style={styles.textInput} placeholder="e.g. AirBuddi Mini" placeholderTextColor={dashboardTheme.colors.textMuted} />
               <Text style={styles.inputLabel}>ROOM OR SPACE</Text>
@@ -1188,29 +1267,45 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             </>}
 
             {activeSheet === 'notification-inbox' && <>
-              <View style={styles.pageIntroSection}>
-                <Text style={styles.pageSectionTitle}>Notifications</Text>
-                <Text style={styles.pageSectionSubtitle}>Your latest AirBuddi updates and alerts.</Text>
+              <View style={styles.notificationPanelHeader}>
+                <View>
+                  <Text style={styles.notificationPanelTitle}>Notifications</Text>
+                  <Text style={styles.notificationPanelSubtitle}>Your latest updates and alerts</Text>
+                </View>
+                <View style={styles.notificationCountBadge}>
+                  <Text style={styles.notificationCountText}>{selectedDevice?.status === 'Offline' ? '1' : '0'}</Text>
+                </View>
               </View>
-              <View style={styles.settingsCard}>
+              <View style={styles.notificationList}>
                 {selectedDevice?.status === 'Offline' ? (
-                  <View style={styles.contactOption}>
-                    <View style={styles.contactIconWrap}><MaterialCommunityIcons name="wifi-off" size={22} color="#DC2626" /></View>
-                    <View style={styles.contactInfo}>
-                      <Text style={styles.contactLabel}>Device offline</Text>
-                      <Text style={styles.contactSub}>{selectedDevice.name} is currently offline.</Text>
+                  <View style={styles.notificationItem}>
+                    <View style={[styles.notificationItemIcon, styles.notificationItemIconWarning]}>
+                      <MaterialCommunityIcons name="wifi-off" size={18} color="#B45309" />
+                    </View>
+                    <View style={styles.notificationItemCopy}>
+                      <View style={styles.notificationItemTitleRow}>
+                        <Text style={styles.notificationItemTitle}>Device offline</Text>
+                        <Text style={styles.notificationItemTime}>Now</Text>
+                      </View>
+                      <Text style={styles.notificationItemText}>{selectedDevice.name} is currently offline.</Text>
                     </View>
                   </View>
                 ) : (
-                  <View style={styles.contactOption}>
-                    <View style={styles.contactIconWrap}><MaterialCommunityIcons name="check-circle-outline" size={22} color={dashboardTheme.colors.primaryDark} /></View>
-                    <View style={styles.contactInfo}>
-                      <Text style={styles.contactLabel}>No new notifications</Text>
-                      <Text style={styles.contactSub}>You are all caught up.</Text>
+                  <View style={styles.notificationItem}>
+                    <View style={[styles.notificationItemIcon, styles.notificationItemIconSuccess]}>
+                      <MaterialCommunityIcons name="check" size={18} color={dashboardTheme.colors.primaryDark} />
+                    </View>
+                    <View style={styles.notificationItemCopy}>
+                      <View style={styles.notificationItemTitleRow}>
+                        <Text style={styles.notificationItemTitle}>All caught up</Text>
+                        <Text style={styles.notificationItemTime}>Now</Text>
+                      </View>
+                      <Text style={styles.notificationItemText}>There are no new notifications.</Text>
                     </View>
                   </View>
                 )}
               </View>
+              <Text style={styles.notificationPanelFooter}>AirBuddi notifications</Text>
             </>}
 
             {/* ── Notification Preferences ────────────────────────── */}
@@ -2651,7 +2746,7 @@ settingsSubtitle: {
     position: 'absolute',
     top: 64,
     right: 20,
-    width: 320,
+    width: 310,
     maxHeight: 380,
     backgroundColor: dashboardTheme.colors.surface,
     borderRadius: dashboardTheme.radii.md,
@@ -2660,6 +2755,87 @@ settingsSubtitle: {
     ...dashboardTheme.shadows.strong,
   },
   notificationPanelContent: { padding: 16 },
+  notificationPanelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: dashboardTheme.colors.border,
+  },
+  notificationPanelTitle: {
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  notificationPanelSubtitle: {
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 12,
+    marginTop: 3,
+  },
+  notificationCountBadge: {
+    minWidth: 24,
+    height: 24,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: dashboardTheme.colors.primarySoft,
+  },
+  notificationCountText: {
+    color: dashboardTheme.colors.primaryDark,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  notificationList: { paddingTop: 4 },
+  notificationItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 11,
+    paddingVertical: 14,
+  },
+  notificationItemIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  notificationItemIconWarning: { backgroundColor: '#FEF3C7' },
+  notificationItemIconSuccess: { backgroundColor: dashboardTheme.colors.primarySoft },
+  notificationItemCopy: { flex: 1, minWidth: 0 },
+  notificationItemTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  notificationItemTitle: {
+    flex: 1,
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  notificationItemTime: {
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  notificationItemText: {
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  notificationPanelFooter: {
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: dashboardTheme.colors.border,
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 60 : 20, paddingBottom: 16, backgroundColor: dashboardTheme.colors.surface, borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
   pageBackButton: { padding: 8, marginLeft: -8 },
   pageTitle: { fontSize: 20, fontWeight: '800', color: dashboardTheme.colors.textPrimary },
@@ -2669,6 +2845,36 @@ settingsSubtitle: {
   pageIntroSection: { marginBottom: 24 },
   pageSectionTitle: { fontSize: 24, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.5 },
   pageSectionSubtitle: { fontSize: 14, color: dashboardTheme.colors.textSecondary, marginTop: 4, fontWeight: '500' },
+  readOnlyTextInput: { color: dashboardTheme.colors.textMuted, backgroundColor: '#F1F5F9' },
+  updateDeviceList: { gap: 10, marginTop: 4 },
+  updateDeviceOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    backgroundColor: dashboardTheme.colors.surface,
+  },
+  updateDeviceOptionActive: {
+    borderColor: dashboardTheme.colors.primary,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+  },
+  updateDeviceIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: dashboardTheme.colors.primarySoft,
+  },
+  updateDeviceIconActive: { backgroundColor: dashboardTheme.colors.primary },
+  updateDeviceCopy: { flex: 1, minWidth: 0 },
+  updateDeviceName: { color: dashboardTheme.colors.textPrimary, fontSize: 14, fontWeight: '800' },
+  updateDeviceNameActive: { color: dashboardTheme.colors.primaryDark },
+  updateDeviceMeta: { color: dashboardTheme.colors.textMuted, fontSize: 11, marginTop: 3 },
+  emptyUpdateText: { color: dashboardTheme.colors.textMuted, fontSize: 13, marginTop: 4 },
   profileIdentityFull: { alignItems: 'center', marginBottom: 32 },
   premiumAvatarContainerLarge: { position: 'relative', width: 100, height: 100, alignItems: 'center', justifyContent: 'center' },
   avatarGlowLarge: { position: 'absolute', width: 116, height: 116, borderRadius: 58, backgroundColor: dashboardTheme.colors.primarySoft, opacity: 0.25 },
