@@ -13,6 +13,8 @@ export interface SettingsState {
   profile: {
     name: string;
     email: string;
+    phone: string;
+    location: string;
     avatarUri: string | null;
   };
   notifications: {

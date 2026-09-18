@@ -41,7 +41,7 @@ import { useDashboardRealtimeBridge } from './useDashboardRealtimeBridge';
 import { fetchLatestTelemetry, postFirmwareUpdate } from '../../services/awsIot/awsTelemetryApiClient';
 
 import ExploreProductsScreen from './ExploreProductScreen';
-import { setNotifications, setPreferences, setProfile, setActiveSheet } from '../settings/settingsSlice';
+import { resetSettings, setNotifications, setPreferences, setProfile, setActiveSheet } from '../settings/settingsSlice';
 
 
 // ─── Bottom Tab Config ────────────────────────────────────────────────────────
@@ -1042,17 +1042,15 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
       {/* ── Account, device, and overflow sheets ───────────────────── */}
       <Modal
-        animationType={activeSheet === 'add-device' ? 'slide' : 'none'}
-        transparent={activeSheet === 'add-device'}
         animationType={activeSheet === 'notification-inbox' ? 'fade' : 'slide'}
-        transparent={activeSheet === 'notification-inbox'}
+        transparent={activeSheet === 'add-device' || activeSheet === 'notification-inbox'}
         visible={activeSheet !== null && activeSheet !== 'menu' && activeSheet !== 'profile'}
         onRequestClose={() => dispatch(setActiveSheet(null))}
       >
         <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
         <View style={activeSheet === 'add-device' ? styles.addDeviceSheetBackdrop : styles.fullPageContainer}>
         <View style={[styles.fullPageContainer, activeSheet === 'add-device' && styles.addDeviceSheet]}>
-        {activeSheet === 'add-device' && <View style={styles.sheetHandle} />}</View>
+        {activeSheet === 'add-device' && <View style={styles.sheetHandle} />}
         {/* {activeSheet !== 'add-device' && <View style={styles.pageHeader}></View> */}
         <View style={activeSheet === 'notification-inbox' ? styles.notificationOverlay : styles.fullPageContainer}>
           {activeSheet === 'notification-inbox' && (
@@ -1430,19 +1428,19 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               </View>
               <View style={styles.settingsToggleRow}>
                 <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>Push Notifications</Text><Text style={styles.settingsToggleSublabel}>Enable all notifications</Text></View>
-                <Switch value={notifPush} onValueChange={v => dispatch(setNotifications({ push: v }))} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifPush ? '#22C55E' : '#F4F4F4'} />
+                <Switch value={notifPush} onValueChange={v => { void dispatch(setNotifications({ push: v })); }} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifPush ? '#22C55E' : '#F4F4F4'} />
               </View>
               <View style={styles.settingsToggleRow}>
                 <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>AQI Alerts</Text><Text style={styles.settingsToggleSublabel}>Warn when air quality drops</Text></View>
-                <Switch value={notifAqiAlerts} onValueChange={v => dispatch(setNotifications({ aqiAlerts: v }))} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifAqiAlerts ? '#22C55E' : '#F4F4F4'} />
+                <Switch value={notifAqiAlerts} onValueChange={v => { void dispatch(setNotifications({ aqiAlerts: v })); }} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifAqiAlerts ? '#22C55E' : '#F4F4F4'} />
               </View>
               <View style={styles.settingsToggleRow}>
                 <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>Device Offline</Text><Text style={styles.settingsToggleSublabel}>Alert when device goes offline</Text></View>
-                <Switch value={notifDeviceOffline} onValueChange={v => dispatch(setNotifications({ deviceOffline: v }))} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifDeviceOffline ? '#22C55E' : '#F4F4F4'} />
+                <Switch value={notifDeviceOffline} onValueChange={v => { void dispatch(setNotifications({ deviceOffline: v })); }} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifDeviceOffline ? '#22C55E' : '#F4F4F4'} />
               </View>
               <View style={[styles.settingsToggleRow, styles.settingsToggleRowLast]}>
                 <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>Filter Replacement</Text><Text style={styles.settingsToggleSublabel}>Remind when filter needs replacing</Text></View>
-                <Switch value={notifFilterReminder} onValueChange={v => dispatch(setNotifications({ filterReminder: v }))} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifFilterReminder ? '#22C55E' : '#F4F4F4'} />
+                <Switch value={notifFilterReminder} onValueChange={v => { void dispatch(setNotifications({ filterReminder: v })); }} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifFilterReminder ? '#22C55E' : '#F4F4F4'} />
               </View>
             </>}
 
@@ -1502,13 +1500,13 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               <Text style={styles.aboutCopy}>Your data stays on your device. AirBuddi connects to your purifier locally and doesn't share personal information with third parties.</Text>
               <TouchableOpacity style={styles.primarySheetButtonRefined} onPress={async () => {
                 try {
-                  await AsyncStorage.multiRemove([
+                  await Promise.all([
                     PROFILE_STORAGE_KEY,
                     DEVICES_STORAGE_KEY,
                     NOTIFICATIONS_STORAGE_KEY,
-                    PREFERENCES_STORAGE_KEY
-                  ]);
-                  dispatch(resetSettings());
+                    PREFERENCES_STORAGE_KEY,
+                  ].map(key => AsyncStorage.removeItem(key)));
+                  dispatch(resetSettings(null));
                   setDevices([]);
                   Alert.alert('Cache Cleared', 'Local app cache has been cleared successfully.');
                 } catch (e) {
@@ -1568,6 +1566,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             </>}
             <View style={styles.bottomSpaceLarge} />
           </ScrollView>
+        </View>
         </View>
         </View>
       </Modal>
@@ -2848,6 +2847,11 @@ settingsSubtitle: {
     justifyContent: 'center',
     borderRadius: 21,
     backgroundColor: 'rgba(255, 255, 255, 0.14)',
+  },
+  qrScannerZoomValue: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '800',
   },
   qrScannerActionLabel: {
     color: '#FFFFFF',
