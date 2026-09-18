@@ -268,3 +268,28 @@ export async function postEspCommands(deviceId: string, commands: string[]) {
   }
 }
 
+export type FirmwareUpdatePayload = {
+  command: 'firmware_update';
+  model: string;
+  version: string;
+};
+
+export async function postFirmwareUpdate(deviceId: string, payload: FirmwareUpdatePayload) {
+  const normalizedDeviceId = normalizeDeviceId(deviceId);
+  if (!normalizedDeviceId) {
+    throw new Error('A device ID is required to start a firmware update.');
+  }
+
+  const url = `${telemetryApiConfig.baseUrl.replace(/\/$/, '')}/devices/${encodeURIComponent(normalizedDeviceId)}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => response.statusText);
+    throw new Error(`Firmware update failed (${response.status}): ${text}`);
+  }
+}
+
