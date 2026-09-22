@@ -716,6 +716,15 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const controlFanSpeed: 'off' | '1' | '2' | '3' | undefined =
     device?.fanSpeed === 'turbo' ? '3' : device?.fanSpeed;
 
+  const handleSettingsBack = useCallback(() => {
+    if (activeSheet === 'notification-inbox' || activeSheet === 'settings-main') {
+      dispatch(setActiveSheet(null));
+      return;
+    }
+
+    dispatch(setActiveSheet('settings-main'));
+  }, [activeSheet, dispatch]);
+
   return (
     <View style={styles.safeArea}>
       {/* Subtle background decor */}
@@ -1045,7 +1054,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         animationType={activeSheet === 'notification-inbox' ? 'fade' : 'slide'}
         transparent={activeSheet === 'add-device' || activeSheet === 'notification-inbox'}
         visible={activeSheet !== null && activeSheet !== 'menu' && activeSheet !== 'profile'}
-        onRequestClose={() => dispatch(setActiveSheet(null))}
+        onRequestClose={handleSettingsBack}
       >
         <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
         <View style={activeSheet === 'add-device' ? styles.addDeviceSheetBackdrop : styles.fullPageContainer}>
@@ -1061,13 +1070,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             />
           )}
           {activeSheet !== 'notification-inbox' && <View style={styles.pageHeader}>
-            <TouchableOpacity onPress={() => {
-              if (activeSheet === 'settings-main' || activeTab === 'settings') {
-                dispatch(setActiveSheet(null));
-              } else {
-                dispatch(setActiveSheet('settings-main'));
-              }
-            }} style={styles.pageBackButton}>
+            <TouchableOpacity onPress={handleSettingsBack} style={styles.pageBackButton}>
               <MaterialCommunityIcons name="arrow-left" size={26} color={dashboardTheme.colors.textPrimary} />
             </TouchableOpacity>
             <Text style={styles.pageTitle}>{
