@@ -1034,25 +1034,25 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
               <View style={styles.settingsCard}>
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>ACCOUNT & DEVICES</Text></View>
-                <SettingsCategoryRow icon="account-circle-outline" title="Account & Profile" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} />
-                <SettingsCategoryRow icon="air-filter" title="My Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} />
+                <SettingsCategoryRow icon="account-circle" title="Account & Profile" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} iconBgColor="#007AFF" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="air-filter" title="My Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} iconBgColor="#34C759" iconColor="#FFFFFF" />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
                 
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>PREFERENCES & ALERTS</Text></View>
-                <SettingsCategoryRow icon="tune-variant" title="App Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
-                <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
+                <SettingsCategoryRow icon="tune" title="App Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} iconBgColor="#8E8E93" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="bell" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} iconBgColor="#FF3B30" iconColor="#FFFFFF" />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
 
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>ABOUT & SUPPORT</Text></View>
-                <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
-                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); }} />
-                <SettingsCategoryRow icon="leaf-circle-outline" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} />
+                <SettingsCategoryRow icon="help-circle" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} iconBgColor="#FF9500" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); }} iconBgColor="#5856D6" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="leaf-circle" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} iconBgColor="#AF52DE" iconColor="#FFFFFF" />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
                 
-                <SettingsCategoryRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
+                <SettingsCategoryRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} iconBgColor="#FF3B30" iconColor="#FFFFFF" last />
               </View>
             </View>
           </Animated.View>
@@ -1121,25 +1121,25 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             {activeSheet === 'settings-main' && <>
               <View style={styles.settingsCard}>
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>ACCOUNT & DEVICES</Text></View>
-                <SettingsCategoryRow icon="account-circle-outline" title="Account & Profile" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} />
-                <SettingsCategoryRow icon="air-filter" title="My Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} />
+                <SettingsCategoryRow icon="account-circle" title="Account & Profile" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} iconBgColor="#007AFF" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="air-filter" title="My Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} iconBgColor="#34C759" iconColor="#FFFFFF" />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
                 
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>PREFERENCES & ALERTS</Text></View>
-                <SettingsCategoryRow icon="tune-variant" title="App Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
-                <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
+                <SettingsCategoryRow icon="tune" title="App Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} iconBgColor="#8E8E93" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="bell" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} iconBgColor="#FF3B30" iconColor="#FFFFFF" />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
 
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>ABOUT & SUPPORT</Text></View>
-                <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
-                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); }} />
-                <SettingsCategoryRow icon="leaf-circle-outline" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} />
+                <SettingsCategoryRow icon="help-circle" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} iconBgColor="#FF9500" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); }} iconBgColor="#5856D6" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="leaf-circle" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} iconBgColor="#AF52DE" iconColor="#FFFFFF" />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
                 
-                <SettingsCategoryRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
+                <SettingsCategoryRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} iconBgColor="#FF3B30" iconColor="#FFFFFF" last />
               </View>
             </>}
 
@@ -1891,10 +1891,10 @@ function SettingsRow({ icon, title, subtitle, onPress, last = false }: { icon: s
   );
 }
 
-function SettingsCategoryRow({ icon, title, subtitle, onPress, last = false }: { icon: string; title: string; subtitle: string; onPress: () => void; last?: boolean }) {
+function SettingsCategoryRow({ icon, title, subtitle, onPress, last = false, iconColor, iconBgColor }: { icon: string; title: string; subtitle: string; onPress: () => void; last?: boolean; iconColor?: string; iconBgColor?: string }) {
   return (
     <TouchableOpacity style={[styles.settingsCategoryRow, last && styles.settingsRowLast]} activeOpacity={0.75} onPress={onPress}>
-      <View style={styles.settingsCategoryIcon}><MaterialCommunityIcons name={icon} size={22} color={dashboardTheme.colors.primaryDark} /></View>
+      <View style={[styles.settingsCategoryIcon, iconBgColor ? { backgroundColor: iconBgColor } : {}]}><MaterialCommunityIcons name={icon} size={22} color={iconColor || dashboardTheme.colors.primaryDark} /></View>
       <View style={styles.settingsCopy}><Text style={styles.settingsCategoryTitle}>{title}</Text><Text style={styles.settingsSubtitle}>{subtitle}</Text></View>
       <MaterialCommunityIcons name="chevron-right" size={24} color={dashboardTheme.colors.textMuted} />
     </TouchableOpacity>
