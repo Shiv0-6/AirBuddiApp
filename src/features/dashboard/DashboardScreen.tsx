@@ -140,6 +140,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [refreshing, setRefreshing] = useState(false);
+  const [settingsSearchOpen, setSettingsSearchOpen] = useState(false);
+  const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
 
   // profile local UI state
   const {
@@ -727,6 +729,19 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     dispatch(setActiveSheet('settings-main'));
   }, [activeSheet, dispatch]);
 
+  const settingsSearchItems = [
+    { icon: 'account-circle-outline', title: 'Account', subtitle: 'Profile and linked accounts', onPress: () => dispatch(setActiveSheet('account')) },
+    { icon: 'air-filter', title: 'Devices', subtitle: 'Manage your AirBuddi devices', onPress: () => dispatch(setActiveSheet('devices')) },
+    { icon: 'bell-outline', title: 'Notifications', subtitle: 'Alerts and notification preferences', onPress: () => dispatch(setActiveSheet('notification-settings')) },
+    { icon: 'update', title: 'Check for Updates', subtitle: 'App and device software updates', onPress: () => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); } },
+    { icon: 'tune-variant', title: 'Preferences', subtitle: 'Appearance, units, and privacy', onPress: () => dispatch(setActiveSheet('preferences')) },
+    { icon: 'leaf-circle-outline', title: 'Explore Products', subtitle: 'Explore other products', onPress: () => { dispatch(setActiveSheet(null)); setActiveTab('explore'); } },
+    { icon: 'help-circle-outline', title: 'Support', subtitle: 'Help, contact, and app information', onPress: () => dispatch(setActiveSheet('support')) },
+  ];
+  const filteredSettings = settingsSearchItems.filter(item =>
+    `${item.title} ${item.subtitle}`.toLowerCase().includes(settingsSearchQuery.trim().toLowerCase()),
+  );
+
   return (
     <View style={styles.safeArea}>
       {/* Subtle background decor */}
@@ -1039,9 +1054,9 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
                 <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); }} />
                 <SettingsCategoryRow icon="tune-variant" title="Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
-                <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
                 <SettingsCategoryRow icon="leaf-circle-outline" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} />
-                <SettingsCategoryRow icon="leaf-circle-outline" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
+                <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
+                <SettingsCategoryRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
               </View>
             </View>
           </Animated.View>
@@ -1092,23 +1107,58 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                activeSheet === 'edit-device' ? 'Edit Device' :
                activeSheet === 'about' ? 'About' : 'Settings'
             }</Text>
-            <View style={styles.pageHeaderPlaceholder} />
+            {activeSheet === 'settings-main' ? (
+              <TouchableOpacity
+                style={styles.pageHeaderAction}
+                accessibilityLabel={settingsSearchOpen ? 'Close settings search' : 'Search settings'}
+                accessibilityRole="button"
+                onPress={() => {
+                  setSettingsSearchOpen(value => !value);
+                  if (settingsSearchOpen) setSettingsSearchQuery('');
+                }}
+              >
+                <MaterialCommunityIcons name={settingsSearchOpen ? 'close' : 'magnify'} size={25} color={dashboardTheme.colors.textPrimary} />
+              </TouchableOpacity>
+            ) : <View style={styles.pageHeaderPlaceholder} />}
           </View>}
+
+          {activeSheet === 'settings-main' && settingsSearchOpen && (
+            <View style={styles.settingsSearchBar}>
+              <MaterialCommunityIcons name="magnify" size={20} color={dashboardTheme.colors.textMuted} />
+              <TextInput
+                autoFocus
+                value={settingsSearchQuery}
+                onChangeText={setSettingsSearchQuery}
+                placeholder="Search settings"
+                placeholderTextColor={dashboardTheme.colors.textMuted}
+                style={styles.settingsSearchInput}
+                returnKeyType="search"
+              />
+            </View>
+          )}
 
           <ScrollView
             style={[styles.pageContent, activeSheet === 'notification-inbox' && styles.notificationPanel]}
             contentContainerStyle={[styles.pageContentScroll, activeSheet === 'notification-inbox' && styles.notificationPanelContent]}
             showsVerticalScrollIndicator={false}
           >
-            {activeSheet === 'settings-main' && <>
+            {activeSheet === 'settings-main' && settingsSearchOpen && settingsSearchQuery.trim() ? (
+              <View style={styles.settingsCard}>
+                {filteredSettings.length > 0 ? filteredSettings.map((item, index) => (
+                  <SettingsCategoryRow key={item.title} {...item} last={index === filteredSettings.length - 1} />
+                )) : (
+                  <Text style={styles.settingsSearchEmpty}>No settings found</Text>
+                )}
+              </View>
+            ) : activeSheet === 'settings-main' && <>
               <View style={styles.settingsCard}>
                 <SettingsCategoryRow icon="account-circle-outline" title="Account" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} />
                 <SettingsCategoryRow icon="air-filter" title="Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} />
                 <SettingsCategoryRow icon="bell-outline" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
                 <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); }} />
                 <SettingsCategoryRow icon="tune-variant" title="Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
-                <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
                 <SettingsCategoryRow icon="leaf-circle-outline" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} />
+                <SettingsCategoryRow icon="help-circle-outline" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
                 <SettingsCategoryRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
               </View>
             </>}
@@ -3057,7 +3107,11 @@ settingsSubtitle: {
   pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, backgroundColor: dashboardTheme.colors.surface, borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
   pageBackButton: { padding: 8, marginLeft: -8 },
   pageTitle: { fontSize: 20, fontWeight: '800', color: dashboardTheme.colors.textPrimary },
+  pageHeaderAction: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', marginRight: -8 },
   pageHeaderPlaceholder: { width: 42 },
+  settingsSearchBar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: 20, marginTop: 12, marginBottom: 4, paddingHorizontal: 14, height: 46, borderRadius: 13, backgroundColor: dashboardTheme.colors.surfaceTint, borderWidth: 1, borderColor: dashboardTheme.colors.border },
+  settingsSearchInput: { flex: 1, padding: 0, color: dashboardTheme.colors.textPrimary, fontSize: 15 },
+  settingsSearchEmpty: { padding: 22, textAlign: 'center', color: dashboardTheme.colors.textMuted, fontSize: 14 },
   pageContent: { flex: 1 },
   pageContentScroll: { padding: 20 },
   pageIntroSection: { marginBottom: 24 },
