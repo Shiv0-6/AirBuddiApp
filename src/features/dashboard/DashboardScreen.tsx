@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -24,6 +24,7 @@ import BarcodeScanning from '@react-native-ml-kit/barcode-scanning';
 import { Camera, CameraType } from 'react-native-camera-kit';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { dashboardTheme } from './dashboardTheme';
 import { connectionLabels } from './dashboardMockData';
@@ -129,6 +130,7 @@ function extractDeviceMacFromQrData(rawValue: string): string | null {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
+  const insets = useContext(SafeAreaInsetsContext) ?? { top: 0 };
   const dispatch = useAppDispatch();
   const dashboard = useAppSelector(selectDashboard) as DashboardRuntimeState;
   const { notifications, preferences, profile, activeSheet } = useAppSelector(state => state.settings);
@@ -1060,6 +1062,9 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         <View style={activeSheet === 'add-device' ? styles.addDeviceSheetBackdrop : styles.fullPageContainer}>
         <View style={[styles.fullPageContainer, activeSheet === 'add-device' && styles.addDeviceSheet]}>
         {activeSheet === 'add-device' && <View style={styles.sheetHandle} />}
+        {activeSheet !== 'add-device' && activeSheet !== 'notification-inbox' && (
+          <View style={[styles.settingsStatusBarInset, { height: insets.top }]} />
+        )}
         {/* {activeSheet !== 'add-device' && <View style={styles.pageHeader}></View> */}
         <View style={activeSheet === 'notification-inbox' ? styles.notificationOverlay : styles.fullPageContainer}>
           {activeSheet === 'notification-inbox' && (
@@ -3048,7 +3053,8 @@ settingsSubtitle: {
     fontWeight: '600',
     textAlign: 'center',
   },
-  pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 60 : 20, paddingBottom: 16, backgroundColor: dashboardTheme.colors.surface, borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
+  settingsStatusBarInset: { backgroundColor: '#000000' },
+  pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, backgroundColor: dashboardTheme.colors.surface, borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
   pageBackButton: { padding: 8, marginLeft: -8 },
   pageTitle: { fontSize: 20, fontWeight: '800', color: dashboardTheme.colors.textPrimary },
   pageHeaderPlaceholder: { width: 42 },
