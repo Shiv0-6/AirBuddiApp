@@ -30,8 +30,6 @@ import {
   SafeAreaView,
 } from 'react-native-safe-area-context';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
 import { DashboardScreen } from './src/features/dashboard/DashboardScreen';
@@ -46,6 +44,8 @@ import {
   signInWithCloud,
   type AuthSession,
 } from './src/services/auth/cognitoAuth';
+import { isCognitoAuthConfigured } from './src/config/authConfig';
+import { registerLocalAccount, signInWithLocalAccount } from './src/services/auth/localAuth';
 
 
 function App() {
@@ -298,8 +298,12 @@ function SignInScreen({
       /* REGISTER */
 
       if (isRegistering) {
-        await registerCloudAccount(trimmedUsername, password);
-        const session = await signInWithCloud(trimmedUsername, password);
+        const session = isCognitoAuthConfigured()
+          ? await (async () => {
+              await registerCloudAccount(trimmedUsername, password);
+              return signInWithCloud(trimmedUsername, password);
+            })()
+          : await registerLocalAccount(trimmedUsername, password);
 
         setUsername('');
         setPassword('');
@@ -320,7 +324,9 @@ function SignInScreen({
       */
       const session = trimmedUsername === 'admin' && password === 'admin123'
         ? createTestAdminSession()
-        : await signInWithCloud(trimmedUsername, password);
+        : isCognitoAuthConfigured()
+          ? await signInWithCloud(trimmedUsername, password)
+          : await signInWithLocalAccount(trimmedUsername, password);
 
       if (session) {
         setUsername('');
