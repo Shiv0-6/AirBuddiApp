@@ -196,6 +196,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     theme: themePreference,
     tempUnit,
     aqiStandard,
+    language,
     aqiWarningThreshold,
     aqiDangerThreshold
   } = preferences;
@@ -791,7 +792,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const settingsSearchResults = [
     { title: 'Account & Profile', subtitle: 'Profile and linked accounts', onPress: () => dispatch(setActiveSheet('account')) },
     { title: 'My Devices', subtitle: 'Manage your AirBuddi devices', onPress: () => dispatch(setActiveSheet('devices')) },
-    { title: 'App Preferences', subtitle: 'Appearance, units, and privacy', onPress: () => dispatch(setActiveSheet('preferences')) },
+    { title: 'Appearance', subtitle: 'Appearance, units and Languages', onPress: () => dispatch(setActiveSheet('preferences')) },
     { title: 'Notifications', subtitle: 'Alerts and notification preferences', onPress: () => dispatch(setActiveSheet('notification-settings')) },
     { title: 'Support', subtitle: 'Help, contact, and app information', onPress: () => dispatch(setActiveSheet('support')) },
     { title: 'Check for Updates', subtitle: 'App and device software updates', onPress: () => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); } },
@@ -1116,7 +1117,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
                 
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>PREFERENCES & ALERTS</Text></View>
-                <SettingsCategoryRow icon="tune" title="App Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
+                <SettingsCategoryRow icon="tune" title="App Preferences" subtitle="Appearance, units, and Languages" onPress={() => dispatch(setActiveSheet('preferences'))} />
                 <SettingsCategoryRow icon="bell" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
@@ -1186,6 +1187,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 activeSheet === 'check-updates' ? 'Check for Updates' :
                 activeSheet === 'device-update' ? 'Device Update' :
                 activeSheet === 'preferences' ? 'Preferences' :
+                activeSheet === 'language' ? 'Language' :
                 activeSheet === 'support' ? 'Support' :
                 activeSheet === 'add-device' ? 'Add Device' :
                 activeSheet === 'edit-device' ? 'Edit Device' :
@@ -1248,7 +1250,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
                 
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>PREFERENCES & ALERTS</Text></View>
-                <SettingsCategoryRow icon="tune" title="App Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
+                <SettingsCategoryRow icon="tune" title="App Preferences" subtitle="Appearance, units, and languages" onPress={() => dispatch(setActiveSheet('preferences'))} />
                 <SettingsCategoryRow icon="bell" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
@@ -1401,7 +1403,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               </View>
               <View style={styles.settingsCard}>
                 <SettingsRow icon="palette" title="Appearance" subtitle={`Theme: ${themePreference.charAt(0).toUpperCase() + themePreference.slice(1)}`} onPress={() => dispatch(setActiveSheet('appearance'))} />
-                <SettingsRow icon="earth" title="Units & Region" subtitle={`${tempUnit === 'celsius' ? '°C' : '°F'} · ${aqiStandard === 'us' ? 'US EPA' : 'India NAQI'}`} onPress={() => dispatch(setActiveSheet('units'))} last />
+                <SettingsRow icon="earth" title="Units & Region" subtitle={`${tempUnit === 'celsius' ? '°C' : '°F'} · ${aqiStandard === 'us' ? 'US EPA' : 'India NAQI'}`} onPress={() => dispatch(setActiveSheet('units'))} />
+                <SettingsRow icon="translate" title="Language" subtitle={language === 'en' ? 'English' : 'हिन्दी'} onPress={() => dispatch(setActiveSheet('language'))} last />
               </View>
             </>}
 
@@ -1677,6 +1680,22 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               <View style={styles.optionRow}>
                 <TouchableOpacity style={[styles.optionChip, aqiStandard === 'us' && styles.optionChipActive]} onPress={() => dispatch(setPreferences({ aqiStandard: 'us' }))}><Text style={[styles.optionChipText, aqiStandard === 'us' && styles.optionChipTextActive]}>US EPA</Text></TouchableOpacity>
                 <TouchableOpacity style={[styles.optionChip, aqiStandard === 'india' && styles.optionChipActive]} onPress={() => dispatch(setPreferences({ aqiStandard: 'india' }))}><Text style={[styles.optionChipText, aqiStandard === 'india' && styles.optionChipTextActive]}>India NAQI</Text></TouchableOpacity>
+              </View>
+            </>}
+
+            {activeSheet === 'language' && <>
+              <View style={styles.pageIntroSection}>
+                <Text style={styles.pageSectionTitle}>Language</Text>
+                <Text style={styles.pageSectionSubtitle}>Choose the language you prefer to use in AirBuddi.</Text>
+              </View>
+              <Text style={styles.inputLabel}>APP LANGUAGE</Text>
+              <View style={styles.optionRow}>
+                <TouchableOpacity style={[styles.optionChip, language === 'en' && styles.optionChipActive]} onPress={() => dispatch(setPreferences({ language: 'en' }))} accessibilityRole="radio" accessibilityState={{ checked: language === 'en' }}>
+                  <Text style={[styles.optionChipText, language === 'en' && styles.optionChipTextActive]}>English</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.optionChip, language === 'hi' && styles.optionChipActive]} onPress={() => dispatch(setPreferences({ language: 'hi' }))} accessibilityRole="radio" accessibilityState={{ checked: language === 'hi' }}>
+                  <Text style={[styles.optionChipText, language === 'hi' && styles.optionChipTextActive]}>हिन्दी</Text>
+                </TouchableOpacity>
               </View>
             </>}
 
