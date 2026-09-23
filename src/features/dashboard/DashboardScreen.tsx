@@ -164,7 +164,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const [isScanningQr, setIsScanningQr] = useState(false);
   const [isQrScannerVisible, setIsQrScannerVisible] = useState(false);
   const [scannedQrValue, setScannedQrValue] = useState('');
-  const [qrZoom, setQrZoom] = useState(0);
+  const [qrZoom, setQrZoom] = useState(1);
   const [newDeviceName, setNewDeviceName] = useState('');
   const [newDeviceRoom, setNewDeviceRoom] = useState('');
   const [newDeviceId, setNewDeviceId] = useState('');
@@ -530,7 +530,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     }
 
     setIsScanningQr(true);
-    setQrZoom(0);
+    setQrZoom(1);
     setIsQrScannerVisible(true);
   }, []);
   const openQrScanner = useCallback(() => {
@@ -1863,6 +1863,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             cameraType={CameraType.Back}
             zoomMode="on"
             zoom={qrZoom}
+            maxZoom={2}
             scanBarcode
             showFrame
             barcodeFrameSize={{ width: 260, height: 260 }}
@@ -1920,9 +1921,9 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   <Text style={styles.qrScannerActionLabel}>Gallery</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.qrScannerAction} onPress={() => setQrZoom(value => value === 0 ? 0.5 : 0)}>
+                <TouchableOpacity style={styles.qrScannerAction} onPress={() => setQrZoom(value => value === 1 ? 2 : 1)}>
                   <View style={styles.qrScannerActionIcon}>
-                    <Text style={styles.qrScannerZoomValue}>{qrZoom === 0 ? '1x' : '2x'}</Text>
+                    <Text style={styles.qrScannerZoomValue}>{qrZoom === 1 ? '1x' : '2x'}</Text>
                   </View>
                   <Text style={styles.qrScannerActionLabel}>Zoom</Text>
                 </TouchableOpacity>
