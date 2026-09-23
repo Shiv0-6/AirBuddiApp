@@ -180,6 +180,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const [firmwareUpdateStage, setFirmwareUpdateStage] = useState<FirmwareUpdateStage>('idle');
   const [firmwareUpdateProgress, setFirmwareUpdateProgress] = useState(0);
   const firmwareUpdateTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const firmwareUpdateCompletionRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [devices, setDevices] = useState<HomeDevice[]>([]);
   const devicesLoadedRef = useRef(false);
   const prefsLoadedRef = useRef(false);
@@ -715,8 +716,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               console.warn('[AirBuddi] Firmware update request was not acknowledged; continuing staged update UI.', error);
             });
 
-            const downloadDuration = 20_000;
-            const installDuration = 30_000;
+            const downloadDuration = 35_000;
+            const installDuration = 55_000;
             const totalDuration = downloadDuration + installDuration;
             const startedAt = Date.now();
 
@@ -730,6 +731,12 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 setFirmwareUpdateProgress(100);
                 setFirmwareUpdateStage('complete');
                 setIsUpdatingDevice(false);
+                firmwareUpdateCompletionRef.current = setTimeout(() => {
+                  dispatch(setActiveSheet(null));
+                  setFirmwareUpdateStage('idle');
+                  setFirmwareUpdateProgress(0);
+                  firmwareUpdateCompletionRef.current = null;
+                }, 1500);
                 return;
               }
 
@@ -750,6 +757,9 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   useEffect(() => () => {
     if (firmwareUpdateTimerRef.current) {
       clearInterval(firmwareUpdateTimerRef.current);
+    }
+    if (firmwareUpdateCompletionRef.current) {
+      clearTimeout(firmwareUpdateCompletionRef.current);
     }
   }, []);
 
