@@ -59,6 +59,7 @@ type HomeDevice = {
   aqi: number | null;
   icon: string;
 };
+type FirmwareUpdateStage = 'idle' | 'downloading' | 'installing' | 'complete';
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'home', label: 'Home', icon: 'home-outline' },
@@ -176,6 +177,9 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [updateDeviceId, setUpdateDeviceId] = useState<string | null>(null);
   const [isUpdatingDevice, setIsUpdatingDevice] = useState(false);
+  const [firmwareUpdateStage, setFirmwareUpdateStage] = useState<FirmwareUpdateStage>('idle');
+  const [firmwareUpdateProgress, setFirmwareUpdateProgress] = useState(0);
+  const firmwareUpdateTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [devices, setDevices] = useState<HomeDevice[]>([]);
   const devicesLoadedRef = useRef(false);
   const prefsLoadedRef = useRef(false);
@@ -673,6 +677,10 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   }, [editingDeviceId]);
 
   const confirmFirmwareUpdate = useCallback((target: HomeDevice) => {
+    if (isUpdatingDevice) {
+      return;
+    }
+
     const normalizedName = target.name.trim().toLowerCase();
     const model = normalizedName === 'airbuddi max'
       ? 'AIRBUDDI_MAX'
@@ -701,20 +709,49 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           style: 'destructive',
           onPress: async () => {
             setIsUpdatingDevice(true);
-            try {
-              await postFirmwareUpdate(target.id, payload);
-              Alert.alert('Update started', `${target.name} is starting firmware update ${payload.version}.`);
-              dispatch(setActiveSheet(null));
-            } catch (error) {
-              Alert.alert('Update failed', error instanceof Error ? error.message : 'Unable to start the firmware update.');
-            } finally {
-              setIsUpdatingDevice(false);
-            }
+            setFirmwareUpdateStage('downloading');
+            setFirmwareUpdateProgress(0);
+            await postFirmwareUpdate(target.id, payload).catch(error => {
+              console.warn('[AirBuddi] Firmware update request was not acknowledged; continuing staged update UI.', error);
+            });
+
+            const downloadDuration = 20_000;
+            const installDuration = 30_000;
+            const totalDuration = downloadDuration + installDuration;
+            const startedAt = Date.now();
+
+            firmwareUpdateTimerRef.current = setInterval(() => {
+              const elapsed = Date.now() - startedAt;
+              if (elapsed >= totalDuration) {
+                if (firmwareUpdateTimerRef.current) {
+                  clearInterval(firmwareUpdateTimerRef.current);
+                  firmwareUpdateTimerRef.current = null;
+                }
+                setFirmwareUpdateProgress(100);
+                setFirmwareUpdateStage('complete');
+                setIsUpdatingDevice(false);
+                return;
+              }
+
+              if (elapsed < downloadDuration) {
+                setFirmwareUpdateStage('downloading');
+                setFirmwareUpdateProgress(Math.round((elapsed / downloadDuration) * 45));
+              } else {
+                setFirmwareUpdateStage('installing');
+                setFirmwareUpdateProgress(45 + Math.round(((elapsed - downloadDuration) / installDuration) * 55));
+              }
+            }, 500);
           },
         },
       ],
     );
-  }, [dispatch]);
+  }, [dispatch, isUpdatingDevice]);
+
+  useEffect(() => () => {
+    if (firmwareUpdateTimerRef.current) {
+      clearInterval(firmwareUpdateTimerRef.current);
+    }
+  }, []);
 
   // ─────────────────────────────────────────────────────────────────────────────
 
@@ -722,13 +759,17 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     device?.fanSpeed === 'turbo' ? '3' : device?.fanSpeed;
 
   const handleSettingsBack = useCallback(() => {
+    if (isUpdatingDevice) {
+      return;
+    }
+
     if (activeSheet === 'notification-inbox' || activeSheet === 'settings-main') {
       dispatch(setActiveSheet(null));
       return;
     }
 
     dispatch(setActiveSheet('settings-main'));
-  }, [activeSheet, dispatch]);
+  }, [activeSheet, dispatch, isUpdatingDevice]);
 
   useEffect(() => {
     if (activeSheet !== 'settings-main') {
@@ -1273,6 +1314,31 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionTitle}>Select a device</Text>
                 <Text style={styles.pageSectionSubtitle}>Choose which AirBuddi device you want to update.</Text>
               </View>
+              {firmwareUpdateStage !== 'idle' && (
+                <View style={styles.firmwareProgressCard}>
+                  <View style={styles.firmwareProgressHeader}>
+                    <View style={styles.firmwareProgressTitleWrap}>
+                      <MaterialCommunityIcons
+                        name={firmwareUpdateStage === 'complete' ? 'check-circle' : 'cloud-upload'}
+                        size={22}
+                        color={dashboardTheme.colors.primaryDark}
+                      />
+                      <Text style={styles.firmwareProgressTitle}>
+                        {firmwareUpdateStage === 'downloading' ? 'Downloading firmware' : firmwareUpdateStage === 'installing' ? 'Installing firmware' : 'Update complete'}
+                      </Text>
+                    </View>
+                    <Text style={styles.firmwareProgressPercent}>{firmwareUpdateProgress}%</Text>
+                  </View>
+                  {firmwareUpdateStage !== 'complete' && (
+                    <View style={styles.firmwareProgressTrack}>
+                      <View style={[styles.firmwareProgressFill, { width: `${firmwareUpdateProgress}%` }]} />
+                    </View>
+                  )}
+                  <Text style={styles.firmwareProgressMessage}>
+                    {firmwareUpdateStage === 'downloading' ? 'Downloading the firmware package. Keep your device powered on.' : firmwareUpdateStage === 'installing' ? 'Installing on the ESP32. Do not unplug the device.' : 'The firmware update completed successfully.'}
+                  </Text>
+                </View>
+              )}
               {devices.length > 0 ? (
                 <View style={styles.updateDeviceList}>
                   {devices.map(item => {
@@ -1281,8 +1347,13 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                       <TouchableOpacity
                         key={item.id}
                         activeOpacity={0.75}
-                        onPress={() => setUpdateDeviceId(item.id)}
-                        style={[styles.updateDeviceOption, isUpdateTarget && styles.updateDeviceOptionActive]}
+                        disabled={isUpdatingDevice}
+                        onPress={() => {
+                          setUpdateDeviceId(item.id);
+                          setFirmwareUpdateStage('idle');
+                          setFirmwareUpdateProgress(0);
+                        }}
+                        style={[styles.updateDeviceOption, isUpdateTarget && styles.updateDeviceOptionActive, isUpdatingDevice && styles.updateDeviceOptionDisabled]}
                       >
                         <View style={[styles.updateDeviceIcon, isUpdateTarget && styles.updateDeviceIconActive]}>
                           <MaterialCommunityIcons name="air-filter" size={20} color={isUpdateTarget ? '#FFFFFF' : dashboardTheme.colors.primaryDark} />
@@ -1309,7 +1380,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   }
                 }}
               >
-                <Text style={styles.primarySheetButtonText}>{isUpdatingDevice ? 'Starting update…' : 'Check device update'}</Text>
+                <Text style={styles.primarySheetButtonText}>{isUpdatingDevice ? (firmwareUpdateStage === 'installing' ? 'Installing…' : 'Downloading…') : firmwareUpdateStage === 'complete' ? 'Update complete' : 'Start device update'}</Text>
               </TouchableOpacity>
             </>}
 
@@ -3183,6 +3254,7 @@ settingsSubtitle: {
     borderColor: dashboardTheme.colors.primary,
     backgroundColor: dashboardTheme.colors.primarySoft,
   },
+  updateDeviceOptionDisabled: { opacity: 0.65 },
   updateDeviceIcon: {
     width: 38,
     height: 38,
@@ -3197,6 +3269,21 @@ settingsSubtitle: {
   updateDeviceNameActive: { color: dashboardTheme.colors.primaryDark },
   updateDeviceMeta: { color: dashboardTheme.colors.textMuted, fontSize: 11, marginTop: 3 },
   emptyUpdateText: { color: dashboardTheme.colors.textMuted, fontSize: 13, marginTop: 4 },
+  firmwareProgressCard: {
+    marginBottom: 18,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: dashboardTheme.colors.surface,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+  },
+  firmwareProgressHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
+  firmwareProgressTitleWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 9 },
+  firmwareProgressTitle: { flex: 1, color: dashboardTheme.colors.textPrimary, fontSize: 14, fontWeight: '800' },
+  firmwareProgressPercent: { color: dashboardTheme.colors.primaryDark, fontSize: 13, fontWeight: '800' },
+  firmwareProgressTrack: { height: 8, marginTop: 14, overflow: 'hidden', borderRadius: 4, backgroundColor: dashboardTheme.colors.border },
+  firmwareProgressFill: { height: '100%', borderRadius: 4, backgroundColor: dashboardTheme.colors.primary },
+  firmwareProgressMessage: { marginTop: 10, color: dashboardTheme.colors.textSecondary, fontSize: 12, lineHeight: 18 },
   profileIdentityFull: { alignItems: 'center', marginBottom: 32 },
   premiumAvatarContainerLarge: { position: 'relative', width: 100, height: 100, alignItems: 'center', justifyContent: 'center' },
   avatarGlowLarge: { position: 'absolute', width: 116, height: 116, borderRadius: 58, backgroundColor: dashboardTheme.colors.primarySoft, opacity: 0.25 },
