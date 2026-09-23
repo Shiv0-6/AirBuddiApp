@@ -37,12 +37,15 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { DashboardScreen } from './src/features/dashboard/DashboardScreen';
 import { store } from './src/store/store';
 import { resetDashboard } from './src/features/dashboard/dashboardSlice';
-
-
-const AUTH_STORAGE_KEY = '@airbuddi_signed_in';
-
-const REGISTERED_ACCOUNT_STORAGE_KEY =
-  '@airbuddi_registered_account';
+import {
+  clearAuthSession,
+  createTestAdminSession,
+  getStoredAuthSession,
+  registerCloudAccount,
+  saveAuthSession,
+  signInWithCloud,
+  type AuthSession,
+} from './src/services/auth/cognitoAuth';
 
 
 function App() {
@@ -79,12 +82,8 @@ function AppContent() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const value =
-          await AsyncStorage.getItem(
-            AUTH_STORAGE_KEY
-          );
-
-        setIsSignedIn(value === 'true');
+        const session = await getStoredAuthSession();
+        setIsSignedIn(session !== null);
       } catch {
         setIsSignedIn(false);
       } finally {
@@ -96,16 +95,13 @@ function AppContent() {
   }, []);
 
 
-  const handleSignIn = useCallback(async () => {
+  const handleSignIn = useCallback(async (session: AuthSession) => {
     try {
       store.dispatch(
         resetDashboard(undefined)
       );
 
-      await AsyncStorage.setItem(
-        AUTH_STORAGE_KEY,
-        'true'
-      );
+      await saveAuthSession(session);
 
       setIsSignedIn(true);
     } catch (error) {
@@ -119,9 +115,7 @@ function AppContent() {
 
   const handleSignOut = useCallback(async () => {
     try {
-      await AsyncStorage.removeItem(
-        AUTH_STORAGE_KEY
-      );
+      await clearAuthSession();
     } catch (error) {
       console.error(
         '[AirBuddi] Sign out failed:',
@@ -180,7 +174,7 @@ function AppContent() {
 function SignInScreen({
   onSignIn,
 }: {
-  onSignIn: () => void;
+  onSignIn: (session: AuthSession) => void;
 }) {
   const [isRegistering, setIsRegistering] =
     useState(false);
@@ -279,9 +273,9 @@ function SignInScreen({
         return;
       }
 
-      if (password.length < 6) {
+      if (password.length < 8) {
         setErrorMessage(
-          'Password must be at least 6 characters.'
+          'Password must be at least 8 characters.'
         );
 
         return;
@@ -304,20 +298,15 @@ function SignInScreen({
       /* REGISTER */
 
       if (isRegistering) {
-        await AsyncStorage.setItem(
-          REGISTERED_ACCOUNT_STORAGE_KEY,
-          JSON.stringify({
-            username: trimmedUsername,
-            password,
-          })
-        );
+        await registerCloudAccount(trimmedUsername, password);
+        const session = await signInWithCloud(trimmedUsername, password);
 
         setUsername('');
         setPassword('');
         setConfirmPassword('');
         setErrorMessage('');
 
-        onSignIn();
+        onSignIn(session);
 
         return;
       }
@@ -325,51 +314,20 @@ function SignInScreen({
 
       /* LOGIN */
 
-      let isValidLogin = false;
-
-
       /*
         Internal testing credentials.
         Not displayed in the UI.
       */
+      const session = trimmedUsername === 'admin' && password === 'admin123'
+        ? createTestAdminSession()
+        : await signInWithCloud(trimmedUsername, password);
 
-      if (
-        trimmedUsername === 'admin' &&
-        password === 'admin123'
-      ) {
-        isValidLogin = true;
-      }
-
-
-      const storedAccount =
-        await AsyncStorage.getItem(
-          REGISTERED_ACCOUNT_STORAGE_KEY
-        );
-
-
-      if (storedAccount) {
-        const account =
-          JSON.parse(storedAccount);
-
-        if (
-          account.username === trimmedUsername &&
-          account.password === password
-        ) {
-          isValidLogin = true;
-        }
-      }
-
-
-      if (isValidLogin) {
+      if (session) {
         setUsername('');
         setPassword('');
         setErrorMessage('');
 
-        onSignIn();
-      } else {
-        setErrorMessage(
-          'Invalid username or password.'
-        );
+        onSignIn(session);
       }
 
     } catch (error) {
@@ -379,7 +337,9 @@ function SignInScreen({
       );
 
       setErrorMessage(
-        'Something went wrong. Please try again.'
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong. Please try again.'
       );
     } finally {
       setIsSubmitting(false);

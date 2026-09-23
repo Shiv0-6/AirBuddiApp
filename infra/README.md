@@ -19,3 +19,14 @@ sam deploy --guided
 ```
 
 After deploy, note the `TelemetryApi` output — set `telemetryApiConfig.baseUrl` in `src/config/awsIotConfig.ts`.
+
+## Customer sign-in
+
+The template also creates an Amazon Cognito User Pool. This is where registered
+customer accounts are stored; Cognito hashes passwords, so the mobile app never
+stores or receives password records. After deployment, copy the
+`CognitoUserPoolClientId` output into `src/config/authConfig.ts`.
+
+The included pre-sign-up trigger auto-confirms accounts because the current app
+only asks for a username and password. Before a production release, add an email
+field to registration and replace that trigger with email verification.

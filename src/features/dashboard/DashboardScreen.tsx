@@ -50,6 +50,7 @@ import { resetSettings, setNotifications, setPreferences, setProfile, setActiveS
 type TabId = 'home' | 'monitor' | 'control' | 'settings' | 'explore';
 
 
+
 type HomeDevice = {
   id: string;
   name: string;
@@ -140,6 +141,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
   const [activeTab, setActiveTab] = useState<TabId>('home');
   const [refreshing, setRefreshing] = useState(false);
+  const [isSettingsSearchVisible, setIsSettingsSearchVisible] = useState(false);
+  const [settingsSearchQuery, setSettingsSearchQuery] = useState('');
 
   // profile local UI state
   const {
@@ -727,6 +730,28 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     dispatch(setActiveSheet('settings-main'));
   }, [activeSheet, dispatch]);
 
+  useEffect(() => {
+    if (activeSheet !== 'settings-main') {
+      setIsSettingsSearchVisible(false);
+      setSettingsSearchQuery('');
+    }
+  }, [activeSheet]);
+
+  const settingsSearchResults = [
+    { title: 'Account & Profile', subtitle: 'Profile and linked accounts', onPress: () => dispatch(setActiveSheet('account')) },
+    { title: 'My Devices', subtitle: 'Manage your AirBuddi devices', onPress: () => dispatch(setActiveSheet('devices')) },
+    { title: 'App Preferences', subtitle: 'Appearance, units, and privacy', onPress: () => dispatch(setActiveSheet('preferences')) },
+    { title: 'Notifications', subtitle: 'Alerts and notification preferences', onPress: () => dispatch(setActiveSheet('notification-settings')) },
+    { title: 'Support', subtitle: 'Help, contact, and app information', onPress: () => dispatch(setActiveSheet('support')) },
+    { title: 'Check for Updates', subtitle: 'App and device software updates', onPress: () => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); } },
+    { title: 'Explore Products', subtitle: 'Explore other products', onPress: () => { dispatch(setActiveSheet(null)); setActiveTab('explore'); } },
+    { title: 'Sign Out', subtitle: 'Sign out of your account', onPress: handleSignOut },
+  ];
+  const normalizedSettingsSearchQuery = settingsSearchQuery.trim().toLowerCase();
+  const filteredSettingsSearchResults = settingsSearchResults.filter(item =>
+    `${item.title} ${item.subtitle}`.toLowerCase().includes(normalizedSettingsSearchQuery),
+  );
+
   return (
     <View style={styles.safeArea}>
       {/* Subtle background decor */}
@@ -838,7 +863,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                       resizeMode="contain"
                     />
                       <Image
-                        source={require('../../../assets/Max_l1.png')}
+                        source={require('../../../assets/Device.png')}
                         style={styles.logoImage}
                         resizeMode="contain"
                       />
@@ -1034,25 +1059,25 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
               <View style={styles.settingsCard}>
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>ACCOUNT & DEVICES</Text></View>
-                <SettingsCategoryRow icon="account-circle" title="Account & Profile" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} iconBgColor="#007AFF" iconColor="#FFFFFF" />
-                <SettingsCategoryRow icon="air-filter" title="My Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} iconBgColor="#34C759" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="account-circle" title="Account & Profile" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} />
+                <SettingsCategoryRow icon="air-filter" title="My Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
                 
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>PREFERENCES & ALERTS</Text></View>
-                <SettingsCategoryRow icon="tune" title="App Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} iconBgColor="#8E8E93" iconColor="#FFFFFF" />
-                <SettingsCategoryRow icon="bell" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} iconBgColor="#FF3B30" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="tune" title="App Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
+                <SettingsCategoryRow icon="bell" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
 
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>ABOUT & SUPPORT</Text></View>
-                <SettingsCategoryRow icon="help-circle" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} iconBgColor="#FF9500" iconColor="#FFFFFF" />
-                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); }} iconBgColor="#5856D6" iconColor="#FFFFFF" />
-                <SettingsCategoryRow icon="leaf-circle" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} iconBgColor="#AF52DE" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="help-circle" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
+                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); }} />
+                <SettingsCategoryRow icon="leaf-circle" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
                 
-                <SettingsCategoryRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} iconBgColor="#FF3B30" iconColor="#FFFFFF" last />
+                <SettingsCategoryRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
               </View>
             </View>
           </Animated.View>
@@ -1089,28 +1114,52 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             <TouchableOpacity onPress={handleSettingsBack} style={styles.pageBackButton}>
               <MaterialCommunityIcons name="arrow-left" size={26} color={dashboardTheme.colors.textPrimary} />
             </TouchableOpacity>
-            <Text style={styles.pageTitle}>{
-               activeSheet === 'settings-main' ? 'Settings' :
-               activeSheet === 'account' ? 'Account' :
-               activeSheet === 'devices' ? 'Devices' :
-               activeSheet === 'notification-settings' ? 'Notifications' :
-               activeSheet === 'notification-inbox' ? 'Notifications' :
-               activeSheet === 'check-updates' ? 'Check for Updates' :
-               activeSheet === 'device-update' ? 'Device Update' :
-               activeSheet === 'preferences' ? 'Preferences' :
-               activeSheet === 'support' ? 'Support' :
-               activeSheet === 'add-device' ? 'Add Device' :
-               activeSheet === 'edit-device' ? 'Edit Device' :
-               activeSheet === 'about' ? 'About' : 'Settings'
-            }</Text>
-            <TouchableOpacity
-              style={styles.pageHeaderAction}
-              accessibilityLabel="Search settings"
-              accessibilityRole="button"
-              onPress={() => {}}
-            >
-              <MaterialCommunityIcons name="magnify" size={25} color={dashboardTheme.colors.textPrimary} />
-            </TouchableOpacity>
+            {activeSheet === 'settings-main' && isSettingsSearchVisible ? (
+              <TextInput
+                autoFocus
+                value={settingsSearchQuery}
+                onChangeText={setSettingsSearchQuery}
+                placeholder="Search settings"
+                placeholderTextColor={dashboardTheme.colors.textMuted}
+                style={styles.settingsSearchInput}
+                accessibilityLabel="Search settings"
+                returnKeyType="search"
+              />
+            ) : (
+              <Text style={styles.pageTitle}>{
+                activeSheet === 'settings-main' ? 'Settings' :
+                activeSheet === 'account' ? 'Account' :
+                activeSheet === 'devices' ? 'Devices' :
+                activeSheet === 'notification-settings' ? 'Notifications' :
+                activeSheet === 'notification-inbox' ? 'Notifications' :
+                activeSheet === 'check-updates' ? 'Check for Updates' :
+                activeSheet === 'device-update' ? 'Device Update' :
+                activeSheet === 'preferences' ? 'Preferences' :
+                activeSheet === 'support' ? 'Support' :
+                activeSheet === 'add-device' ? 'Add Device' :
+                activeSheet === 'edit-device' ? 'Edit Device' :
+                activeSheet === 'about' ? 'About' : 'Settings'
+              }</Text>
+            )}
+            {activeSheet === 'settings-main' && isSettingsSearchVisible ? (
+              <TouchableOpacity
+                style={styles.pageHeaderAction}
+                accessibilityLabel="Close settings search"
+                accessibilityRole="button"
+                onPress={() => { setIsSettingsSearchVisible(false); setSettingsSearchQuery(''); }}
+              >
+                <MaterialCommunityIcons name="close" size={25} color={dashboardTheme.colors.textPrimary} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={styles.pageHeaderAction}
+                accessibilityLabel="Search settings"
+                accessibilityRole="button"
+                onPress={() => { if (activeSheet === 'settings-main') setIsSettingsSearchVisible(true); }}
+              >
+                <MaterialCommunityIcons name="magnify" size={25} color={dashboardTheme.colors.textPrimary} />
+              </TouchableOpacity>
+            )}
           </View>}
 
           <ScrollView
@@ -1118,28 +1167,49 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             contentContainerStyle={[styles.pageContentScroll, activeSheet === 'notification-inbox' && styles.notificationPanelContent]}
             showsVerticalScrollIndicator={false}
           >
-            {activeSheet === 'settings-main' && <>
+            {activeSheet === 'settings-main' && normalizedSettingsSearchQuery ? (
+              filteredSettingsSearchResults.length > 0 ? (
+                <View style={styles.settingsCard}>
+                  {filteredSettingsSearchResults.map((item, index) => (
+                    <SettingsCategoryRow
+                      key={item.title}
+                      icon="magnify"
+                      title={item.title}
+                      subtitle={item.subtitle}
+                      onPress={item.onPress}
+                      last={index === filteredSettingsSearchResults.length - 1}
+                    />
+                  ))}
+                </View>
+              ) : (
+                <View style={styles.settingsSearchEmpty}>
+                  <MaterialCommunityIcons name="magnify-close" size={30} color={dashboardTheme.colors.textMuted} />
+                  <Text style={styles.settingsSearchEmptyTitle}>No settings found</Text>
+                  <Text style={styles.settingsSearchEmptyText}>Try a different search.</Text>
+                </View>
+              )
+            ) : activeSheet === 'settings-main' && <>
               <View style={styles.settingsCard}>
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>ACCOUNT & DEVICES</Text></View>
-                <SettingsCategoryRow icon="account-circle" title="Account & Profile" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} iconBgColor="#007AFF" iconColor="#FFFFFF" />
-                <SettingsCategoryRow icon="air-filter" title="My Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} iconBgColor="#34C759" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="account-circle" title="Account & Profile" subtitle="Profile and linked accounts" onPress={() => dispatch(setActiveSheet('account'))} />
+                <SettingsCategoryRow icon="air-filter" title="My Devices" subtitle="Manage your AirBuddi devices" onPress={() => dispatch(setActiveSheet('devices'))} />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
                 
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>PREFERENCES & ALERTS</Text></View>
-                <SettingsCategoryRow icon="tune" title="App Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} iconBgColor="#8E8E93" iconColor="#FFFFFF" />
-                <SettingsCategoryRow icon="bell" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} iconBgColor="#FF3B30" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="tune" title="App Preferences" subtitle="Appearance, units, and privacy" onPress={() => dispatch(setActiveSheet('preferences'))} />
+                <SettingsCategoryRow icon="bell" title="Notifications" subtitle="Alerts and notification preferences" onPress={() => dispatch(setActiveSheet('notification-settings'))} />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
 
                 <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 4 }}><Text style={{ color: dashboardTheme.colors.primaryDark, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 }}>ABOUT & SUPPORT</Text></View>
-                <SettingsCategoryRow icon="help-circle" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} iconBgColor="#FF9500" iconColor="#FFFFFF" />
-                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); }} iconBgColor="#5856D6" iconColor="#FFFFFF" />
-                <SettingsCategoryRow icon="leaf-circle" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} iconBgColor="#AF52DE" iconColor="#FFFFFF" />
+                <SettingsCategoryRow icon="help-circle" title="Support" subtitle="Help, contact, and app information" onPress={() => dispatch(setActiveSheet('support'))} />
+                <SettingsCategoryRow icon="update" title="Check for Updates" subtitle="App and device software updates" onPress={() => { setUpdateDeviceId(selectedDeviceId); dispatch(setActiveSheet('check-updates')); }} />
+                <SettingsCategoryRow icon="leaf-circle" title="Explore Products" subtitle="Explore other products" onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('explore'); }} />
                 
                 <View style={{ height: 6, backgroundColor: '#F4F7F5', borderTopWidth: 1, borderBottomWidth: 1, borderColor: dashboardTheme.colors.border }} />
                 
-                <SettingsCategoryRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} iconBgColor="#FF3B30" iconColor="#FFFFFF" last />
+                <SettingsCategoryRow icon="logout" title="Sign Out" subtitle="Sign out of your account" onPress={handleSignOut} last />
               </View>
             </>}
 
@@ -1149,8 +1219,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionSubtitle}>Manage your personal details and sign-in connections.</Text>
               </View>
               <View style={styles.settingsCard}>
-                <SettingsRow icon="account-circle-outline" title="Profile" subtitle={profileName || 'Add your name'} onPress={() => dispatch(setActiveSheet('profile'))} />
-                <SettingsRow icon="link-variant" title="Linked Accounts" subtitle="Google, Apple" onPress={() => dispatch(setActiveSheet('linked-accounts'))} last />
+                <SettingsRow icon="account-circle" title="Profile" subtitle={profileName || 'Add your name'} onPress={() => dispatch(setActiveSheet('profile'))} />
+                <SettingsRow icon="link" title="Linked Accounts" subtitle="Google, Apple" onPress={() => dispatch(setActiveSheet('linked-accounts'))} last />
               </View>
             </>}
 
@@ -1161,7 +1231,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               </View>
               <View style={styles.settingsCard}>
                 <SettingsRow icon="air-filter" title="My Devices" subtitle={devices.length > 0 ? `${devices.length} device${devices.length === 1 ? '' : 's'} added` : 'No device connected'} onPress={() => { dispatch(setActiveSheet(null)); setActiveTab('home'); }} />
-                <SettingsRow icon="plus-circle-outline" title="Add New Device" subtitle="Pair a new AirBuddi" onPress={() => dispatch(setActiveSheet('add-device'))} last />
+                <SettingsRow icon="plus-circle" title="Add New Device" subtitle="Pair a new AirBuddi" onPress={() => dispatch(setActiveSheet('add-device'))} last />
               </View>
             </>}
 
@@ -1171,8 +1241,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionSubtitle}>Manage alerts and notification preferences.</Text>
               </View>
               <View style={styles.settingsCard}>
-                <SettingsRow icon="bell-outline" title="Notification Preferences" subtitle="Choose which alerts you receive" onPress={() => dispatch(setActiveSheet('notifications'))} />
-                <SettingsRow icon="alert-circle-outline" title="Alert Thresholds" subtitle="Set AQI warning levels" onPress={() => dispatch(setActiveSheet('alert-thresholds'))} last />
+                <SettingsRow icon="bell" title="Notification Preferences" subtitle="Choose which alerts you receive" onPress={() => dispatch(setActiveSheet('notifications'))} />
+                <SettingsRow icon="alert-circle" title="Alert Thresholds" subtitle="Set AQI warning levels" onPress={() => dispatch(setActiveSheet('alert-thresholds'))} last />
               </View>
             </>}
 
@@ -1249,9 +1319,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionSubtitle}>Personalize your AirBuddi experience.</Text>
               </View>
               <View style={styles.settingsCard}>
-                <SettingsRow icon="palette-outline" title="Appearance" subtitle={`Theme: ${themePreference.charAt(0).toUpperCase() + themePreference.slice(1)}`} onPress={() => dispatch(setActiveSheet('appearance'))} />
-                <SettingsRow icon="earth" title="Units & Region" subtitle={`${tempUnit === 'celsius' ? '°C' : '°F'} · ${aqiStandard === 'us' ? 'US EPA' : 'India NAQI'}`} onPress={() => dispatch(setActiveSheet('units'))} />
-                <SettingsRow icon="shield-lock-outline" title="Data & Privacy" subtitle="Manage your data" onPress={() => dispatch(setActiveSheet('data-privacy'))} last />
+                <SettingsRow icon="palette" title="Appearance" subtitle={`Theme: ${themePreference.charAt(0).toUpperCase() + themePreference.slice(1)}`} onPress={() => dispatch(setActiveSheet('appearance'))} />
+                <SettingsRow icon="earth" title="Units & Region" subtitle={`${tempUnit === 'celsius' ? '°C' : '°F'} · ${aqiStandard === 'us' ? 'US EPA' : 'India NAQI'}`} onPress={() => dispatch(setActiveSheet('units'))} last />
               </View>
             </>}
 
@@ -1261,9 +1330,10 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionSubtitle}>Find answers or get in touch with the AirBuddi team.</Text>
               </View>
               <View style={styles.settingsCard}>
-                <SettingsRow icon="help-circle-outline" title="Help & Troubleshooting" subtitle="FAQs and setup guides" onPress={() => dispatch(setActiveSheet('help'))} />
+                <SettingsRow icon="help-circle" title="Help & Troubleshooting" subtitle="FAQs and setup guides" onPress={() => dispatch(setActiveSheet('help'))} />
                 <SettingsRow icon="headphones" title="Contact Support" subtitle="Email, phone, or chat" onPress={() => dispatch(setActiveSheet('contact-support'))} />
-                <SettingsRow icon="information-outline" title="About AirBuddi" subtitle="App version and legal" onPress={() => dispatch(setActiveSheet('about'))} last />
+                <SettingsRow icon="shield-lock" title="Data & Privacy" subtitle="Manage your data" onPress={() => dispatch(setActiveSheet('data-privacy'))} />
+                <SettingsRow icon="information" title="About AirBuddi" subtitle="App version and legal" onPress={() => dispatch(setActiveSheet('about'))} last />
               </View>
             </>}
 
@@ -3087,12 +3157,16 @@ settingsSubtitle: {
   pageHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16, backgroundColor: dashboardTheme.colors.surface, borderBottomWidth: 1, borderBottomColor: dashboardTheme.colors.border },
   pageBackButton: { padding: 8, marginLeft: -8 },
   pageTitle: { fontSize: 20, fontWeight: '800', color: dashboardTheme.colors.textPrimary },
+  settingsSearchInput: { flex: 1, height: 42, marginHorizontal: 8, paddingHorizontal: 12, borderRadius: 12, backgroundColor: dashboardTheme.colors.surfaceTint, color: dashboardTheme.colors.textPrimary, fontSize: 16 },
   pageHeaderPlaceholder: { width: 42 },
   pageContent: { flex: 1 },
   pageContentScroll: { padding: 20 },
   pageIntroSection: { marginBottom: 24 },
   pageSectionTitle: { fontSize: 24, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.5 },
   pageSectionSubtitle: { fontSize: 14, color: dashboardTheme.colors.textSecondary, marginTop: 4, fontWeight: '500' },
+  settingsSearchEmpty: { alignItems: 'center', paddingVertical: 52, paddingHorizontal: 24 },
+  settingsSearchEmptyTitle: { marginTop: 12, color: dashboardTheme.colors.textPrimary, fontSize: 16, fontWeight: '800' },
+  settingsSearchEmptyText: { marginTop: 5, color: dashboardTheme.colors.textMuted, fontSize: 13 },
   readOnlyTextInput: { color: dashboardTheme.colors.textMuted, backgroundColor: '#F1F5F9' },
   updateDeviceList: { gap: 10, marginTop: 4 },
   updateDeviceOption: {
