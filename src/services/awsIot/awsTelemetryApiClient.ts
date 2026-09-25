@@ -268,6 +268,41 @@ export async function postEspCommands(deviceId: string, commands: string[]) {
   }
 }
 
+export type AvailableFirmwareDevice = {
+  mac: string;
+  model: string;
+  versions: string[];
+};
+
+export async function fetchAvailableFirmware(): Promise<AvailableFirmwareDevice[]> {
+  const response = await fetch(endpoint('/firmware/available'), {
+    headers: { Accept: 'application/json' },
+  });
+  const body = await responseBody(response) as { devices?: unknown };
+
+  if (!Array.isArray(body.devices)) {
+    return [];
+  }
+
+  return body.devices.flatMap(entry => {
+    if (!isRecord(entry)) {
+      return [];
+    }
+
+    const rawMac = asString(entry.mac).replace(/-/g, ':').toUpperCase();
+    const compactMac = rawMac.replace(/[^0-9A-F]/g, '');
+    const mac = compactMac.length === 12
+      ? compactMac.match(/../g)?.join(':') ?? rawMac
+      : rawMac;
+    const model = asString(entry.model);
+    const versions = Array.isArray(entry.versions)
+      ? entry.versions.filter((version): version is string => typeof version === 'string' && version.trim().length > 0)
+      : [];
+
+    return mac && model ? [{ mac, model, versions }] : [];
+  });
+}
+
 export type FirmwareUpdatePayload = {
   command: 'firmware_update';
   model: string;

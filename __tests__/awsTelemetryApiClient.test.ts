@@ -1,4 +1,25 @@
-import { fetchLatestTelemetry, postEspCommand, postEspCommands, toDashboardTelemetryMessage } from '../src/services/awsIot/awsTelemetryApiClient';
+import { fetchAvailableFirmware, fetchLatestTelemetry, postEspCommand, postEspCommands, toDashboardTelemetryMessage } from '../src/services/awsIot/awsTelemetryApiClient';
+
+describe('fetchAvailableFirmware', () => {
+  it('loads firmware versions and normalizes compact MAC addresses', async () => {
+    (globalThis as any).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({
+        devices: [
+          { mac: 'D4E9F4BCEE24', model: 'AIRBUDDI_MAX', versions: ['1.0.1'] },
+        ],
+      }),
+    });
+
+    await expect(fetchAvailableFirmware()).resolves.toEqual([
+      { mac: 'D4:E9:F4:BC:EE:24', model: 'AIRBUDDI_MAX', versions: ['1.0.1'] },
+    ]);
+    expect((globalThis as any).fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/firmware\/available$/),
+      expect.objectContaining({ headers: { Accept: 'application\/json' } }),
+    );
+  });
+});
 
 describe('postEspCommand', () => {
   beforeEach(() => {

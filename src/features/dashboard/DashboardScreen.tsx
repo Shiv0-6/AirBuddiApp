@@ -39,7 +39,7 @@ import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectDashboard } from './dashboardSelectors';
 import type { DashboardRuntimeState } from './dashboardSlice';
 import { useDashboardRealtimeBridge } from './useDashboardRealtimeBridge';
-import { fetchLatestTelemetry, postFirmwareUpdate } from '../../services/awsIot/awsTelemetryApiClient';
+import { fetchAvailableFirmware, fetchLatestTelemetry, postFirmwareUpdate, type AvailableFirmwareDevice } from '../../services/awsIot/awsTelemetryApiClient';
 
 import ExploreProductsScreen from './ExploreProductScreen';
 import { resetSettings, setNotifications, setPreferences, setProfile, setActiveSheet } from '../settings/settingsSlice';
@@ -129,6 +129,10 @@ function extractDeviceMacFromQrData(rawValue: string): string | null {
   return parameterMatch ? findMacAddress(decodeURIComponent(parameterMatch[1])) : null;
 }
 
+function firmwareMacKey(value: string): string {
+  return value.replace(/[^0-9A-F]/gi, '').toUpperCase();
+}
+
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
@@ -176,6 +180,10 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const [editDeviceError, setEditDeviceError] = useState('');
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
   const [updateDeviceId, setUpdateDeviceId] = useState<string | null>(null);
+  const [availableFirmware, setAvailableFirmware] = useState<AvailableFirmwareDevice[]>([]);
+  const [selectedFirmwareVersion, setSelectedFirmwareVersion] = useState<string | null>(null);
+  const [isLoadingFirmware, setIsLoadingFirmware] = useState(false);
+  const [firmwareAvailabilityError, setFirmwareAvailabilityError] = useState('');
   const [isUpdatingDevice, setIsUpdatingDevice] = useState(false);
   const [firmwareUpdateStage, setFirmwareUpdateStage] = useState<FirmwareUpdateStage>('idle');
   const [firmwareUpdateProgress, setFirmwareUpdateProgress] = useState(0);
@@ -354,6 +362,42 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     AsyncStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences))
       .catch(e => console.error('[AirBuddi] Failed to save preferences:', e));
   }, [preferences]);
+
+  useEffect(() => {
+    if (activeSheet !== 'device-update') {
+      return;
+    }
+
+    let active = true;
+    setIsLoadingFirmware(true);
+    setFirmwareAvailabilityError('');
+    setSelectedFirmwareVersion(null);
+
+    fetchAvailableFirmware()
+      .then(entries => {
+        if (!active) {
+          return;
+        }
+        setAvailableFirmware(entries);
+        const target = entries.find(entry => firmwareMacKey(entry.mac) === firmwareMacKey(updateDeviceId ?? ''));
+        setSelectedFirmwareVersion(target?.versions[0] ?? null);
+      })
+      .catch(error => {
+        if (active) {
+          setAvailableFirmware([]);
+          setFirmwareAvailabilityError(error instanceof Error ? error.message : 'Unable to load available firmware.');
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoadingFirmware(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [activeSheet, updateDeviceId]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
 
@@ -579,6 +623,9 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   }, [applyScannedQrValue]);
 
   const selectedDevice = devices.find(item => item.id === selectedDeviceId) ?? null;
+  const updateTarget = devices.find(item => item.id === updateDeviceId) ?? null;
+  const availableFirmwareForTarget = availableFirmware.find(entry => firmwareMacKey(entry.mac) === firmwareMacKey(updateDeviceId ?? ''));
+  const availableFirmwareVersions = availableFirmwareForTarget?.versions ?? [];
   const deviceTitle = selectedDevice?.room ?? 'Add a device';
   const displayDeviceName = selectedDevice?.name ?? 'No device connected';
   const isMiniDevice = displayDeviceName.trim().toLowerCase() === 'airbuddi mini';
@@ -678,17 +725,17 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     dispatch(setActiveSheet(null));
   }, [editingDeviceId]);
 
-  const confirmFirmwareUpdate = useCallback((target: HomeDevice) => {
+  const confirmFirmwareUpdate = useCallback((target: HomeDevice, version: string, availableModel?: string) => {
     if (isUpdatingDevice) {
       return;
     }
 
     const normalizedName = target.name.trim().toLowerCase();
-    const model = normalizedName === 'airbuddi max'
+    const model = availableModel || (normalizedName === 'airbuddi max'
       ? 'AIRBUDDI_MAX'
       : normalizedName === 'airbuddi mini'
         ? 'AIRBUDDI_MINI'
-        : null;
+        : null);
 
     if (!model) {
       Alert.alert('Unsupported device', 'Firmware updates are available for AirBuddi Max and AirBuddi Mini only.');
@@ -698,7 +745,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     const payload = {
       command: 'firmware_update' as const,
       model,
-      version: '1.0.1',
+      version,
     };
 
     Alert.alert(
@@ -1326,6 +1373,31 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionTitle}>Select a device</Text>
                 <Text style={styles.pageSectionSubtitle}>Choose which AirBuddi device you want to update.</Text>
               </View>
+              <Text style={styles.inputLabel}>AVAILABLE FIRMWARE</Text>
+              {isLoadingFirmware ? (
+                <View style={styles.firmwareAvailabilityMessage}>
+                  <MaterialCommunityIcons name="loading" size={18} color={dashboardTheme.colors.primaryDark} />
+                  <Text style={styles.firmwareAvailabilityText}>Loading available firmware…</Text>
+                </View>
+              ) : firmwareAvailabilityError ? (
+                <Text style={styles.firmwareAvailabilityError}>{firmwareAvailabilityError}</Text>
+              ) : availableFirmwareVersions.length > 0 ? (
+                <View style={styles.firmwareVersionList}>
+                  {availableFirmwareVersions.map(version => (
+                    <TouchableOpacity
+                      key={version}
+                      activeOpacity={0.75}
+                      onPress={() => setSelectedFirmwareVersion(version)}
+                      style={[styles.firmwareVersionOption, selectedFirmwareVersion === version && styles.firmwareVersionOptionActive]}
+                    >
+                      <Text style={[styles.firmwareVersionText, selectedFirmwareVersion === version && styles.firmwareVersionTextActive]}>Version {version}</Text>
+                      <MaterialCommunityIcons name={selectedFirmwareVersion === version ? 'check-circle' : 'circle-outline'} size={20} color={selectedFirmwareVersion === version ? dashboardTheme.colors.primary : dashboardTheme.colors.textMuted} />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : (
+                <Text style={styles.firmwareAvailabilityText}>{updateTarget ? 'No firmware is available for this device.' : 'Select a device to see available firmware.'}</Text>
+              )}
               {firmwareUpdateStage !== 'idle' && (
                 <View style={styles.firmwareProgressCard}>
                   <View style={styles.firmwareProgressHeader}>
@@ -1383,12 +1455,12 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.emptyUpdateText}>No devices available.</Text>
               )}
               <TouchableOpacity
-                style={[styles.primarySheetButtonRefined, (isUpdatingDevice || !updateDeviceId || devices.length === 0) && styles.primarySheetButtonDisabled]}
-                disabled={isUpdatingDevice || !updateDeviceId || devices.length === 0}
+                style={[styles.primarySheetButtonRefined, (isUpdatingDevice || isLoadingFirmware || !updateDeviceId || !selectedFirmwareVersion || devices.length === 0) && styles.primarySheetButtonDisabled]}
+                disabled={isUpdatingDevice || isLoadingFirmware || !updateDeviceId || !selectedFirmwareVersion || devices.length === 0}
                 onPress={() => {
                   const target = devices.find(item => item.id === updateDeviceId);
-                  if (target) {
-                    confirmFirmwareUpdate(target);
+                  if (target && selectedFirmwareVersion) {
+                    confirmFirmwareUpdate(target, selectedFirmwareVersion, availableFirmwareForTarget?.model);
                   }
                 }}
               >
@@ -3314,6 +3386,24 @@ settingsSubtitle: {
   firmwareProgressTrack: { height: 8, marginTop: 14, overflow: 'hidden', borderRadius: 4, backgroundColor: dashboardTheme.colors.border },
   firmwareProgressFill: { height: '100%', borderRadius: 4, backgroundColor: dashboardTheme.colors.primary },
   firmwareProgressMessage: { marginTop: 10, color: dashboardTheme.colors.textSecondary, fontSize: 12, lineHeight: 18 },
+  firmwareAvailabilityMessage: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 },
+  firmwareAvailabilityText: { color: dashboardTheme.colors.textMuted, fontSize: 13, lineHeight: 19 },
+  firmwareAvailabilityError: { color: '#B91C1C', fontSize: 13, lineHeight: 19, marginTop: 4 },
+  firmwareVersionList: { gap: 8, marginTop: 4 },
+  firmwareVersionOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    backgroundColor: dashboardTheme.colors.surface,
+  },
+  firmwareVersionOptionActive: { borderColor: dashboardTheme.colors.primary, backgroundColor: dashboardTheme.colors.primarySoft },
+  firmwareVersionText: { color: dashboardTheme.colors.textSecondary, fontSize: 14, fontWeight: '700' },
+  firmwareVersionTextActive: { color: dashboardTheme.colors.primaryDark },
   profileIdentityFull: { alignItems: 'center', marginBottom: 32 },
   premiumAvatarContainerLarge: { position: 'relative', width: 100, height: 100, alignItems: 'center', justifyContent: 'center' },
   avatarGlowLarge: { position: 'absolute', width: 116, height: 116, borderRadius: 58, backgroundColor: dashboardTheme.colors.primarySoft, opacity: 0.25 },
