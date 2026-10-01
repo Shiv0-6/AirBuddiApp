@@ -637,6 +637,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   }, [applyScannedQrValue]);
 
   const selectedDevice = devices.find(item => item.id === selectedDeviceId) ?? null;
+  const offlineDevices = devices.filter(item => item.status === 'Offline');
   const updateTarget = devices.find(item => item.id === updateDeviceId) ?? null;
   const availableFirmwareForTarget = availableFirmware.find(entry => firmwareMacKey(entry.mac) === firmwareMacKey(updateDeviceId ?? ''));
   const availableFirmwareVersions = availableFirmwareForTarget?.versions ?? [];
@@ -1663,23 +1664,36 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   <Text style={styles.notificationPanelSubtitle}>Your latest updates and alerts</Text>
                 </View>
                 <View style={styles.notificationCountBadge}>
-                  <Text style={styles.notificationCountText}>{selectedDevice?.status === 'Offline' ? '1' : '0'}</Text>
+                  <Text style={styles.notificationCountText}>{notifDeviceOffline ? offlineDevices.length : 0}</Text>
                 </View>
               </View>
               <View style={styles.notificationList}>
-                {selectedDevice?.status === 'Offline' ? (
-                  <View style={styles.notificationItem}>
-                    <View style={[styles.notificationItemIcon, styles.notificationItemIconWarning]}>
-                      <MaterialCommunityIcons name="wifi-off" size={18} color="#B45309" />
-                    </View>
-                    <View style={styles.notificationItemCopy}>
-                      <View style={styles.notificationItemTitleRow}>
-                        <Text style={styles.notificationItemTitle}>Device offline</Text>
-                        <Text style={styles.notificationItemTime}>Now</Text>
+                {notifDeviceOffline && offlineDevices.length > 0 ? (
+                  offlineDevices.map(item => (
+                    <View key={item.id} style={styles.notificationItem}>
+                      <View style={[styles.notificationItemIcon, styles.notificationItemIconWarning]}>
+                        <MaterialCommunityIcons name="wifi-off" size={18} color="#B45309" />
                       </View>
-                      <Text style={styles.notificationItemText}>{selectedDevice.name} is currently offline.</Text>
+                      <View style={styles.notificationItemCopy}>
+                        <View style={styles.notificationItemTitleRow}>
+                          <Text style={styles.notificationItemTitle}>Device offline</Text>
+                          <Text style={styles.notificationItemTime}>Now</Text>
+                        </View>
+                        <Text style={styles.notificationItemText}>{item.name} is currently offline.</Text>
+                        <Text style={styles.notificationRecoveryText}>Check that it is powered on and connected to Wi-Fi.</Text>
+                        <TouchableOpacity
+                          accessibilityLabel={`Open Wi-Fi settings for ${item.name}`}
+                          accessibilityRole="button"
+                          style={styles.notificationWifiButton}
+                          activeOpacity={0.8}
+                          onPress={openWifiSettings}
+                        >
+                          <MaterialCommunityIcons name="wifi-cog-outline" size={15} color={dashboardTheme.colors.primaryDark} />
+                          <Text style={styles.notificationWifiButtonText}>Open Wi-Fi settings</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
-                  </View>
+                  ))
                 ) : (
                   <View style={styles.notificationItem}>
                     <View style={[styles.notificationItemIcon, styles.notificationItemIconSuccess]}>
@@ -3382,6 +3396,30 @@ settingsSubtitle: {
     fontSize: 12,
     lineHeight: 18,
     marginTop: 4,
+  },
+  notificationRecoveryText: {
+    color: dashboardTheme.colors.textMuted,
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: 5,
+  },
+  notificationWifiButton: {
+    alignSelf: 'flex-start',
+    minHeight: 32,
+    marginTop: 8,
+    paddingHorizontal: 9,
+    borderRadius: 9,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    borderWidth: 1,
+    borderColor: '#CFE7D2',
+  },
+  notificationWifiButtonText: {
+    color: dashboardTheme.colors.primaryDark,
+    fontSize: 11,
+    fontWeight: '800',
   },
   notificationPanelFooter: {
     paddingTop: 10,
