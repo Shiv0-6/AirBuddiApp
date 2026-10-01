@@ -1513,46 +1513,6 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionSubtitle}>Choose how you want to pair your AirBuddi device.</Text>
               </View>
 
-              <View style={styles.connectionInstructions}>
-                <View style={styles.connectionInstructionsHeader}>
-                  <View style={styles.connectionInstructionsIcon}>
-                    <MaterialCommunityIcons name="wifi-cog-outline" size={20} color={dashboardTheme.colors.primaryDark} />
-                  </View>
-                  <View style={styles.connectionInstructionsHeaderCopy}>
-                    <Text style={styles.connectionInstructionsTitle}>Connect AirBuddi to Wi-Fi</Text>
-                    <Text style={styles.connectionInstructionsSubtitle}>Complete these steps before adding the device.</Text>
-                  </View>
-                </View>
-
-                <View style={styles.connectionInstructionRow}>
-                  <View style={styles.connectionInstructionNumber}><Text style={styles.connectionInstructionNumberText}>1</Text></View>
-                  <Text style={styles.connectionInstructionText}>Turn on your AirBuddi and open your phone's Wi-Fi settings.</Text>
-                </View>
-                <View style={styles.connectionInstructionRow}>
-                  <View style={styles.connectionInstructionNumber}><Text style={styles.connectionInstructionNumberText}>2</Text></View>
-                  <Text style={styles.connectionInstructionText}>Select the temporary <Text style={styles.connectionInstructionStrong}>AirBuddi</Text> Wi-Fi network.</Text>
-                </View>
-                <View style={styles.connectionInstructionRow}>
-                  <View style={styles.connectionInstructionNumber}><Text style={styles.connectionInstructionNumberText}>3</Text></View>
-                  <Text style={styles.connectionInstructionText}>In the setup screen, choose and configure your home Wi-Fi or mobile hotspot.</Text>
-                </View>
-                <View style={[styles.connectionInstructionRow, styles.connectionInstructionRowLast]}>
-                  <View style={styles.connectionInstructionNumber}><Text style={styles.connectionInstructionNumberText}>4</Text></View>
-                  <Text style={styles.connectionInstructionText}>When setup succeeds, the <Text style={styles.connectionInstructionStrong}>AirBuddi</Text> network disappears. Return here and add the device; it will show <Text style={styles.connectionInstructionStrong}>Online</Text>.</Text>
-                </View>
-
-                <TouchableOpacity
-                  accessibilityLabel="Open Wi-Fi settings"
-                  accessibilityRole="button"
-                  style={styles.openWifiButton}
-                  activeOpacity={0.8}
-                  onPress={openWifiSettings}
-                >
-                  <MaterialCommunityIcons name="wifi" size={18} color="#FFFFFF" />
-                  <Text style={styles.openWifiButtonText}>Open Wi-Fi settings</Text>
-                </TouchableOpacity>
-              </View>
-
               {/* Mode Switcher Tabs */}
               <View style={styles.modeToggleContainer}>
                 <TouchableOpacity
@@ -1859,20 +1819,57 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionTitle}>Help Center</Text>
                 <Text style={styles.pageSectionSubtitle}>Find answers to common questions.</Text>
               </View>
-              <TouchableOpacity
-                accessibilityLabel="Open Wi-Fi settings"
-                accessibilityRole="button"
-                style={styles.helpWifiButton}
-                activeOpacity={0.8}
-                onPress={openWifiSettings}
-              >
-                <MaterialCommunityIcons name="wifi-cog-outline" size={20} color={dashboardTheme.colors.primaryDark} />
-                <View style={styles.helpWifiButtonCopy}>
-                  <Text style={styles.helpWifiButtonTitle}>Open Wi-Fi settings</Text>
-                  <Text style={styles.helpWifiButtonSubtitle}>See available networks and select AirBuddi.</Text>
+              <View style={styles.connectionInstructions}>
+                <View style={styles.connectionInstructionsHeader}>
+                  <View style={styles.connectionInstructionsIcon}>
+                    <MaterialCommunityIcons name="wifi-cog-outline" size={20} color={dashboardTheme.colors.primaryDark} />
+                  </View>
+                  <View style={styles.connectionInstructionsHeaderCopy}>
+                    <Text style={styles.connectionInstructionsTitle}>How to connect AirBuddi to Wi-Fi</Text>
+                    <Text style={styles.connectionInstructionsSubtitle}>Follow these steps before adding your device.</Text>
+                  </View>
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
-              </TouchableOpacity>
+
+                <View style={styles.connectionInstructionRow}>
+                  <View style={styles.connectionInstructionNumber}><Text style={styles.connectionInstructionNumberText}>1</Text></View>
+                  <View style={styles.connectionInstructionCopy}>
+                    <Text style={styles.connectionInstructionTitle}>Turn on AirBuddi</Text>
+                    <Text style={styles.connectionInstructionText}>Power on the device and keep it close to your phone.</Text>
+                  </View>
+                </View>
+                <View style={styles.connectionInstructionRow}>
+                  <View style={styles.connectionInstructionNumber}><Text style={styles.connectionInstructionNumberText}>2</Text></View>
+                  <View style={styles.connectionInstructionCopy}>
+                    <Text style={styles.connectionInstructionTitle}>Join the AirBuddi network</Text>
+                    <Text style={styles.connectionInstructionText}>Open your phone's Wi-Fi settings and select the temporary <Text style={styles.connectionInstructionStrong}>AirBuddi</Text> network.</Text>
+                  </View>
+                </View>
+                <View style={styles.connectionInstructionRow}>
+                  <View style={styles.connectionInstructionNumber}><Text style={styles.connectionInstructionNumberText}>3</Text></View>
+                  <View style={styles.connectionInstructionCopy}>
+                    <Text style={styles.connectionInstructionTitle}>Choose your home Wi-Fi</Text>
+                    <Text style={styles.connectionInstructionText}>In the setup screen, select and configure your home Wi-Fi or mobile hotspot.</Text>
+                  </View>
+                </View>
+                <View style={[styles.connectionInstructionRow, styles.connectionInstructionRowLast]}>
+                  <View style={styles.connectionInstructionNumber}><Text style={styles.connectionInstructionNumberText}>4</Text></View>
+                  <View style={styles.connectionInstructionCopy}>
+                    <Text style={styles.connectionInstructionTitle}>Return to AirBuddi</Text>
+                    <Text style={styles.connectionInstructionText}>When setup succeeds, the <Text style={styles.connectionInstructionStrong}>AirBuddi</Text> network disappears. Return to the app, add the device, and wait for it to show <Text style={styles.connectionInstructionStrong}>Online</Text>.</Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  accessibilityLabel="Open Wi-Fi settings"
+                  accessibilityRole="button"
+                  style={styles.openWifiButton}
+                  activeOpacity={0.8}
+                  onPress={openWifiSettings}
+                >
+                  <MaterialCommunityIcons name="wifi" size={18} color="#FFFFFF" />
+                  <Text style={styles.openWifiButtonText}>Open Wi-Fi settings</Text>
+                </TouchableOpacity>
+              </View>
               {[
                 { q: 'How do I connect AirBuddi to Wi-Fi?', a: 'Turn on AirBuddi, select the temporary AirBuddi Wi-Fi network on your phone, and configure it to your home Wi-Fi or mobile hotspot. The AirBuddi network will disappear after setup. Return to the app, add the device, and wait for it to show Online.' },
                 { q: 'How do I add a device?', a: 'After AirBuddi is connected to Wi-Fi, go to the Home tab and tap "Add a device." Scan the QR code or enter the MAC address found on the device label.' },
@@ -3426,6 +3423,8 @@ settingsSubtitle: {
   connectionInstructionsSubtitle: { marginTop: 3, color: dashboardTheme.colors.textSecondary, fontSize: 12, lineHeight: 17 },
   connectionInstructionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 12 },
   connectionInstructionRowLast: { marginBottom: 0 },
+  connectionInstructionCopy: { flex: 1, minWidth: 0 },
+  connectionInstructionTitle: { color: dashboardTheme.colors.textPrimary, fontSize: 13, fontWeight: '800', lineHeight: 18 },
   connectionInstructionNumber: {
     width: 22,
     height: 22,
