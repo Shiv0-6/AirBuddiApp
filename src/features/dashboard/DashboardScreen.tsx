@@ -229,6 +229,20 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     setRefreshing(false);
   }, [refreshData]);
 
+  const openWifiSettings = useCallback(async () => {
+    try {
+      if (Platform.OS === 'android') {
+        await Linking.sendIntent('android.settings.WIFI_SETTINGS');
+        return;
+      }
+
+      await Linking.openURL('App-Prefs:root=WIFI');
+    } catch (error) {
+      console.warn('[AirBuddi] Could not open Wi-Fi settings:', error);
+      await Linking.openSettings();
+    }
+  }, []);
+
   // Tab transition animation
   const contentOpacity = useSharedValue(1);
   const contentTranslateY = useSharedValue(0);
@@ -1499,6 +1513,46 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionSubtitle}>Choose how you want to pair your AirBuddi device.</Text>
               </View>
 
+              <View style={styles.connectionInstructions}>
+                <View style={styles.connectionInstructionsHeader}>
+                  <View style={styles.connectionInstructionsIcon}>
+                    <MaterialCommunityIcons name="wifi-cog-outline" size={20} color={dashboardTheme.colors.primaryDark} />
+                  </View>
+                  <View style={styles.connectionInstructionsHeaderCopy}>
+                    <Text style={styles.connectionInstructionsTitle}>Connect AirBuddi to Wi-Fi</Text>
+                    <Text style={styles.connectionInstructionsSubtitle}>Complete these steps before adding the device.</Text>
+                  </View>
+                </View>
+
+                <View style={styles.connectionInstructionRow}>
+                  <View style={styles.connectionInstructionNumber}><Text style={styles.connectionInstructionNumberText}>1</Text></View>
+                  <Text style={styles.connectionInstructionText}>Turn on your AirBuddi and open your phone's Wi-Fi settings.</Text>
+                </View>
+                <View style={styles.connectionInstructionRow}>
+                  <View style={styles.connectionInstructionNumber}><Text style={styles.connectionInstructionNumberText}>2</Text></View>
+                  <Text style={styles.connectionInstructionText}>Select the temporary <Text style={styles.connectionInstructionStrong}>AirBuddi</Text> Wi-Fi network.</Text>
+                </View>
+                <View style={styles.connectionInstructionRow}>
+                  <View style={styles.connectionInstructionNumber}><Text style={styles.connectionInstructionNumberText}>3</Text></View>
+                  <Text style={styles.connectionInstructionText}>In the setup screen, choose and configure your home Wi-Fi or mobile hotspot.</Text>
+                </View>
+                <View style={[styles.connectionInstructionRow, styles.connectionInstructionRowLast]}>
+                  <View style={styles.connectionInstructionNumber}><Text style={styles.connectionInstructionNumberText}>4</Text></View>
+                  <Text style={styles.connectionInstructionText}>When setup succeeds, the <Text style={styles.connectionInstructionStrong}>AirBuddi</Text> network disappears. Return here and add the device; it will show <Text style={styles.connectionInstructionStrong}>Online</Text>.</Text>
+                </View>
+
+                <TouchableOpacity
+                  accessibilityLabel="Open Wi-Fi settings"
+                  accessibilityRole="button"
+                  style={styles.openWifiButton}
+                  activeOpacity={0.8}
+                  onPress={openWifiSettings}
+                >
+                  <MaterialCommunityIcons name="wifi" size={18} color="#FFFFFF" />
+                  <Text style={styles.openWifiButtonText}>Open Wi-Fi settings</Text>
+                </TouchableOpacity>
+              </View>
+
               {/* Mode Switcher Tabs */}
               <View style={styles.modeToggleContainer}>
                 <TouchableOpacity
@@ -1805,9 +1859,24 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionTitle}>Help Center</Text>
                 <Text style={styles.pageSectionSubtitle}>Find answers to common questions.</Text>
               </View>
+              <TouchableOpacity
+                accessibilityLabel="Open Wi-Fi settings"
+                accessibilityRole="button"
+                style={styles.helpWifiButton}
+                activeOpacity={0.8}
+                onPress={openWifiSettings}
+              >
+                <MaterialCommunityIcons name="wifi-cog-outline" size={20} color={dashboardTheme.colors.primaryDark} />
+                <View style={styles.helpWifiButtonCopy}>
+                  <Text style={styles.helpWifiButtonTitle}>Open Wi-Fi settings</Text>
+                  <Text style={styles.helpWifiButtonSubtitle}>See available networks and select AirBuddi.</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
+              </TouchableOpacity>
               {[
-                { q: 'How do I add a device?', a: 'Go to the Home tab and tap "Add a device." Enter your AirBuddi\'s MAC address found on the device label.' },
-                { q: 'My device shows as offline', a: 'Make sure your AirBuddi is powered on and connected to Wi-Fi. Try pulling down to refresh the device list.' },
+                { q: 'How do I connect AirBuddi to Wi-Fi?', a: 'Turn on AirBuddi, select the temporary AirBuddi Wi-Fi network on your phone, and configure it to your home Wi-Fi or mobile hotspot. The AirBuddi network will disappear after setup. Return to the app, add the device, and wait for it to show Online.' },
+                { q: 'How do I add a device?', a: 'After AirBuddi is connected to Wi-Fi, go to the Home tab and tap "Add a device." Scan the QR code or enter the MAC address found on the device label.' },
+                { q: 'My device shows as offline', a: 'Make sure your AirBuddi is powered on and connected to the same Wi-Fi or hotspot configured during setup. Then pull down to refresh the device list.' },
                 { q: 'How do I reset my device?', a: 'Press and hold the reset button on the back of your AirBuddi for 10 seconds until the LED flashes rapidly.' },
                 { q: 'Can I control multiple devices?', a: 'Yes! Add multiple devices from the Home tab. Tap any device card to select and control it.' },
                 { q: 'How accurate are the sensors?', a: 'AirBuddi uses industrial-grade PM2.5, temperature, and humidity sensors with ±5% accuracy.' },
@@ -3335,6 +3404,66 @@ settingsSubtitle: {
   pageContent: { flex: 1 },
   pageContentScroll: { padding: 20 },
   pageIntroSection: { marginBottom: 24 },
+  connectionInstructions: {
+    marginBottom: 18,
+    padding: 16,
+    borderRadius: 16,
+    backgroundColor: '#F4FAF5',
+    borderWidth: 1,
+    borderColor: '#D7EAD9',
+  },
+  connectionInstructionsHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
+  connectionInstructionsIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#DDF3E1',
+  },
+  connectionInstructionsHeaderCopy: { flex: 1, minWidth: 0 },
+  connectionInstructionsTitle: { color: dashboardTheme.colors.textPrimary, fontSize: 15, fontWeight: '800' },
+  connectionInstructionsSubtitle: { marginTop: 3, color: dashboardTheme.colors.textSecondary, fontSize: 12, lineHeight: 17 },
+  connectionInstructionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 12 },
+  connectionInstructionRowLast: { marginBottom: 0 },
+  connectionInstructionNumber: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: dashboardTheme.colors.primary,
+  },
+  connectionInstructionNumberText: { color: '#FFFFFF', fontSize: 11, fontWeight: '800' },
+  connectionInstructionText: { flex: 1, color: dashboardTheme.colors.textSecondary, fontSize: 13, lineHeight: 19 },
+  connectionInstructionStrong: { color: dashboardTheme.colors.textPrimary, fontWeight: '800' },
+  openWifiButton: {
+    minHeight: 46,
+    marginTop: 16,
+    borderRadius: 13,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: dashboardTheme.colors.primaryDark,
+  },
+  openWifiButtonText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800' },
+  helpWifiButton: {
+    minHeight: 68,
+    marginBottom: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    backgroundColor: dashboardTheme.colors.primarySoft,
+    borderWidth: 1,
+    borderColor: '#D7EAD9',
+  },
+  helpWifiButtonCopy: { flex: 1, minWidth: 0 },
+  helpWifiButtonTitle: { color: dashboardTheme.colors.textPrimary, fontSize: 14, fontWeight: '800' },
+  helpWifiButtonSubtitle: { marginTop: 3, color: dashboardTheme.colors.textSecondary, fontSize: 12, lineHeight: 17 },
   pageSectionTitle: { fontSize: 24, fontWeight: '800', color: dashboardTheme.colors.textPrimary, letterSpacing: -0.5 },
   pageSectionSubtitle: { fontSize: 14, color: dashboardTheme.colors.textSecondary, marginTop: 4, fontWeight: '500' },
   settingsSearchEmpty: { alignItems: 'center', paddingVertical: 52, paddingHorizontal: 24 },
