@@ -7,7 +7,7 @@
  */
 export const cognitoAuthConfig = {
   region: 'eu-north-1',
-  userPoolClientId: 'REPLACE_WITH_COGNITO_APP_CLIENT_ID',
+  userPoolClientId: '5v2sskhkmuc02l7qkq0o4ln55o',
 };
 
 export function isCognitoAuthConfigured() {

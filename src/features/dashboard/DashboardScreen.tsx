@@ -61,6 +61,29 @@ type HomeDevice = {
 };
 type FirmwareUpdateStage = 'idle' | 'downloading' | 'installing' | 'complete';
 
+const DEVICE_ICON_RULES: Array<{ keywords: string[]; icon: string }> = [
+  { keywords: ['bedroom', 'bed room', 'sleep', 'master bed', 'guest bed', 'nursery'], icon: 'bed-king-outline' },
+  { keywords: ['living room', 'lounge', 'family room', 'sofa'], icon: 'sofa-outline' },
+  { keywords: ['kitchen', 'cook', 'dining', 'pantry'], icon: 'silverware-fork-knife' },
+  { keywords: ['bathroom', 'bath', 'shower', 'washroom', 'toilet'], icon: 'shower' },
+  { keywords: ['office', 'study', 'workroom', 'desk'], icon: 'desk' },
+  { keywords: ['baby', 'child', 'kid', 'playroom', 'nursery'], icon: 'baby-face-outline' },
+  { keywords: ['garage', 'workshop'], icon: 'garage' },
+  { keywords: ['garden', 'balcony', 'patio', 'terrace', 'plant'], icon: 'flower-outline' },
+  { keywords: ['gym', 'workout', 'fitness'], icon: 'dumbbell' },
+  { keywords: ['studio', 'music'], icon: 'music' },
+  { keywords: ['hallway', 'corridor', 'entry', 'entrance'], icon: 'door-open' },
+  { keywords: ['laundry', 'utility'], icon: 'washing-machine' },
+  { keywords: ['outdoor', 'outside', 'yard'], icon: 'tree-outline' },
+];
+
+function resolveDeviceIcon(name: string, room: string): string {
+  const searchableText = `${room} ${name}`.trim().toLowerCase();
+  return DEVICE_ICON_RULES.find(rule =>
+    rule.keywords.some(keyword => searchableText.includes(keyword)),
+  )?.icon ?? 'air-filter';
+}
+
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'home', label: 'Home', icon: 'home-outline' },
   { id: 'monitor', label: 'Monitor', icon: 'chart-line' },
@@ -320,7 +343,10 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed)) {
-            setDevices(parsed);
+            setDevices(parsed.map(item => ({
+              ...item,
+              icon: resolveDeviceIcon(String(item.name ?? ''), String(item.room ?? '')),
+            })));
           }
         }
       } catch (error) {
@@ -683,7 +709,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         room,
         status: isOnline ? ('Online' as const) : ('Offline' as const),
         aqi: isOnline ? (telemetry.esp32?.aqi ?? telemetry.aqi ?? null) : null,
-        icon: 'air-filter',
+        icon: resolveDeviceIcon(name, room),
       };
       setDevices(current => [...current, nextDevice]);
       setSelectedDeviceId(current => current ?? id);
@@ -718,7 +744,9 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
       return;
     }
 
-    setDevices(current => current.map(item => item.id === editingDeviceId ? { ...item, name, room } : item));
+    setDevices(current => current.map(item => item.id === editingDeviceId
+      ? { ...item, name, room, icon: resolveDeviceIcon(name, room) }
+      : item));
     setEditingDeviceId(null);
     setEditingDeviceName('');
     setEditingDeviceRoom('');
@@ -1209,8 +1237,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         onRequestClose={handleSettingsBack}
       >
         <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
-        <View style={activeSheet === 'add-device' ? styles.addDeviceSheetBackdrop : styles.fullPageContainer}>
-        <View style={[styles.fullPageContainer, activeSheet === 'add-device' && styles.addDeviceSheet]}>
+        <View style={activeSheet === 'notification-inbox' ? styles.notificationModalContainer : activeSheet === 'add-device' ? styles.addDeviceSheetBackdrop : styles.fullPageContainer}>
+        <View style={[activeSheet === 'notification-inbox' ? styles.notificationModalContainer : styles.fullPageContainer, activeSheet === 'add-device' && styles.addDeviceSheet]}>
         {activeSheet === 'add-device' && <View style={styles.sheetHandle} />}
         {activeSheet !== 'add-device' && activeSheet !== 'notification-inbox' && (
           <View style={[styles.settingsStatusBarInset, { height: insets.top }]} />
@@ -3308,15 +3336,16 @@ settingsSubtitle: {
   sheetScroll: { maxHeight: 500 },
   bottomSheetGap: { height: 20 },
   fullPageContainer: { flex: 1, backgroundColor: dashboardTheme.colors.background },
+  notificationModalContainer: { flex: 1, backgroundColor: 'transparent' },
   addDeviceSheetBackdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(15, 23, 42, 0.35)' },
   addDeviceSheet: { flex: 0, height: '92%', borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden' },
   addDeviceSheetHeader: { paddingTop: 8, borderTopLeftRadius: 24, borderTopRightRadius: 24 },
   notificationOverlay: { flex: 1 },
   notificationPanel: {
     position: 'absolute',
-    top: 64,
-    right: 20,
-    width: 310,
+    top: 60,
+    right: 66,
+    width: 280,
     maxHeight: 380,
     backgroundColor: dashboardTheme.colors.surface,
     borderRadius: dashboardTheme.radii.md,
