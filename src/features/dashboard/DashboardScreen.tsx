@@ -77,11 +77,32 @@ const DEVICE_ICON_RULES: Array<{ keywords: string[]; icon: string }> = [
   { keywords: ['outdoor', 'outside', 'yard'], icon: 'tree-outline' },
 ];
 
+const DEVICE_ICON_COLORS: Record<string, { icon: string; background: string }> = {
+  'bed-king-outline': { icon: '#7C3AED', background: '#F3E8FF' },
+  'sofa-outline': { icon: '#2563EB', background: '#DBEAFE' },
+  'silverware-fork-knife': { icon: '#EA580C', background: '#FFEDD5' },
+  shower: { icon: '#0891B2', background: '#CFFAFE' },
+  desk: { icon: '#4F46E5', background: '#E0E7FF' },
+  'baby-face-outline': { icon: '#DB2777', background: '#FCE7F3' },
+  garage: { icon: '#475569', background: '#E2E8F0' },
+  'flower-outline': { icon: '#16A34A', background: '#DCFCE7' },
+  dumbbell: { icon: '#DC2626', background: '#FEE2E2' },
+  music: { icon: '#9333EA', background: '#F3E8FF' },
+  'door-open': { icon: '#CA8A04', background: '#FEF9C3' },
+  'washing-machine': { icon: '#0F766E', background: '#CCFBF1' },
+  'tree-outline': { icon: '#15803D', background: '#DCFCE7' },
+  'air-filter': { icon: '#166534', background: '#DCFCE7' },
+};
+
 function resolveDeviceIcon(name: string, room: string): string {
   const searchableText = `${room} ${name}`.trim().toLowerCase();
   return DEVICE_ICON_RULES.find(rule =>
     rule.keywords.some(keyword => searchableText.includes(keyword)),
   )?.icon ?? 'air-filter';
+}
+
+function getDeviceIconColors(icon: string): { icon: string; background: string } {
+  return DEVICE_ICON_COLORS[icon] ?? DEVICE_ICON_COLORS['air-filter'];
 }
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
@@ -1081,6 +1102,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                     {devices.map(item => {
                       const isSelected = item.id === selectedDeviceId;
                       const displayedAqi = isSelected ? pm25Value : item.aqi;
+                      const iconColors = getDeviceIconColors(item.icon);
                       return (
                         <TouchableOpacity
                           key={item.id}
@@ -1088,8 +1110,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                           style={[styles.homeDeviceCard, isSelected && styles.homeDeviceCardSelected]}
                           onPress={() => setSelectedDeviceId(item.id)}
                         >
-                          <View style={[styles.deviceIcon, isSelected && styles.deviceIconSelected]}>
-                            <MaterialCommunityIcons name={item.icon} size={24} color={isSelected ? '#FFFFFF' : dashboardTheme.colors.primaryDark} />
+                          <View style={[styles.deviceIcon, { backgroundColor: iconColors.background }]}>
+                            <MaterialCommunityIcons name={item.icon} size={24} color={iconColors.icon} />
                           </View>
                           <View style={styles.deviceCardContent}>
                             <Text style={styles.deviceRoom}>{item.room}</Text>
