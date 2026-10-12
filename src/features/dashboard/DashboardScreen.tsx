@@ -58,6 +58,7 @@ type HomeDevice = {
   status: 'Online' | 'Offline';
   aqi: number | null;
   icon: string;
+  type?: 'max' | 'mini' | 'monitor';
 };
 type FirmwareUpdateStage = 'idle' | 'downloading' | 'installing' | 'complete';
 
@@ -92,10 +93,14 @@ const DEVICE_ICON_COLORS: Record<string, { icon: string; background: string }> =
   'washing-machine': { icon: '#0F766E', background: '#CCFBF1' },
   'tree-outline': { icon: '#15803D', background: '#DCFCE7' },
   'air-filter': { icon: '#166534', background: '#DCFCE7' },
+  'chart-line': { icon: '#0369A1', background: '#E0F2FE' },
 };
 
 function resolveDeviceIcon(name: string, room: string): string {
   const searchableText = `${room} ${name}`.trim().toLowerCase();
+  if (searchableText.includes('monitor')) {
+    return 'chart-line';
+  }
   return DEVICE_ICON_RULES.find(rule =>
     rule.keywords.some(keyword => searchableText.includes(keyword)),
   )?.icon ?? 'air-filter';
@@ -103,6 +108,25 @@ function resolveDeviceIcon(name: string, room: string): string {
 
 function getDeviceIconColors(icon: string): { icon: string; background: string } {
   return DEVICE_ICON_COLORS[icon] ?? DEVICE_ICON_COLORS['air-filter'];
+}
+
+function getDeviceType(name: string): 'max' | 'mini' | 'monitor' {
+  const normalizedName = name.trim().toLowerCase();
+  if (normalizedName === 'monitor' || normalizedName === 'airbuddi monitor' || normalizedName.includes('monitor')) {
+    return 'monitor';
+  }
+  return normalizedName === 'airbuddi mini' ? 'mini' : 'max';
+}
+
+function getFirmwareModelForDevice(device: Pick<HomeDevice, 'name' | 'type'>): string {
+  const normalizedName = device.name.trim().toLowerCase();
+  if (device.type === 'monitor' || normalizedName.includes('monitor')) {
+    return 'Monitor';
+  }
+  if (device.type === 'mini' || normalizedName.includes('mini')) {
+    return 'AIRBUDDI_MINI';
+  }
+  return 'AIRBUDDI_MAX';
 }
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
@@ -214,6 +238,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const [scannedQrValue, setScannedQrValue] = useState('');
   const [qrZoom, setQrZoom] = useState(1);
   const [newDeviceName, setNewDeviceName] = useState('');
+  const [newDeviceType, setNewDeviceType] = useState<'max' | 'mini' | 'monitor'>('max');
   const [newDeviceRoom, setNewDeviceRoom] = useState('');
   const [newDeviceId, setNewDeviceId] = useState('');
   const [addDeviceError, setAddDeviceError] = useState('');
@@ -367,6 +392,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             setDevices(parsed.map(item => ({
               ...item,
               icon: resolveDeviceIcon(String(item.name ?? ''), String(item.room ?? '')),
+              type: item.type ?? getDeviceType(String(item.name ?? '')),
             })));
           }
         }
@@ -461,6 +487,12 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   }, [activeSheet, updateDeviceId]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
+
+  const monitorDeviceSelected = (() => {
+    const selected = devices.find(item => item.id === selectedDeviceId);
+    return selected?.type === 'monitor'
+      || (!selected?.type && getDeviceType(selected?.name ?? '') === 'monitor');
+  })();
 
   const pickProfileImage = useCallback(() => {
     launchImageLibrary(
@@ -571,25 +603,29 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   }, [onSignOut]);
 
   const handleTogglePower = useCallback(() => {
-    if (!device) { return; }
+    if (!device || monitorDeviceSelected) { return; }
     setPowerState(device.power !== 'on');
-  }, [device, setPowerState]);
+  }, [device, monitorDeviceSelected, setPowerState]);
 
   const handleToggleAutoMode = useCallback((value: boolean) => {
+    if (monitorDeviceSelected) { return; }
     setAutoMode(value);
-  }, [setAutoMode]);
+  }, [monitorDeviceSelected, setAutoMode]);
 
   const handleToggleSleepMode = useCallback((value: boolean) => {
+    if (monitorDeviceSelected) { return; }
     setSleepModeState(value);
-  }, [setSleepModeState]);
+  }, [monitorDeviceSelected, setSleepModeState]);
 
   const handleToggleUvc = useCallback((value: boolean) => {
+    if (monitorDeviceSelected) { return; }
     setUvcModeState(value);
-  }, [setUvcModeState]);
+  }, [monitorDeviceSelected, setUvcModeState]);
 
   const handleSelectFanSpeed = useCallback((speed: 'off' | '1' | '2' | '3') => {
+    if (monitorDeviceSelected) { return; }
     setFanSpeedState(speed);
-  }, [setFanSpeedState]);
+  }, [monitorDeviceSelected, setFanSpeedState]);
 
   const applyScannedQrValue = useCallback((value: string) => {
     const scannedValue = value.trim();
@@ -686,11 +722,17 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const selectedDevice = devices.find(item => item.id === selectedDeviceId) ?? null;
   const offlineDevices = devices.filter(item => item.status === 'Offline');
   const updateTarget = devices.find(item => item.id === updateDeviceId) ?? null;
-  const availableFirmwareForTarget = availableFirmware.find(entry => firmwareMacKey(entry.mac) === firmwareMacKey(updateDeviceId ?? ''));
+  const updateTargetModel = updateTarget ? getFirmwareModelForDevice(updateTarget) : null;
+  const availableFirmwareForTarget = availableFirmware.find(entry =>
+    firmwareMacKey(entry.mac) === firmwareMacKey(updateDeviceId ?? '')
+    && entry.model.toUpperCase() === updateTargetModel?.toUpperCase(),
+  );
   const availableFirmwareVersions = availableFirmwareForTarget?.versions ?? [];
   const deviceTitle = selectedDevice?.room ?? 'Add a device';
   const displayDeviceName = selectedDevice?.name ?? 'No device connected';
-  const isMiniDevice = displayDeviceName.trim().toLowerCase() === 'airbuddi mini';
+  const isMiniDevice = selectedDevice?.type === 'mini'
+    || (!selectedDevice?.type && displayDeviceName.trim().toLowerCase() === 'airbuddi mini');
+  const monitorAqi = monitorDeviceSelected ? dashboard.aqi : pm25Value;
   const visibleSensors = isMiniDevice
     ? sensors.filter(sensor => {
       const sensorId = sensor.id.toLowerCase();
@@ -706,7 +748,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     : sensors;
 
   const addDevice = useCallback(async () => {
-    const name = newDeviceName.trim() || 'AirBuddi Device';
+    const name = newDeviceName.trim() || (newDeviceType === 'monitor' ? 'Monitor' : 'AirBuddi Device');
     const room = newDeviceRoom.trim() || 'New Room';
     const id = newDeviceId.trim().toUpperCase();
     if (devices.some(item => item.id.toLowerCase() === id.toLowerCase())) {
@@ -731,10 +773,12 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         status: isOnline ? ('Online' as const) : ('Offline' as const),
         aqi: isOnline ? (telemetry.esp32?.aqi ?? telemetry.aqi ?? null) : null,
         icon: resolveDeviceIcon(name, room),
+        type: newDeviceType === 'monitor' ? 'monitor' as const : newDeviceType,
       };
       setDevices(current => [...current, nextDevice]);
       setSelectedDeviceId(current => current ?? id);
       setNewDeviceName('');
+      setNewDeviceType('max');
       setNewDeviceRoom('');
       setNewDeviceId('');
       dispatch(setActiveSheet(null));
@@ -743,7 +787,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     } finally {
       setIsAddingDevice(false);
     }
-  }, [devices, newDeviceId, newDeviceName, newDeviceRoom]);
+  }, [devices, newDeviceId, newDeviceName, newDeviceRoom, newDeviceType]);
   const beginEditingDevice = useCallback((item: HomeDevice) => {
     setEditingDeviceId(item.id);
     setEditingDeviceName(item.name);
@@ -794,17 +838,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
       return;
     }
 
-    const normalizedName = target.name.trim().toLowerCase();
-    const model = availableModel || (normalizedName === 'airbuddi max'
-      ? 'AIRBUDDI_MAX'
-      : normalizedName === 'airbuddi mini'
-        ? 'AIRBUDDI_MINI'
-        : null);
-
-    if (!model) {
-      Alert.alert('Unsupported device', 'Firmware updates are available for AirBuddi Max and AirBuddi Mini only.');
-      return;
-    }
+    const model = availableModel || getFirmwareModelForDevice(target);
 
     const payload = {
       command: 'firmware_update' as const,
@@ -824,9 +858,19 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
             setIsUpdatingDevice(true);
             setFirmwareUpdateStage('downloading');
             setFirmwareUpdateProgress(0);
-            await postFirmwareUpdate(target.id, payload).catch(error => {
-              console.warn('[AirBuddi] Firmware update request was not acknowledged; continuing staged update UI.', error);
-            });
+            try {
+              await postFirmwareUpdate(target.id, payload);
+            } catch (error) {
+              console.error('[AirBuddi] Firmware update request failed:', error);
+              setIsUpdatingDevice(false);
+              setFirmwareUpdateStage('idle');
+              setFirmwareUpdateProgress(0);
+              Alert.alert(
+                'Firmware update failed',
+                error instanceof Error ? error.message : 'The device did not accept the firmware update request.',
+              );
+              return;
+            }
 
             const downloadDuration = 35_000;
             const installDuration = 55_000;
@@ -1171,6 +1215,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         {activeTab === 'monitor' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
             <View style={styles.tabPad}>
+              {/* <AirQualityCard aqi={monitorAqi} /> */}
               <AirQualityCard aqi={pm25Value} />
               <View style={styles.gap}>
                 <SensorGrid sensors={visibleSensors} />             </View>
@@ -1181,34 +1226,51 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         {/* ── Control Tab ───────────────────────────────────────────── */}
         {activeTab === 'control' && (
           <Animated.View style={[styles.tabContent, contentStyle]}>
-            <QuickControls
-              isPoweredOn={device?.power === 'on'}
-              isAutoMode={device?.mode === 'auto'}
-              isSleepMode={device?.sleepMode ?? false}
-              isUvc={device?.uvc ?? true}
-              showPresets={!isMiniDevice}
-              fanSpeed={controlFanSpeed}
-              onTogglePower={handleTogglePower}
-              onToggleAutoMode={handleToggleAutoMode}
-              onToggleSleepMode={handleToggleSleepMode}
-              onToggleUvc={handleToggleUvc}
-              onSelectFanSpeed={handleSelectFanSpeed}
-            />
-            <View style={styles.tabPad}>
-              <RootPurificationCard
-                upperBedChamber={device?.upperBedChamber ?? 'Standby'}
-                lowerBedChamber={device?.lowerBedChamber ?? 'Standby'}
-                showLowerChamber={!isMiniDevice}
-                onUpperPress={() => {
-                  const currentVal = device?.upperBedChamber ?? 'Standby';
-                  setUpperBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
-                }}
-                onLowerPress={() => {
-                  const currentVal = device?.lowerBedChamber ?? 'Standby';
-                  setLowerBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
-                }}
-                disabled={device?.power !== 'on' || device?.mode === 'auto' || device?.sleepMode === true}              />
-            </View>
+            {monitorDeviceSelected ? (
+              <View style={styles.monitorOnlyNotice}>
+                <MaterialCommunityIcons name="chart-line" size={34} color={dashboardTheme.colors.primaryDark} />
+                <Text style={styles.monitorOnlyTitle}>Monitor only</Text>
+                <Text style={styles.monitorOnlyCopy}>
+                  This device reports air-quality data only. Purification controls are unavailable.
+                </Text>
+              </View>
+            ) : (
+              <>
+                <QuickControls
+                  isPoweredOn={device?.power === 'on'}
+                  isAutoMode={device?.mode === 'auto'}
+                  isSleepMode={device?.sleepMode ?? false}
+                  isUvc={device?.uvc ?? true}
+                  showPresets={!isMiniDevice}
+                  fanSpeed={controlFanSpeed}
+                  onTogglePower={handleTogglePower}
+                  onToggleAutoMode={handleToggleAutoMode}
+                  onToggleSleepMode={handleToggleSleepMode}
+                  onToggleUvc={handleToggleUvc}
+                  onSelectFanSpeed={handleSelectFanSpeed}
+                />
+                <View style={styles.tabPad}>
+                  <RootPurificationCard
+                    upperBedChamber={device?.upperBedChamber ?? 'Standby'}
+                    lowerBedChamber={device?.lowerBedChamber ?? 'Standby'}
+                    showLowerChamber={!isMiniDevice}
+                    onUpperPress={() => {
+                      const currentVal = device?.upperBedChamber ?? 'Standby';
+                      if (!monitorDeviceSelected) {
+                        setUpperBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
+                      }
+                    }}
+                    onLowerPress={() => {
+                      const currentVal = device?.lowerBedChamber ?? 'Standby';
+                      if (!monitorDeviceSelected) {
+                        setLowerBedChamberStateState(currentVal === 'Active' ? 'Standby' : 'Active');
+                      }
+                    }}
+                    disabled={device?.power !== 'on' || device?.mode === 'auto' || device?.sleepMode === true}
+                  />
+                </View>
+              </>
+            )}
           </Animated.View>
         )}
 
@@ -1638,6 +1700,28 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               )}
 
               <Text style={styles.inputLabel}>DEVICE NAME</Text>
+              <Text style={styles.inputHint}>Choose whether this device purifies air or only reports readings.</Text>
+              <View style={styles.deviceTypeRow}>
+                {([
+                  ['max', 'AirBuddi Max'],
+                  ['mini', 'AirBuddi Mini'],
+                  ['monitor', 'Monitor'],
+                ] as const).map(([type, label]) => (
+                  <TouchableOpacity
+                    key={type}
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      setNewDeviceType(type);
+                      if (!newDeviceName.trim() || newDeviceName === 'AirBuddi Device' || newDeviceName === 'Monitor') {
+                        setNewDeviceName(type === 'monitor' ? 'Monitor' : label);
+                      }
+                    }}
+                    style={[styles.deviceTypeOption, newDeviceType === type && styles.deviceTypeOptionActive]}
+                  >
+                    <Text style={[styles.deviceTypeOptionText, newDeviceType === type && styles.deviceTypeOptionTextActive]}>{label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
               <TextInput value={newDeviceName} onChangeText={setNewDeviceName} style={styles.textInput} placeholder="e.g. AirBuddi Mini" placeholderTextColor={dashboardTheme.colors.textMuted} />
 
               <Text style={styles.inputLabel}>ROOM OR SPACE</Text>
@@ -2344,6 +2428,29 @@ const styles = StyleSheet.create({
   tabPad: {
     paddingHorizontal: 20,
   },
+  monitorOnlyNotice: {
+    margin: 20,
+    padding: 28,
+    borderRadius: dashboardTheme.radii.lg,
+    alignItems: 'center',
+    backgroundColor: dashboardTheme.colors.surface,
+    borderWidth: 1,
+    borderColor: dashboardTheme.colors.border,
+    ...dashboardTheme.shadows.medium,
+  },
+  monitorOnlyTitle: {
+    marginTop: 12,
+    color: dashboardTheme.colors.textPrimary,
+    fontSize: 19,
+    fontWeight: '800',
+  },
+  monitorOnlyCopy: {
+    marginTop: 8,
+    color: dashboardTheme.colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
   gap: {
     marginTop: 16,
   },
@@ -2881,6 +2988,12 @@ settingsSubtitle: {
   sheetTitle: { color: dashboardTheme.colors.textPrimary, fontSize: 23, fontWeight: '800', letterSpacing: -0.3 },
   sheetIntro: { marginTop: 7, marginBottom: 22, color: dashboardTheme.colors.textSecondary, fontSize: 14, lineHeight: 20 },
   inputLabel: { color: dashboardTheme.colors.textMuted, fontSize: 11, fontWeight: '800', letterSpacing: 0.8, marginBottom: 7, marginTop: 14 },
+  inputHint: { color: dashboardTheme.colors.textMuted, fontSize: 12, lineHeight: 17, marginBottom: 10 },
+  deviceTypeRow: { flexDirection: 'row', gap: 8, marginBottom: 2 },
+  deviceTypeOption: { flex: 1, minHeight: 42, paddingHorizontal: 8, borderRadius: 10, borderWidth: 1, borderColor: dashboardTheme.colors.border, backgroundColor: dashboardTheme.colors.surfaceTint, alignItems: 'center', justifyContent: 'center' },
+  deviceTypeOptionActive: { borderColor: dashboardTheme.colors.primary, backgroundColor: dashboardTheme.colors.primarySoft },
+  deviceTypeOptionText: { color: dashboardTheme.colors.textSecondary, fontSize: 11, fontWeight: '700', textAlign: 'center' },
+  deviceTypeOptionTextActive: { color: dashboardTheme.colors.primaryDark },
   textInput: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: dashboardTheme.colors.border, backgroundColor: dashboardTheme.colors.surfaceTint, paddingHorizontal: 13, color: dashboardTheme.colors.textPrimary, fontSize: 15 },
   readOnlyDeviceId: { height: 48, borderRadius: 12, borderWidth: 1, borderColor: dashboardTheme.colors.border, backgroundColor: dashboardTheme.colors.surfaceTint, paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 9 },
   readOnlyDeviceIdText: { color: dashboardTheme.colors.textSecondary, fontSize: 15, fontWeight: '600', letterSpacing: 0.4 },

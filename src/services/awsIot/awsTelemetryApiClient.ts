@@ -108,7 +108,9 @@ function buildSensorReadings(entry: Record<string, unknown>) {
   const readings: Array<[string, unknown]> = [
     ['temperature', entry.Temperature ?? entry.temperature ?? entry.temp ?? entry.temperature_c],
     ['humidity', entry.Humidity ?? entry.humidity ?? entry.humidity_percent],
+    ['pm1_0', entry['PM 1.0'] ?? entry.pm1_0 ?? entry.pm1],
     ['pm2_5', entry['PM 2.5'] ?? entry.pm2_5 ?? entry.pm25],
+    ['pm4_0', entry['PM 4.0'] ?? entry.pm4_0 ?? entry.pm4],
     ['pm10', entry['PM 10'] ?? entry.pm10],
     ['co2', entry['C02 Equivalent'] ?? entry['CO2 Equivalent'] ?? entry.CO2 ?? entry.co2],
     ['voc', entry["VOC's"] ?? entry.VOC ?? entry.VOCs ?? entry.voc],
@@ -119,7 +121,8 @@ function buildSensorReadings(entry: Record<string, unknown>) {
   ];
 
   return readings
-    .filter(([, value]) => typeof value === 'number')
+    .map(([key, value]) => [key, typeof value === 'string' && value.trim() !== '' ? Number(value) : value] as const)
+    .filter(([, value]) => typeof value === 'number' && Number.isFinite(value))
     .map(([key, value]) => {
       if (key === 'upper_bed_chamber' || key === 'lower_bed_chamber') {
         return {
@@ -274,32 +277,75 @@ export type AvailableFirmwareDevice = {
   versions: string[];
 };
 
+function normalizeFirmwareMac(value: unknown): string {
+  const rawMac = asString(value).replace(/-/g, ':').toUpperCase();
+  const compactMac = rawMac.replace(/[^0-9A-F]/g, '');
+  return compactMac.length === 12
+    ? compactMac.match(/../g)?.join(':') ?? rawMac
+    : rawMac;
+}
+
+function firmwareVersionFromEntry(value: unknown): string | null {
+  if (typeof value === 'string') {
+    const version = value.trim();
+    return version || null;
+  }
+
+  if (!isRecord(value)) {
+    return null;
+  }
+
+  const explicitVersion = asString(value.version);
+  if (explicitVersion) {
+    return explicitVersion;
+  }
+
+  const s3Key = asString(value.s3_key);
+  const pathParts = s3Key.split('/').filter(Boolean);
+  const firmwareIndex = pathParts.findIndex(part => part.toLowerCase() === 'firmware.bin');
+  const version = firmwareIndex > 0 ? pathParts[firmwareIndex - 1].trim() : '';
+  return version || null;
+}
+
+function normalizeFirmwareEntry(entry: unknown, model: string): AvailableFirmwareDevice | null {
+  if (!isRecord(entry)) {
+    return null;
+  }
+
+  const mac = normalizeFirmwareMac(entry.mac ?? entry.device_id ?? entry.deviceId);
+  const versions = Array.isArray(entry.versions)
+    ? entry.versions
+      .map(firmwareVersionFromEntry)
+      .filter((version): version is string => version !== null)
+    : [];
+
+  return mac && model ? { mac, model, versions } : null;
+}
+
 export async function fetchAvailableFirmware(): Promise<AvailableFirmwareDevice[]> {
   const response = await fetch(endpoint('/firmware/available'), {
     headers: { Accept: 'application/json' },
   });
-  const body = await responseBody(response) as { devices?: unknown };
+  const body = await responseBody(response);
 
-  if (!Array.isArray(body.devices)) {
+  if (isRecord(body) && Array.isArray(body.devices)) {
+    return body.devices
+      .map(entry => normalizeFirmwareEntry(entry, isRecord(entry) ? asString(entry.model) : ''))
+      .filter((entry): entry is AvailableFirmwareDevice => entry !== null);
+  }
+
+  if (!isRecord(body) || !isRecord(body.models)) {
     return [];
   }
 
-  return body.devices.flatMap(entry => {
-    if (!isRecord(entry)) {
+  return Object.entries(body.models).flatMap(([model, modelEntries]) => {
+    if (!Array.isArray(modelEntries)) {
       return [];
     }
 
-    const rawMac = asString(entry.mac).replace(/-/g, ':').toUpperCase();
-    const compactMac = rawMac.replace(/[^0-9A-F]/g, '');
-    const mac = compactMac.length === 12
-      ? compactMac.match(/../g)?.join(':') ?? rawMac
-      : rawMac;
-    const model = asString(entry.model);
-    const versions = Array.isArray(entry.versions)
-      ? entry.versions.filter((version): version is string => typeof version === 'string' && version.trim().length > 0)
-      : [];
-
-    return mac && model ? [{ mac, model, versions }] : [];
+    return modelEntries
+      .map(entry => normalizeFirmwareEntry(entry, model))
+      .filter((entry): entry is AvailableFirmwareDevice => entry !== null);
   });
 }
 
@@ -327,4 +373,3 @@ export async function postFirmwareUpdate(deviceId: string, payload: FirmwareUpda
     throw new Error(`Firmware update failed (${response.status}): ${text}`);
   }
 }
-

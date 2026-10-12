@@ -1,4 +1,5 @@
 import { toDashboardTelemetryMessage } from '../src/services/awsIot/awsTelemetryApiClient';
+import { normalizeTelemetryMessage } from '../src/services/awsIot/awsIotClient';
 
 describe('Telemetry Parser', () => {
   it('correctly extracts and parses telemetry for the active device', () => {
@@ -54,11 +55,15 @@ describe('Telemetry Parser', () => {
     expect(telemetryMessage.esp32?.deviceId).toBe(targetDeviceId);
 
     const pm25Sensor = telemetryMessage.esp32?.sensors.find(s => s.key === 'pm2_5');
+    const pm1Sensor = telemetryMessage.esp32?.sensors.find(s => s.key === 'pm1_0');
+    const pm4Sensor = telemetryMessage.esp32?.sensors.find(s => s.key === 'pm4_0');
     const pm10Sensor = telemetryMessage.esp32?.sensors.find(s => s.key === 'pm10');
     const tempSensor = telemetryMessage.esp32?.sensors.find(s => s.key === 'temperature');
 
     expect(pm25Sensor).toBeDefined();
     expect(pm25Sensor?.value).toBe(184);
+    expect(pm1Sensor?.value).toBe(176);
+    expect(pm4Sensor?.value).toBe(189);
     expect(pm10Sensor?.value).toBe(196);
     expect(tempSensor?.value).toBe(22.5);
 
@@ -69,5 +74,22 @@ describe('Telemetry Parser', () => {
     expect(pressureSensor?.value).toBe(0);
     expect(gasResistanceSensor).toBeDefined();
     expect(gasResistanceSensor?.value).toBe(0);
+  });
+
+  it('normalizes monitor sensor labels from realtime telemetry', () => {
+    const message = normalizeTelemetryMessage({
+      deviceId: 'monitor-1',
+      online: true,
+      aqi: 12,
+      sensors: [
+        { id: 'PM 1.0', value: '1.5' },
+        { id: 'PM 4.0', value: 4 },
+      ],
+    }, 'monitor-1');
+
+    expect(message.esp32?.sensors).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'pm1_0', value: 1.5 }),
+      expect.objectContaining({ key: 'pm4_0', value: 4 }),
+    ]));
   });
 });

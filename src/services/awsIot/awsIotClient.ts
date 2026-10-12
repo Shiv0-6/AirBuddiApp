@@ -6,7 +6,7 @@ import type {
   Esp32SensorKey,
   Esp32SensorReading,
 } from './esp32TelemetryContract';
-import { esp32SensorDisplay } from './esp32TelemetryContract';
+import { esp32SensorDisplay, normalizeEsp32SensorKey } from './esp32TelemetryContract';
 import { fetchLatestTelemetry, postDeviceCommand, toDashboardTelemetryMessage } from './awsTelemetryApiClient';
 import { telemetryApiConfig } from '../../config/awsIotConfig';
 
@@ -356,15 +356,18 @@ function normalizeEsp32Sensors(telemetry: any): Esp32SensorReading[] {
   if (Array.isArray(telemetry.sensors) && telemetry.sensors.length) {
     return telemetry.sensors
       .map((sensor: any) => {
-        const key = (sensor.key || sensor.id) as Esp32SensorKey;
+        const key = normalizeEsp32SensorKey(sensor.key || sensor.id);
+        if (!key) {
+          return null;
+        }
         return {
           key,
-          value: sensor.value,
+          value: typeof sensor.value === 'number' ? sensor.value : Number(sensor.value),
           unit: sensor.unit ?? esp32SensorDisplay(key).unit,
           status: sensor.status,
         };
       })
-      .filter((s: any) => typeof s.value === 'number');
+      .filter((s: any): s is Esp32SensorReading => s !== null && Number.isFinite(s.value));
   }
 
   // The ESP32 legacy publisher sends title-cased keys. Newer firmware uses
@@ -377,7 +380,9 @@ function normalizeEsp32Sensors(telemetry: any): Esp32SensorReading[] {
   const readings: Array<[Esp32SensorKey, unknown]> = [
     ['temperature', telemetry.Temperature ?? telemetry.temperature ?? telemetry.temp ?? telemetry.temperature_c],
     ['humidity', telemetry.Humidity ?? telemetry.humidity ?? telemetry.humidity_percent],
+    ['pm1_0', telemetry['PM 1.0'] ?? telemetry.pm1_0 ?? telemetry.pm1],
     ['pm2_5', telemetry['PM 2.5'] ?? telemetry.pm2_5 ?? telemetry.pm25],
+    ['pm4_0', telemetry['PM 4.0'] ?? telemetry.pm4_0 ?? telemetry.pm4],
     ['pm10', telemetry['PM 10'] ?? telemetry.pm10],
     ['co2', telemetry['C02 Equivalent'] ?? telemetry['CO2 Equivalent'] ?? telemetry.CO2 ?? telemetry.Co2 ?? telemetry.co2],
     ['voc', telemetry["VOC's"] ?? telemetry.VOC ?? telemetry.VOCs ?? telemetry.voc],

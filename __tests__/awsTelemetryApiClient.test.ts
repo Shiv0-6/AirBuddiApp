@@ -1,4 +1,4 @@
-import { fetchAvailableFirmware, fetchLatestTelemetry, postEspCommand, postEspCommands, toDashboardTelemetryMessage } from '../src/services/awsIot/awsTelemetryApiClient';
+import { fetchAvailableFirmware, fetchLatestTelemetry, postEspCommand, postEspCommands, postFirmwareUpdate, toDashboardTelemetryMessage } from '../src/services/awsIot/awsTelemetryApiClient';
 
 describe('fetchAvailableFirmware', () => {
   it('loads firmware versions and normalizes compact MAC addresses', async () => {
@@ -17,6 +17,79 @@ describe('fetchAvailableFirmware', () => {
     expect((globalThis as any).fetch).toHaveBeenCalledWith(
       expect.stringMatching(/\/firmware\/available$/),
       expect.objectContaining({ headers: { Accept: 'application\/json' } }),
+    );
+  });
+
+  it('loads firmware grouped by model and extracts versions from S3 keys', async () => {
+    (globalThis as any).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => JSON.stringify({
+        status: 'success',
+        models: {
+          AIRBUDDI_MINI: [
+            { device_id: '441D642AD50C', versions: [] },
+          ],
+          AIRBUDDI_MAX: [
+            {
+              device_id: '441D642AD778',
+              versions: [{
+                file_name: 'firmware.bin',
+                s3_key: 'AIRBUDDI_MAX/441D642AD778/1.0.0/firmware.bin',
+                size_bytes: 1147760,
+              }],
+            },
+            {
+              device_id: 'B0A732B1CF70',
+              versions: [{
+                file_name: 'firmware.bin',
+                s3_key: 'AIRBUDDI_MAX/B0A732B1CF70/1.0.5/firmware.bin',
+              }],
+            },
+          ],
+          Monitor: [
+            {
+              device_id: 'B0A732B1CF70',
+              versions: [{
+                file_name: 'firmware.bin',
+                s3_key: 'Monitor/B0A732B1CF70/1.0.0/firmware.bin',
+              }],
+            },
+          ],
+        },
+      }),
+    });
+
+    await expect(fetchAvailableFirmware()).resolves.toEqual([
+      { mac: '44:1D:64:2A:D5:0C', model: 'AIRBUDDI_MINI', versions: [] },
+      { mac: '44:1D:64:2A:D7:78', model: 'AIRBUDDI_MAX', versions: ['1.0.0'] },
+      { mac: 'B0:A7:32:B1:CF:70', model: 'AIRBUDDI_MAX', versions: ['1.0.5'] },
+      { mac: 'B0:A7:32:B1:CF:70', model: 'Monitor', versions: ['1.0.0'] },
+    ]);
+  });
+});
+
+describe('postFirmwareUpdate', () => {
+  it('preserves the bucket model key for Monitor firmware', async () => {
+    (globalThis as any).fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      text: async () => '',
+    });
+
+    await postFirmwareUpdate('B0A732B1CF70', {
+      command: 'firmware_update',
+      model: 'Monitor',
+      version: '1.0.0',
+    });
+
+    expect((globalThis as any).fetch).toHaveBeenCalledWith(
+      expect.stringMatching(/\/devices\/B0A732B1CF70$/),
+      expect.objectContaining({
+        body: JSON.stringify({
+          command: 'firmware_update',
+          model: 'Monitor',
+          version: '1.0.0',
+        }),
+      }),
     );
   });
 });
