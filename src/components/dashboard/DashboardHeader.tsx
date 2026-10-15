@@ -11,6 +11,9 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 
 import { dashboardTheme } from '../../features/dashboard/dashboardTheme';
 
+// Replace this asset with Monitor.png when the dedicated Monitor artwork is added.
+const MONITOR_DEVICE_IMAGE = require('../../../assets/Monitor.png');
+
 type DashboardHeaderProps = {
   title: string;
   subtitle: string;
@@ -33,10 +36,15 @@ function DashboardHeaderComponent({
   onMenuPress,
 }: DashboardHeaderProps) {
   const normalizedDeviceName = deviceName.trim().toLowerCase();
+  const isMonitorDevice = normalizedDeviceName === 'monitor'
+    || normalizedDeviceName === 'airbuddi monitor'
+    || normalizedDeviceName.includes('monitor');
   const deviceImage = normalizedDeviceName === 'airbuddi max'
     ? require('../../../assets/Max_l2.png')
     : normalizedDeviceName === 'airbuddi mini'
       ? require('../../../assets/Mini.png')
+      : isMonitorDevice
+      ? MONITOR_DEVICE_IMAGE
       : undefined;
 
   return (
