@@ -723,6 +723,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const selectedDevice = devices.find(item => item.id === selectedDeviceId) ?? null;
   const offlineDevices = devices.filter(item => item.status === 'Offline');
   const updateTarget = devices.find(item => item.id === updateDeviceId) ?? null;
+  const notificationPanelWidth = Math.max(0, Math.min(340, Dimensions.get('window').width - 32));
   const updateTargetModel = updateTarget ? getFirmwareModelForDevice(updateTarget) : null;
   const availableFirmwareForTarget = availableFirmware.find(entry =>
     firmwareMacKey(entry.mac) === firmwareMacKey(updateDeviceId ?? '')
@@ -1391,7 +1392,11 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
           </View>}
 
           <ScrollView
-            style={[styles.pageContent, activeSheet === 'notification-inbox' && styles.notificationPanel]}
+            style={[
+              styles.pageContent,
+              activeSheet === 'notification-inbox' && styles.notificationPanel,
+              activeSheet === 'notification-inbox' && { width: notificationPanelWidth },
+            ]}
             contentContainerStyle={[styles.pageContentScroll, activeSheet === 'notification-inbox' && styles.notificationPanelContent]}
             showsVerticalScrollIndicator={false}
           >
@@ -3479,22 +3484,22 @@ settingsSubtitle: {
   notificationOverlay: { flex: 1 },
   notificationPanel: {
     position: 'absolute',
-    top: 60,
-    right: 66,
-    width: 280,
-    maxHeight: 380,
+    top: 68,
+    right: 16,
+    maxHeight: 420,
     backgroundColor: dashboardTheme.colors.surface,
-    borderRadius: dashboardTheme.radii.md,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: dashboardTheme.colors.border,
+    overflow: 'hidden',
     ...dashboardTheme.shadows.strong,
   },
-  notificationPanelContent: { padding: 16 },
+  notificationPanelContent: { padding: 16, paddingBottom: 14 },
   notificationPanelHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingBottom: 14,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: dashboardTheme.colors.border,
   },
@@ -3527,7 +3532,7 @@ settingsSubtitle: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 11,
-    paddingVertical: 14,
+    paddingVertical: 12,
   },
   notificationItemIcon: {
     width: 34,
