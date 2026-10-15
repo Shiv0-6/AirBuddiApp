@@ -221,37 +221,9 @@ function QuickControlsComponent({
         </View>
       </View>
 
-      {/* ── Focus Presets & UV-C ───────────────────────────────── */}
+      {/* ── UV-C Section ────────────────────────────────────────── */}
       <View style={[styles.section, styles.controlCard]}>
         <Text style={styles.sectionTitle}>UV-C</Text>
-        {/*
-          <View style={styles.presetGrid}>
-            {PRESETS.map(preset => {
-              const isActive = preset.id === activePresetId;
-              return (
-                <TouchableOpacity
-                  key={preset.id}
-                  activeOpacity={0.8}
-                  disabled={presetControlsDisabled}
-                  onPress={() => handlePresetPress(preset)}
-                  style={[styles.presetCard, presetControlsDisabled && styles.controlDisabled, isActive && styles.presetCardActive]}
-                >
-                  <MaterialCommunityIcons
-                    name={preset.icon}
-                    size={24}
-                    color={isActive ? '#FFFFFF' : dashboardTheme.colors.primary}
-                  />
-                  <Text style={[styles.presetLabel, isActive && styles.presetLabelActive]} numberOfLines={1}>
-                    {preset.label}
-                  </Text>
-                  <Text style={[styles.presetHintText, isActive && styles.presetHintTextActive]} numberOfLines={1}>
-                    {preset.hint}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        */}
         <View style={styles.presetGrid}>
           <TouchableOpacity
             activeOpacity={0.8}
@@ -327,6 +299,7 @@ function QuickControlsComponent({
           })}
         </View>
       </View>
+
     </View>
   );
 }
