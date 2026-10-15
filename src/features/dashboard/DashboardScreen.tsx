@@ -28,6 +28,7 @@ import { SafeAreaInsetsContext } from 'react-native-safe-area-context';
 
 import { dashboardTheme } from './dashboardTheme';
 import { connectionLabels } from './dashboardMockData';
+import { getAqiAlertLevel } from './dashboardUtils';
 import { DashboardHeader } from '../../components/dashboard/DashboardHeader';
 import { AirQualityCard } from '../../components/dashboard/AirQualityCard';
 import { SensorGrid } from '../../components/dashboard/SensorGrid';
@@ -232,6 +233,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
   const [profileEmailError, setProfileEmailError] = useState('');
   const [profilePhoneError, setProfilePhoneError] = useState('');
   const [profileLocationError, setProfileLocationError] = useState('');
+  const [aqiThresholdError, setAqiThresholdError] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   const [addDeviceMode, setAddDeviceMode] = useState<'qr' | 'manual'>('qr');
@@ -725,6 +727,10 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
 
   const selectedDevice = devices.find(item => item.id === selectedDeviceId) ?? null;
   const offlineDevices = devices.filter(item => item.status === 'Offline');
+  const aqiAlertLevel = notifAqiAlerts
+    ? getAqiAlertLevel(dashboard.aqi, aqiWarningThreshold, aqiDangerThreshold)
+    : null;
+  const notificationCount = (notifDeviceOffline ? offlineDevices.length : 0) + (aqiAlertLevel ? 1 : 0);
   const updateTarget = devices.find(item => item.id === updateDeviceId) ?? null;
   const notificationPanelWidth = Math.max(0, Math.min(340, Dimensions.get('window').width - 32));
   const updateTargetModel = updateTarget ? getFirmwareModelForDevice(updateTarget) : null;
@@ -1807,12 +1813,28 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                   <Text style={styles.notificationPanelSubtitle}>Your latest updates and alerts</Text>
                 </View>
                 <View style={styles.notificationCountBadge}>
-                  <Text style={styles.notificationCountText}>{notifDeviceOffline ? offlineDevices.length : 0}</Text>
+                  <Text style={styles.notificationCountText}>{notificationCount}</Text>
                 </View>
               </View>
               <View style={styles.notificationList}>
-                {notifDeviceOffline && offlineDevices.length > 0 ? (
-                  offlineDevices.map(item => (
+                {notificationCount > 0 ? (
+                  <>
+                  {aqiAlertLevel && (
+                    <View style={styles.notificationItem}>
+                      <View style={[styles.notificationItemIcon, styles.notificationItemIconWarning]}>
+                        <MaterialCommunityIcons name={aqiAlertLevel === 'danger' ? 'alert-circle' : 'alert-outline'} size={18} color="#B45309" />
+                      </View>
+                      <View style={styles.notificationItemCopy}>
+                        <View style={styles.notificationItemTitleRow}>
+                          <Text style={styles.notificationItemTitle}>AQI {aqiAlertLevel === 'danger' ? 'danger' : 'warning'}</Text>
+                          <Text style={styles.notificationItemTime}>Now</Text>
+                        </View>
+                        <Text style={styles.notificationItemText}>Current AQI is {dashboard.aqi}, above your {aqiAlertLevel} threshold.</Text>
+                        <Text style={styles.notificationRecoveryText}>Check your air quality and keep your AirBuddi device running.</Text>
+                      </View>
+                    </View>
+                  )}
+                  {notifDeviceOffline && offlineDevices.length > 0 && offlineDevices.map(item => (
                     <View key={item.id} style={styles.notificationItem}>
                       <View style={[styles.notificationItemIcon, styles.notificationItemIconWarning]}>
                         <MaterialCommunityIcons name="wifi-off" size={18} color="#B45309" />
@@ -1836,7 +1858,8 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                         </TouchableOpacity>
                       </View>
                     </View>
-                  ))
+                  ))}
+                  </>
                 ) : (
                   <View style={styles.notificationItem}>
                     <View style={[styles.notificationItemIcon, styles.notificationItemIconSuccess]}>
@@ -1894,10 +1917,20 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionSubtitle}>Set the AQI levels at which you want to be alerted.</Text>
               </View>
               <Text style={styles.inputLabel}>WARNING LEVEL (AQI)</Text>
-              <TextInput value={aqiWarningThreshold} onChangeText={v => dispatch(setPreferences({ aqiWarningThreshold: v }))} style={styles.textInput} keyboardType="numeric" placeholder="100" placeholderTextColor={dashboardTheme.colors.textMuted} />
+              <TextInput value={aqiWarningThreshold} onChangeText={v => { if (/^\d*$/.test(v)) { setAqiThresholdError(''); dispatch(setPreferences({ aqiWarningThreshold: v })); } }} style={styles.textInput} keyboardType="numeric" placeholder="100" placeholderTextColor={dashboardTheme.colors.textMuted} />
               <Text style={styles.inputLabel}>DANGER LEVEL (AQI)</Text>
-              <TextInput value={aqiDangerThreshold} onChangeText={v => dispatch(setPreferences({ aqiDangerThreshold: v }))} style={styles.textInput} keyboardType="numeric" placeholder="200" placeholderTextColor={dashboardTheme.colors.textMuted} />
-              <TouchableOpacity style={styles.primarySheetButtonRefined} onPress={() => dispatch(setActiveSheet(null))}><Text style={styles.primarySheetButtonText}>Save Thresholds</Text></TouchableOpacity>
+              <TextInput value={aqiDangerThreshold} onChangeText={v => { if (/^\d*$/.test(v)) { setAqiThresholdError(''); dispatch(setPreferences({ aqiDangerThreshold: v })); } }} style={styles.textInput} keyboardType="numeric" placeholder="200" placeholderTextColor={dashboardTheme.colors.textMuted} />
+              {!!aqiThresholdError && <Text style={styles.inputError}>{aqiThresholdError}</Text>}
+              <TouchableOpacity style={styles.primarySheetButtonRefined} onPress={() => {
+                const warning = Number(aqiWarningThreshold);
+                const danger = Number(aqiDangerThreshold);
+                if (!Number.isInteger(warning) || !Number.isInteger(danger) || warning < 0 || danger <= warning) {
+                  setAqiThresholdError('Enter valid whole numbers where danger is greater than warning.');
+                  return;
+                }
+                setAqiThresholdError('');
+                dispatch(setActiveSheet(null));
+              }}><Text style={styles.primarySheetButtonText}>Save Thresholds</Text></TouchableOpacity>
             </>}
 
             {/* ── Appearance ──────────────────────────────────────── */}

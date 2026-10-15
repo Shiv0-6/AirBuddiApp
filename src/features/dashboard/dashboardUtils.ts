@@ -13,6 +13,36 @@ export function getAqiDescriptor(aqi: number) {
   );
 }
 
+export type AqiAlertLevel = 'warning' | 'danger' | null;
+
+export function getAqiAlertLevel(
+  aqi: number | null,
+  warningThreshold: string,
+  dangerThreshold: string,
+): AqiAlertLevel {
+  if (aqi === null || !Number.isFinite(aqi)) {
+    return null;
+  }
+
+  if (!warningThreshold.trim() || !dangerThreshold.trim()) {
+    return null;
+  }
+
+  const warning = Number(warningThreshold);
+  const danger = Number(dangerThreshold);
+  if (!Number.isFinite(warning) || !Number.isFinite(danger) || warning < 0 || danger <= warning) {
+    return null;
+  }
+
+  if (aqi >= danger) {
+    return 'danger';
+  }
+  if (aqi >= warning) {
+    return 'warning';
+  }
+  return null;
+}
+
 export function formatSensorValue(value: number) {
   if (Number.isInteger(value)) {
     return String(value);
