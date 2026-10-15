@@ -99,6 +99,7 @@ function DashboardHeaderComponent({
             style={styles.iconBtn}
           >
             <MaterialCommunityIcons
+              // name="menu"
               name="dots-vertical"
               size={23}
               color={dashboardTheme.colors.textSecondary}
