@@ -1238,12 +1238,12 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
               </View>
             ) : (
               <>
+                {/* Presets are hidden until Fresh Air and Deep Clean are configured. */}
                 <QuickControls
                   isPoweredOn={device?.power === 'on'}
                   isAutoMode={device?.mode === 'auto'}
                   isSleepMode={device?.sleepMode ?? false}
                   isUvc={device?.uvc ?? true}
-                  showPresets={!isMiniDevice}
                   fanSpeed={controlFanSpeed}
                   onTogglePower={handleTogglePower}
                   onToggleAutoMode={handleToggleAutoMode}

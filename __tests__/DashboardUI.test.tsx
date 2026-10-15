@@ -38,7 +38,7 @@ describe('DashboardHeader device image', () => {
 });
 
 describe('QuickControls UI', () => {
-  it('shows modern focus presets for a polished experience', () => {
+  it('keeps unconfigured presets out of the control surface', () => {
     let tree: renderer.ReactTestRenderer;
 
     act(() => {
@@ -61,8 +61,10 @@ describe('QuickControls UI', () => {
     const textContent = tree!.root.findAllByType(Text).map(node => node.props.children);
     const flattenedText = textContent.flat().join(' ');
 
-    expect(flattenedText).toContain('Presets');
-    expect(flattenedText).toContain('Fresh Air');
+    expect(flattenedText).not.toContain('Presets');
+    expect(flattenedText).not.toContain('Fresh Air');
+    expect(flattenedText).not.toContain('Deep Clean');
+    expect(flattenedText).toContain('UV-C');
     expect(flattenedText).toContain('Auto');
     expect(flattenedText).toContain('Manual');
     expect(flattenedText).toContain('Off');

@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useState } from 'react';
+import React, { memo, useCallback, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -23,7 +23,7 @@ type QuickControlsProps = {
   isAutoMode: boolean;
   isSleepMode: boolean;
   isUvc: boolean;
-  showPresets?: boolean;
+  // showPresets?: boolean;
   fanSpeed?: 'off' | '1' | '2' | '3';
   onTogglePower: () => void;
   onToggleAutoMode: (value: boolean) => void;
@@ -46,6 +46,7 @@ const SPEED_REVERSE_MAP: Record<string, string> = {
   '3': 'High'
 };
 
+/* Presets are intentionally disabled until their device commands are configured.
 const PRESETS = [
   {
     id: 'fresh',
@@ -66,6 +67,7 @@ const PRESETS = [
     speed: '3' as const,
   },
 ] as const;
+*/
 
 // ─── Fan rotation speeds ──────────────────────────────────────────────────────
 
@@ -82,7 +84,7 @@ function QuickControlsComponent({
   isAutoMode,
   isSleepMode,
   isUvc,
-  showPresets = true,
+  // showPresets = true,
   fanSpeed = '2',
   onTogglePower,
   onToggleAutoMode,
@@ -93,7 +95,6 @@ function QuickControlsComponent({
   const ringScale = useSharedValue(1);
   const ringOpacity = useSharedValue(0.15);
   const rotation = useSharedValue(0);
-  const [activePresetId, setActivePresetId] = useState<string | null>(null);
 
   const effectiveFanSpeed = isSleepMode ? 'off' : fanSpeed;
 
@@ -124,24 +125,24 @@ function QuickControlsComponent({
   }));
 
   const activeSpeedLabel = SPEED_REVERSE_MAP[effectiveFanSpeed] ?? 'Medium';
-  const presetControlsDisabled = !isPoweredOn || isSleepMode;
   const manualControlsDisabled = !isPoweredOn || isAutoMode || isSleepMode;
 
   const handleSpeedPress = useCallback((label: string) => {
     const mapped = SPEED_MAP[label];
     if (mapped) {
-      setActivePresetId(null);
       onToggleAutoMode(false);
       onSelectFanSpeed(mapped);
     }
   }, [onSelectFanSpeed, onToggleAutoMode]);
 
+  /*
   const handlePresetPress = useCallback((preset: (typeof PRESETS)[number]) => {
     setActivePresetId(preset.id);
     onToggleAutoMode(preset.auto);
     onToggleUvc(preset.uvc);
     onSelectFanSpeed(preset.speed);
   }, [onSelectFanSpeed, onToggleAutoMode, onToggleUvc]);
+  */
 
   const fanSpeedText = !isPoweredOn
     ? 'Off'
@@ -199,7 +200,6 @@ function QuickControlsComponent({
             value={!isAutoMode && !isSleepMode && isPoweredOn}
             disabled={!isPoweredOn}
             onToggle={() => {
-              setActivePresetId(null);
               onToggleAutoMode(false);
               if (isSleepMode) onToggleSleepMode(false);
             }}
@@ -214,7 +214,6 @@ function QuickControlsComponent({
             activeLabelStyle={modeStyles.labelSleepActive}
             activeIndicatorStyle={modeStyles.indicatorSleepActive}
             onToggle={() => {
-              setActivePresetId(null);
               onToggleAutoMode(false);
               onToggleSleepMode(!isSleepMode);
             }}
@@ -224,8 +223,8 @@ function QuickControlsComponent({
 
       {/* ── Focus Presets & UV-C ───────────────────────────────── */}
       <View style={[styles.section, styles.controlCard]}>
-        <Text style={styles.sectionTitle}>{showPresets ? 'Presets' : 'UV-C'}</Text>
-        {showPresets && (
+        <Text style={styles.sectionTitle}>UV-C</Text>
+        {/*
           <View style={styles.presetGrid}>
             {PRESETS.map(preset => {
               const isActive = preset.id === activePresetId;
@@ -252,7 +251,7 @@ function QuickControlsComponent({
               );
             })}
           </View>
-        )}
+        */}
         <View style={styles.presetGrid}>
           <TouchableOpacity
             activeOpacity={0.8}
