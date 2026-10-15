@@ -34,6 +34,7 @@ import { SensorGrid } from '../../components/dashboard/SensorGrid';
 import { QuickControls } from '../../components/dashboard/QuickControls';
 import { ConnectionPill } from '../../components/dashboard/ConnectionPill';
 import { RootPurificationCard } from '../../components/dashboard/RootPurificationCard';
+import { LiveChatScreen } from '../../components/shared/LiveChatScreen';
 
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { selectDashboard } from './dashboardSelectors';
@@ -1319,7 +1320,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
       <Modal
         animationType={activeSheet === 'notification-inbox' ? 'fade' : 'slide'}
         transparent={activeSheet === 'add-device' || activeSheet === 'notification-inbox'}
-        visible={activeSheet !== null && activeSheet !== 'menu' && activeSheet !== 'profile'}
+        visible={activeSheet !== null && activeSheet !== 'menu' && activeSheet !== 'profile' && activeSheet !== 'live-chat'}
         onRequestClose={handleSettingsBack}
       >
         <StatusBar barStyle="light-content" backgroundColor="#000000" translucent={false} />
@@ -2058,7 +2059,7 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <View style={styles.contactInfo}><Text style={styles.contactLabel}>Phone</Text><Text style={styles.contactSub}>+91 12345 67890</Text></View>
                 <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.contactOption, styles.contactOptionLast]} activeOpacity={0.7} onPress={() => Alert.alert('Live Chat', 'Live chat is not available in demo mode.')}>
+              <TouchableOpacity style={[styles.contactOption, styles.contactOptionLast]} activeOpacity={0.7} onPress={() => dispatch(setActiveSheet('live-chat'))}>
                 <View style={styles.contactIconWrap}><MaterialCommunityIcons name="chat-outline" size={22} color={dashboardTheme.colors.primaryDark} /></View>
                 <View style={styles.contactInfo}><Text style={styles.contactLabel}>Live Chat</Text><Text style={styles.contactSub}>Available 9 AM – 6 PM IST</Text></View>
                 <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
@@ -2069,6 +2070,14 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
         </View>
         </View>
         </View>
+      </Modal>
+
+      <Modal
+        animationType="slide"
+        visible={activeSheet === 'live-chat'}
+        onRequestClose={() => dispatch(setActiveSheet('contact-support'))}
+      >
+        <LiveChatScreen onClose={() => dispatch(setActiveSheet('contact-support'))} />
       </Modal>
 
       <Modal
