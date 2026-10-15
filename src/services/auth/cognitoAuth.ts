@@ -49,7 +49,7 @@ function toSession(username: string, result: {
   IdToken?: string;
   RefreshToken?: string;
   ExpiresIn?: number;
-}): AuthSession {
+}, refreshToken?: string): AuthSession {
   if (!result.AccessToken || !result.IdToken) {
     throw new Error('Cloud sign-in did not return a valid session.');
   }
@@ -58,9 +58,30 @@ function toSession(username: string, result: {
     username,
     accessToken: result.AccessToken,
     idToken: result.IdToken,
-    refreshToken: result.RefreshToken,
+    refreshToken: result.RefreshToken ?? refreshToken,
     expiresAt: Date.now() + (result.ExpiresIn ?? 3600) * 1000,
   };
+}
+
+async function refreshCloudSession(session: AuthSession): Promise<AuthSession> {
+  if (!session.refreshToken) {
+    throw new Error('Cloud session expired and cannot be refreshed.');
+  }
+
+  const response = await cognitoRequest<{ AuthenticationResult?: Parameters<typeof toSession>[1] }>(
+    'InitiateAuth',
+    {
+      AuthFlow: 'REFRESH_TOKEN_AUTH',
+      ClientId: cognitoAuthConfig.userPoolClientId,
+      AuthParameters: { REFRESH_TOKEN: session.refreshToken },
+    },
+  );
+
+  return toSession(
+    session.username,
+    response.AuthenticationResult ?? {},
+    session.refreshToken,
+  );
 }
 
 export async function registerCloudAccount(username: string, password: string) {
@@ -106,11 +127,23 @@ export async function getStoredAuthSession(): Promise<AuthSession | null> {
 
   try {
     const session = JSON.parse(stored) as AuthSession;
-    if (!session.accessToken || !session.idToken || session.expiresAt <= Date.now()) {
+    if (!session.accessToken || !session.idToken || !session.username) {
       await clearAuthSession();
       return null;
     }
-    return session;
+
+    if (session.isTestAdmin || session.expiresAt > Date.now()) {
+      return session;
+    }
+
+    if (session.refreshToken) {
+      const refreshedSession = await refreshCloudSession(session);
+      await saveAuthSession(refreshedSession);
+      return refreshedSession;
+    }
+
+    await clearAuthSession();
+    return null;
   } catch {
     await clearAuthSession();
     return null;
