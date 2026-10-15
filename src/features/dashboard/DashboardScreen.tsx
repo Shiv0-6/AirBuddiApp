@@ -268,7 +268,9 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
     push: notifPush,
     aqiAlerts: notifAqiAlerts,
     deviceOffline: notifDeviceOffline,
-    filterReminder: notifFilterReminder
+    filterReminder: notifFilterReminder,
+    appUpdates: notifAppUpdates,
+    deviceUpdates: notifDeviceUpdates,
   } = notifications;
 
   const {
@@ -1871,9 +1873,17 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>Device Offline</Text><Text style={styles.settingsToggleSublabel}>Alert when device goes offline</Text></View>
                 <Switch value={notifDeviceOffline} onValueChange={v => { void dispatch(setNotifications({ deviceOffline: v })); }} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifDeviceOffline ? '#22C55E' : '#F4F4F4'} />
               </View>
-              <View style={[styles.settingsToggleRow, styles.settingsToggleRowLast]}>
+              <View style={styles.settingsToggleRow}>
                 <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>Filter Replacement</Text><Text style={styles.settingsToggleSublabel}>Remind when filter needs replacing</Text></View>
                 <Switch value={notifFilterReminder} onValueChange={v => { void dispatch(setNotifications({ filterReminder: v })); }} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifFilterReminder ? '#22C55E' : '#F4F4F4'} />
+              </View>
+              <View style={styles.settingsToggleRow}>
+                <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>App Updates</Text><Text style={styles.settingsToggleSublabel}>Learn about new app features</Text></View>
+                <Switch value={notifAppUpdates} onValueChange={v => { void dispatch(setNotifications({ appUpdates: v })); }} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifAppUpdates ? '#22C55E' : '#F4F4F4'} />
+              </View>
+              <View style={[styles.settingsToggleRow, styles.settingsToggleRowLast]}>
+                <View style={styles.toggleTextWrap}><Text style={styles.settingsToggleLabel}>Device Updates</Text><Text style={styles.settingsToggleSublabel}>Notify when device updates are available</Text></View>
+                <Switch value={notifDeviceUpdates} onValueChange={v => { void dispatch(setNotifications({ deviceUpdates: v })); }} trackColor={{ false: '#D1D5DB', true: 'rgba(34, 197, 94, 0.35)' }} thumbColor={notifDeviceUpdates ? '#22C55E' : '#F4F4F4'} />
               </View>
             </>}
 

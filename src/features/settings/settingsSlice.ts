@@ -47,12 +47,12 @@ const initialState: SettingsState = {
     avatarUri: null,
   },
   notifications: {
-    push: true,
-    aqiAlerts: true,
-    deviceOffline: true,
-    filterReminder: true,
-    appUpdates: true,
-    deviceUpdates: true,
+    push: false,
+    aqiAlerts: false,
+    deviceOffline: false,
+    filterReminder: false,
+    appUpdates: false,
+    deviceUpdates: false,
   },
   preferences: {
     theme: 'system',
