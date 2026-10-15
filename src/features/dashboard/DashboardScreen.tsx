@@ -120,10 +120,11 @@ function getDeviceType(name: string): 'max' | 'mini' | 'monitor' {
 
 function getFirmwareModelForDevice(device: Pick<HomeDevice, 'name' | 'type'>): string {
   const normalizedName = device.name.trim().toLowerCase();
-  if (device.type === 'monitor' || normalizedName.includes('monitor')) {
+  const normalizedType = String(device.type ?? '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (normalizedType === 'monitor' || normalizedName.includes('monitor')) {
     return 'Monitor';
   }
-  if (device.type === 'mini' || normalizedName.includes('mini')) {
+  if (normalizedType === 'mini' || normalizedType === 'airbuddimini' || normalizedName.includes('mini')) {
     return 'AIRBUDDI_MINI';
   }
   return 'AIRBUDDI_MAX';

@@ -19,7 +19,6 @@ const config = {
       new RegExp(`${escapePath(path.join(projectRoot, 'old_app'))}\\/.*`),
     ],
   },
-  watchFolders: [path.join(projectRoot, 'src')],
 };
 
 function escapePath(value) {

@@ -285,6 +285,23 @@ function normalizeFirmwareMac(value: unknown): string {
     : rawMac;
 }
 
+function normalizeFirmwareModel(value: unknown): string {
+  const model = asString(value);
+  const compactModel = model.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+
+  if (compactModel === 'MONITOR') {
+    return 'Monitor';
+  }
+  if (compactModel === 'AIRBUDDIMINI' || compactModel === 'MINI') {
+    return 'AIRBUDDI_MINI';
+  }
+  if (compactModel === 'AIRBUDDIMAX' || compactModel === 'MAX') {
+    return 'AIRBUDDI_MAX';
+  }
+
+  return model;
+}
+
 function firmwareVersionFromEntry(value: unknown): string | null {
   if (typeof value === 'string') {
     const version = value.trim();
@@ -319,7 +336,8 @@ function normalizeFirmwareEntry(entry: unknown, model: string): AvailableFirmwar
       .filter((version): version is string => version !== null)
     : [];
 
-  return mac && model ? { mac, model, versions } : null;
+  const normalizedModel = normalizeFirmwareModel(model);
+  return mac && normalizedModel ? { mac, model: normalizedModel, versions } : null;
 }
 
 export async function fetchAvailableFirmware(): Promise<AvailableFirmwareDevice[]> {

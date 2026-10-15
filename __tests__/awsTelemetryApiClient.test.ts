@@ -27,7 +27,13 @@ describe('fetchAvailableFirmware', () => {
         status: 'success',
         models: {
           AIRBUDDI_MINI: [
-            { device_id: '441D642AD50C', versions: [] },
+            {
+              device_id: '441D642AD50C',
+              versions: [{
+                file_name: 'firmware.bin',
+                s3_key: 'AIRBUDDI_MINI/441D642AD50C/1.0.2/firmware.bin',
+              }],
+            },
           ],
           AIRBUDDI_MAX: [
             {
@@ -60,7 +66,7 @@ describe('fetchAvailableFirmware', () => {
     });
 
     await expect(fetchAvailableFirmware()).resolves.toEqual([
-      { mac: '44:1D:64:2A:D5:0C', model: 'AIRBUDDI_MINI', versions: [] },
+      { mac: '44:1D:64:2A:D5:0C', model: 'AIRBUDDI_MINI', versions: ['1.0.2'] },
       { mac: '44:1D:64:2A:D7:78', model: 'AIRBUDDI_MAX', versions: ['1.0.0'] },
       { mac: 'B0:A7:32:B1:CF:70', model: 'AIRBUDDI_MAX', versions: ['1.0.5'] },
       { mac: 'B0:A7:32:B1:CF:70', model: 'Monitor', versions: ['1.0.0'] },
