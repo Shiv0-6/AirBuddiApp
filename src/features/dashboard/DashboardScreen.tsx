@@ -2092,14 +2092,14 @@ export function DashboardScreen({ onSignOut }: { onSignOut: () => void }) {
                 <Text style={styles.pageSectionTitle}>Contact Us</Text>
                 <Text style={styles.pageSectionSubtitle}>We're here to help. Reach us through any channel.</Text>
               </View>
-              <TouchableOpacity style={styles.contactOption} activeOpacity={0.7} onPress={() => Linking.openURL('mailto:support@greenverse.in')}>
+              <TouchableOpacity style={styles.contactOption} activeOpacity={0.7} onPress={() => Linking.openURL('mailto:saket@airbuddi.in')}>
                 <View style={styles.contactIconWrap}><MaterialCommunityIcons name="email-outline" size={22} color={dashboardTheme.colors.primaryDark} /></View>
-                <View style={styles.contactInfo}><Text style={styles.contactLabel}>Email</Text><Text style={styles.contactSub}>support@greenverse.in</Text></View>
+                <View style={styles.contactInfo}><Text style={styles.contactLabel}>Email</Text><Text style={styles.contactSub}>saket@airbuddi.in</Text></View>
                 <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
               </TouchableOpacity>
-              <TouchableOpacity style={styles.contactOption} activeOpacity={0.7} onPress={() => Linking.openURL('tel:+911234567890')}>
+              <TouchableOpacity style={styles.contactOption} activeOpacity={0.7} onPress={() => Linking.openURL('tel:+91 91616 02601')}>
                 <View style={styles.contactIconWrap}><MaterialCommunityIcons name="phone-outline" size={22} color={dashboardTheme.colors.primaryDark} /></View>
-                <View style={styles.contactInfo}><Text style={styles.contactLabel}>Phone</Text><Text style={styles.contactSub}>+91 12345 67890</Text></View>
+                <View style={styles.contactInfo}><Text style={styles.contactLabel}>Phone</Text><Text style={styles.contactSub}>+91 91616 02601</Text></View>
                 <MaterialCommunityIcons name="chevron-right" size={22} color={dashboardTheme.colors.textMuted} />
               </TouchableOpacity>
               <TouchableOpacity style={[styles.contactOption, styles.contactOptionLast]} activeOpacity={0.7} onPress={() => dispatch(setActiveSheet('live-chat'))}>
